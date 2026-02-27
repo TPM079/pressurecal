@@ -53,38 +53,29 @@ export default function App() {
     r.status === "calibrated" ? "Calibrated" : r.status === "under-calibrated" ? "Under-calibrated" : "Over-calibrated";
 
   return (
-    <div style={{ padding: 20, fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, Arial" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
-        <div>
-          <h1 style={{ margin: 0 }}>PressureCal</h1>
-          <p style={{ margin: "6px 0 0", opacity: 0.8 }}>Output calibration (rated pump → estimated gun output)</p>
-        </div>
-        <span
-          style={{
-            padding: "6px 10px",
-            borderRadius: 999,
-            border: "1px solid #ddd",
-            background: badgeClass === "ok" ? "#eaffea" : badgeClass === "risk" ? "#ffecec" : "#fff7e6",
-            fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
-          }}
-        >
-          {badgeText}
-        </span>
+  <div className="pc-page">
+    <header className="pc-header">
+      <div>
+        <h1 className="pc-title">PressureCal</h1>
+        <p className="pc-subtitle">Field Calibration & Reference Tool</p>
       </div>
+    </header>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 16 }}>
-        <div style={{ border: "1px solid #ddd", borderRadius: 12, padding: 14 }}>
-          <h2 style={{ marginTop: 0 }}>Inputs</h2>
-
-          <label>Rated pressure</label>
-          <div style={{ display: "flex", gap: 10 }}>
+    <main className="pc-grid">
+      {/* LEFT: Inputs */}
+      <section className="pc-panel">
+        <div className="pc-panel-title">System Configuration</div>
+        <div className="pc-panel-body pc-form">
+          <label className="pc-label">Rated pressure</label>
+          <div className="pc-row">
             <input
+              className="pc-input"
               type="number"
               value={inputs.pumpPressure}
               onChange={(e) => setInputs((s) => ({ ...s, pumpPressure: Number(e.target.value) }))}
-              style={{ flex: 1 }}
             />
             <select
+              className="pc-select"
               value={inputs.pumpPressureUnit}
               onChange={(e) => setInputs((s) => ({ ...s, pumpPressureUnit: e.target.value as PressureUnit }))}
             >
@@ -93,36 +84,38 @@ export default function App() {
             </select>
           </div>
 
-          <div style={{ height: 10 }} />
+          <div className="pc-spacer" />
 
-          <label>Rated flow</label>
-          <div style={{ display: "flex", gap: 10 }}>
+          <label className="pc-label">Rated flow</label>
+          <div className="pc-row">
             <input
+              className="pc-input"
               type="number"
               value={inputs.pumpFlow}
               onChange={(e) => setInputs((s) => ({ ...s, pumpFlow: Number(e.target.value) }))}
-              style={{ flex: 1 }}
             />
             <select
+              className="pc-select"
               value={inputs.pumpFlowUnit}
               onChange={(e) => setInputs((s) => ({ ...s, pumpFlowUnit: e.target.value as FlowUnit }))}
             >
               <option value="lpm">L/min</option>
-              <option value="gpm">gpm</option>
+              <option value="gpm">GPM</option>
             </select>
           </div>
 
-          <hr style={{ margin: "14px 0" }} />
+          <hr className="pc-hr" />
 
-          <label>Hose length</label>
-          <div style={{ display: "flex", gap: 10 }}>
+          <label className="pc-label">Hose length (installed)</label>
+          <div className="pc-row">
             <input
+              className="pc-input"
               type="number"
               value={inputs.hoseLength}
               onChange={(e) => setInputs((s) => ({ ...s, hoseLength: Number(e.target.value) }))}
-              style={{ flex: 1 }}
             />
             <select
+              className="pc-select"
               value={inputs.hoseLengthUnit}
               onChange={(e) => setInputs((s) => ({ ...s, hoseLengthUnit: e.target.value as LengthUnit }))}
             >
@@ -131,17 +124,18 @@ export default function App() {
             </select>
           </div>
 
-          <div style={{ height: 10 }} />
+          <div className="pc-spacer" />
 
-          <label>Hose ID</label>
-          <div style={{ display: "flex", gap: 10 }}>
+          <label className="pc-label">Hose internal diameter</label>
+          <div className="pc-row">
             <input
+              className="pc-input"
               type="number"
               value={inputs.hoseId}
               onChange={(e) => setInputs((s) => ({ ...s, hoseId: Number(e.target.value) }))}
-              style={{ flex: 1 }}
             />
             <select
+              className="pc-select"
               value={inputs.hoseIdUnit}
               onChange={(e) => setInputs((s) => ({ ...s, hoseIdUnit: e.target.value as DiameterUnit }))}
             >
@@ -150,16 +144,17 @@ export default function App() {
             </select>
           </div>
 
-          <div style={{ height: 10 }} />
+          <div className="pc-spacer" />
 
           <select
+            className="pc-select pc-select-full"
             value=""
             onChange={(e) => {
               const mm = Number(e.target.value);
               if (Number.isFinite(mm) && mm > 0) setInputs((s) => ({ ...s, hoseId: mm, hoseIdUnit: "mm" }));
             }}
           >
-            <option value="">Hose preset…</option>
+            <option value="">Hose preset (optional)…</option>
             {hosePresets.map((p) => (
               <option key={p.valueMm} value={p.valueMm}>
                 {p.label}
@@ -167,33 +162,75 @@ export default function App() {
             ))}
           </select>
 
-          <hr style={{ margin: "14px 0" }} />
+          <hr className="pc-hr" />
 
-          <label>Nozzle tip (e.g. 035)</label>
+          <label className="pc-label">Selected nozzle tip</label>
           <input
+            className="pc-input pc-input-full"
             value={inputs.nozzleSizeText}
             onChange={(e) => setInputs((s) => ({ ...s, nozzleSizeText: e.target.value }))}
-            style={{ width: "100%" }}
           />
         </div>
+      </section>
 
-        <div style={{ border: "1px solid #ddd", borderRadius: 12, padding: 14 }}>
-          <h2 style={{ marginTop: 0 }}>Results</h2>
+      {/* RIGHT: Results */}
+      <section className="pc-panel">
+        <div className="pc-panel-title">Calculated Performance</div>
 
-          <p><strong>At-gun pressure:</strong> {fmt(r.gunPressurePsi, 0)} psi ({fmt(gunBar, 1)} bar)</p>
-          <p><strong>At-gun flow:</strong> {fmt(r.gunFlowGpm, 2)} gpm ({fmt(gunLpm, 1)} L/min)</p>
-          <p><strong>Hose loss:</strong> {fmt(r.hoseLossPsi, 0)} psi ({fmt(lossBar, 1)} bar) — {fmt(r.hoseLossPct, 1)}%</p>
+        <div className="pc-panel-body">
+          <div className="pc-metric pc-metric-primary">
+            <div className="pc-metric-label">Estimated operating pressure (at gun)</div>
+            <div className="pc-metric-value">
+              {fmt(r.gunPressurePsi, 0)} PSI <span className="pc-metric-sub">({fmt(gunBar, 1)} bar)</span>
+            </div>
+          </div>
 
-          <hr style={{ margin: "14px 0" }} />
+          <div className="pc-metric-row">
+            <div className="pc-metric">
+              <div className="pc-metric-label">Operating flow rate</div>
+              <div className="pc-metric-value">
+                {fmt(r.gunFlowGpm, 2)} GPM <span className="pc-metric-sub">({fmt(gunLpm, 1)} L/min)</span>
+              </div>
+            </div>
 
-          <p><strong>Selected nozzle:</strong> {r.selectedTipCode} (≈ {fmt(r.selectedOrificeMm, 2)} mm)</p>
-          <p><strong>Calibrated nozzle:</strong> {r.calibratedTipCode} (≈ {fmt(r.calibratedNozzleQ4000Gpm, 2)} gpm @ 4000psi)</p>
+            <div className="pc-metric">
+              <div className="pc-metric-label">Hose pressure loss</div>
+              <div className="pc-metric-value">
+                {fmt(r.hoseLossPsi, 0)} PSI <span className="pc-metric-sub">({fmt(lossBar, 1)} bar)</span>
+              </div>
+              <div className="pc-metric-meta">{fmt(r.hoseLossPct, 1)}% of rated pressure</div>
+            </div>
+          </div>
 
-          <hr style={{ margin: "14px 0" }} />
+          <div className="pc-status">
+            <div className="pc-status-title">Configuration status</div>
+            <div className="pc-status-badge pc-badge">
+              {badgeText}
+            </div>
+            <div className="pc-status-line">{r.statusMessage}</div>
+            {/* We’ll add Pressure Variance % here next */}
+          </div>
 
-          <p style={{ opacity: 0.85 }}>{r.statusMessage}</p>
+          <div className="pc-metric-row">
+            <div className="pc-metric">
+              <div className="pc-metric-label">Selected nozzle tip</div>
+              <div className="pc-metric-value">
+                {r.selectedTipCode} <span className="pc-metric-sub">(Orifice {fmt(r.selectedOrificeMm, 2)} mm)</span>
+              </div>
+            </div>
+            <div className="pc-metric">
+              <div className="pc-metric-label">Nozzle equivalent for rated pressure</div>
+              <div className="pc-metric-value">
+                {r.calibratedTipCode} <span className="pc-metric-sub">(≈ {fmt(r.calibratedNozzleQ4000Gpm, 2)} GPM @ 4000)</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="pc-footnote">
+            Results are calculated estimates based on rated specifications and standardised nozzle rating conventions.
+          </div>
         </div>
-      </div>
-    </div>
-  );
-}
+      </section>
+    </main>
+  </div>
+);
