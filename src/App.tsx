@@ -47,8 +47,6 @@ export default function App() {
   const gunLpm = lpmFromGpm(r.gunFlowGpm);
   const lossBar = barFromPsi(r.hoseLossPsi);
 
-  const badgeClass =
-    r.status === "calibrated" ? "ok" : r.status === "under-calibrated" ? "risk" : "warn";
   const badgeText =
     r.status === "calibrated" ? "Calibrated" : r.status === "under-calibrated" ? "Under-calibrated" : "Over-calibrated";
 
@@ -232,5 +230,6 @@ export default function App() {
         </div>
       </section>
     </main>
-  </div>
-);
+   </div>
+  )
+  }
