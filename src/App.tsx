@@ -82,7 +82,7 @@ const efficiencyNote =
   const badge = statusBadge(r.status);
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-100">
       <div className="mx-auto max-w-5xl px-4 py-8">
         {/* Header */}
         <header className="flex items-start justify-between gap-4">
@@ -99,12 +99,12 @@ const efficiencyNote =
         {/* Main grid */}
         <main className="mt-8 grid gap-6 lg:grid-cols-2">
           {/* Inputs */}
-          <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
             <div className="border-b border-slate-200 px-5 py-4">
-              <h2 className="text-sm font-semibold tracking-wide text-slate-900">System Configuration</h2>
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-900">System Configuration</h2>
             </div>
 
-            <div className="space-y-5 px-5 py-5">
+            <div className="space-y-5 px-5 py-4">
               {/* Rated pressure */}
               <div>
                 <label className="block text-sm font-medium text-slate-700">Rated pressure</label>
@@ -224,19 +224,19 @@ const efficiencyNote =
           </section>
 
           {/* Results */}
-          <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
             <div className="border-b border-slate-200 px-5 py-4">
-              <h2 className="text-sm font-semibold tracking-wide text-slate-900">Calculated Performance</h2>
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-900">Calculated Performance</h2>
             </div>
 
-            <div className="space-y-5 px-5 py-5">
+            <div className="space-y-5 px-5 py-4">
               {/* Primary */}
               <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-4">
                 <div className="text-xs font-medium uppercase tracking-wide text-slate-600">
                   Estimated operating pressure (at gun)
                 </div>
-                <div className="mt-2 text-3xl font-semibold text-slate-900">
-                  {fmt(r.gunPressurePsi, 0)} <span className="text-base font-medium text-slate-600">PSI</span>
+                <div className="mt-2 text-4xl font-semibold tracking-tight text-slate-900">
+                  {fmt(r.gunPressurePsi, 0)} <span className="ml-1 text-sm font-medium text-slate-500">PSI</span>
                 </div>
                 <div className="mt-1 text-sm text-slate-600">({fmt(gunBar, 1)} bar)</div>
               </div>
