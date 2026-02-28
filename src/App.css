@@ -4,6 +4,14 @@
   max-width: 1100px;
   margin: 0 auto;
 }
+.pc-delta {
+  margin-top: 10px;
+  font-size: 0.9rem;
+  color: #6b7280; /* muted grey */
+}
+.pc-delta strong {
+  color: #111827;
+}
 
 .pc-header{
   display:flex;
