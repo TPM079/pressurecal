@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { solvePressureCal, barFromPsi, lpmFromGpm } from "./pressurecal";
 import type { Inputs, PressureUnit, FlowUnit, LengthUnit, DiameterUnit } from "./pressurecal";
 
@@ -24,12 +24,24 @@ function statusBadge(status: string) {
   return { text: "Over-calibrated", cls: "bg-red-50 text-red-800 border-red-200" };
 }
 
+function toPsi(value: number, unit: PressureUnit) {
+  return unit === "psi" ? value : value * 14.5037738;
+}
+
+function toBar(value: number, unit: PressureUnit) {
+  return unit === "bar" ? value : value / 14.5037738;
+}
+
 export default function App() {
   const [inputs, setInputs] = useState<Inputs>({
     pumpPressure: 4000,
     pumpPressureUnit: "psi",
     pumpFlow: 15,
     pumpFlowUnit: "lpm",
+
+    // NEW: unloader / max pressure
+    maxPressure: 4000,
+    maxPressureUnit: "psi",
 
     hoseLength: 15,
     hoseLengthUnit: "m",
@@ -45,41 +57,44 @@ export default function App() {
     hoseRoughnessMm: 0.0015
   });
 
+  // If maxPressure hasn't been manually edited, keep it synced to rated pressure.
+  const maxWasManuallyEditedRef = useRef(false);
+
   const r = useMemo(() => solvePressureCal(inputs), [inputs]);
 
+  // Conversions for display
   const gunBar = barFromPsi(r.gunPressurePsi);
+  const pumpBar = barFromPsi(r.pumpPressurePsi);
+  const reqPumpBar = barFromPsi(r.requiredPumpPsi);
+
   const gunLpm = lpmFromGpm(r.gunFlowGpm);
   const lossBar = barFromPsi(r.hoseLossPsi);
-  const ratedPsi =
-  inputs.pumpPressureUnit === "psi"
-    ? inputs.pumpPressure
-    : inputs.pumpPressure * 14.5038;
 
-const pressureVariancePct =
-  ratedPsi > 0
-    ? ((r.gunPressurePsi - ratedPsi) / ratedPsi) * 100
-    : 0;
-const lossPct = Math.abs(pressureVariancePct);
+  const bypassLpm = lpmFromGpm(r.bypassFlowGpm);
 
-const efficiencyTier =
-  lossPct < 5
-    ? "Optimal"
-    : lossPct < 10
-    ? "Moderate loss"
-    : lossPct < 20
-    ? "High loss"
-    : "Severe loss";
+  // Variance shown vs rated pressure
+  const ratedPsi = toPsi(inputs.pumpPressure, inputs.pumpPressureUnit);
+  const pressureVariancePct = ratedPsi > 0 ? ((r.gunPressurePsi - ratedPsi) / ratedPsi) * 100 : 0;
+  const lossPct = Math.abs(pressureVariancePct);
 
-const efficiencyNote =
-  lossPct < 5
-    ? "Very close to rated performance."
-    : lossPct < 10
-    ? "Some pressure drop—typically acceptable."
-    : lossPct < 20
-    ? "Noticeable drop—consider hose length or diameter."
-    : "Large drop—hose length/ID is significantly reducing performance.";
+  const efficiencyTier =
+    lossPct < 5 ? "Optimal" :
+    lossPct < 10 ? "Moderate loss" :
+    lossPct < 20 ? "High loss" :
+    "Severe loss";
+
+  const efficiencyNote =
+    lossPct < 5 ? "Very close to rated performance." :
+    lossPct < 10 ? "Some pressure drop—typically acceptable." :
+    lossPct < 20 ? "Noticeable drop—consider hose length or diameter." :
+    "Large drop—hose length/ID is significantly reducing performance.";
 
   const badge = statusBadge(r.status);
+
+  // Optional: top-right “system” badge that reflects pressure limiting reality
+  const systemBadge = r.isPressureLimited
+    ? { text: "Pressure-limited (bypass)", cls: "bg-red-50 text-red-800 border-red-200" }
+    : badge;
 
   return (
     <div className="min-h-screen bg-slate-100">
@@ -88,13 +103,11 @@ const efficiencyNote =
         <header className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-4xl font-semibold tracking-tight text-slate-900">PressureCal</h1>
-            <p className="mt-2 text-slate-600">
-  Professional Pressure System Calibration
-</p>
+            <p className="mt-2 text-slate-600">Professional Pressure System Calibration</p>
           </div>
 
-          <div className={`mt-1 inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium ${badge.cls}`}>
-            {badge.text}
+          <div className={`mt-1 inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium ${systemBadge.cls}`}>
+            {systemBadge.text}
           </div>
         </header>
 
@@ -115,12 +128,34 @@ const efficiencyNote =
                     className="w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900 outline-none focus:border-slate-400"
                     type="number"
                     value={inputs.pumpPressure}
-                    onChange={(e) => setInputs((s) => ({ ...s, pumpPressure: Number(e.target.value) }))}
+                    onChange={(e) => {
+                      const next = Number(e.target.value);
+                      setInputs((s) => {
+                        const nextState: Inputs = { ...s, pumpPressure: next };
+                        // keep maxPressure synced if user hasn't manually overridden it
+                        if (!maxWasManuallyEditedRef.current) {
+                          nextState.maxPressure = next;
+                          nextState.maxPressureUnit = s.pumpPressureUnit;
+                        }
+                        return nextState;
+                      });
+                    }}
                   />
                   <select
                     className="rounded-lg border border-slate-200 px-3 py-2 text-slate-900 outline-none focus:border-slate-400"
                     value={inputs.pumpPressureUnit}
-                    onChange={(e) => setInputs((s) => ({ ...s, pumpPressureUnit: e.target.value as PressureUnit }))}
+                    onChange={(e) => {
+                      const u = e.target.value as PressureUnit;
+                      setInputs((s) => {
+                        const nextState: Inputs = { ...s, pumpPressureUnit: u };
+                        // if still synced, swap maxPressure unit too, preserving same numeric meaning
+                        if (!maxWasManuallyEditedRef.current) {
+                          nextState.maxPressureUnit = u;
+                          nextState.maxPressure = s.pumpPressure;
+                        }
+                        return nextState;
+                      });
+                    }}
                   >
                     <option value="psi">psi</option>
                     <option value="bar">bar</option>
@@ -147,6 +182,41 @@ const efficiencyNote =
                     <option value="gpm">GPM</option>
                   </select>
                 </div>
+              </div>
+
+              {/* NEW: Max pressure (unloader) */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700">
+                  Max pressure (unloader)
+                </label>
+                <div className="mt-2 flex gap-3">
+                  <input
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900 outline-none focus:border-slate-400"
+                    type="number"
+                    value={inputs.maxPressure}
+                    onChange={(e) => {
+                      maxWasManuallyEditedRef.current = true;
+                      setInputs((s) => ({ ...s, maxPressure: Number(e.target.value) }));
+                    }}
+                  />
+                  <select
+                    className="rounded-lg border border-slate-200 px-3 py-2 text-slate-900 outline-none focus:border-slate-400"
+                    value={inputs.maxPressureUnit}
+                    onChange={(e) => {
+                      maxWasManuallyEditedRef.current = true;
+                      setInputs((s) => ({ ...s, maxPressureUnit: e.target.value as PressureUnit }));
+                    }}
+                  >
+                    <option value="psi">psi</option>
+                    <option value="bar">bar</option>
+                  </select>
+                </div>
+
+                {!maxWasManuallyEditedRef.current && (
+                  <div className="mt-2 text-xs text-slate-500">
+                    Synced to rated pressure. Edit to override.
+                  </div>
+                )}
               </div>
 
               <div className="h-px bg-slate-200" />
@@ -241,21 +311,31 @@ const efficiencyNote =
                   {fmt(r.gunPressurePsi, 0)} <span className="ml-1 text-sm font-medium text-slate-500">PSI</span>
                 </div>
                 <div className="mt-1 text-sm text-slate-600">({fmt(gunBar, 1)} bar)</div>
+
+                {r.isPressureLimited && (
+                  <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">
+                    Pressure limited by unloader. Pump clamped at {fmt(r.pumpPressurePsi, 0)} PSI ({fmt(pumpBar, 1)} bar).<br />
+                    Required (no limit): {fmt(r.requiredPumpPsi, 0)} PSI ({fmt(reqPumpBar, 1)} bar).
+                  </div>
+                )}
               </div>
+
               <div
-  className={`mt-2 text-xs font-medium ${
-    Math.abs(pressureVariancePct) > 10
-      ? "text-red-600"
-      : Math.abs(pressureVariancePct) > 5
-      ? "text-amber-600"
-      : "text-slate-500"
-  }`}
->
-  Δ from rated pressure: {fmt(pressureVariancePct, 1)}%
-</div>
-<div className="pc-delta">
-  Efficiency tier: <strong>{efficiencyTier}</strong> — {efficiencyNote}
-</div>
+                className={`mt-2 text-xs font-medium ${
+                  Math.abs(pressureVariancePct) > 10
+                    ? "text-red-600"
+                    : Math.abs(pressureVariancePct) > 5
+                    ? "text-amber-600"
+                    : "text-slate-500"
+                }`}
+              >
+                Δ from rated pressure: {fmt(pressureVariancePct, 1)}%
+              </div>
+
+              <div className="text-sm text-slate-700">
+                Efficiency tier: <strong>{efficiencyTier}</strong> — {efficiencyNote}
+              </div>
+
               {/* Two-up metrics */}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="rounded-xl border border-slate-200 px-4 py-4">
@@ -275,6 +355,29 @@ const efficiencyNote =
                   <div className="mt-2 text-xs text-slate-500">{fmt(r.hoseLossPct, 1)}% of rated pressure</div>
                 </div>
               </div>
+
+              {/* NEW: Bypass tiles (only when pressure-limited) */}
+              {r.isPressureLimited && (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="rounded-xl border border-slate-200 px-4 py-4">
+                    <div className="text-xs font-medium uppercase tracking-wide text-slate-600">Bypass flow (unloader)</div>
+                    <div className="mt-2 text-xl font-semibold text-slate-900">
+                      {fmt(r.bypassFlowGpm, 2)} <span className="text-sm font-medium text-slate-600">GPM</span>
+                    </div>
+                    <div className="mt-1 text-sm text-slate-600">({fmt(bypassLpm, 1)} L/min)</div>
+                  </div>
+
+                  <div className="rounded-xl border border-slate-200 px-4 py-4">
+                    <div className="text-xs font-medium uppercase tracking-wide text-slate-600">Bypass percentage</div>
+                    <div className="mt-2 text-xl font-semibold text-slate-900">
+                      {fmt(r.bypassPct, 0)} <span className="text-sm font-medium text-slate-600">%</span>
+                    </div>
+                    <div className="mt-2 text-xs text-slate-500">
+                      Portion of rated pump flow diverted to bypass.
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Status message */}
               <div className="rounded-xl border border-slate-200 px-4 py-4">
