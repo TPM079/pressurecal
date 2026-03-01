@@ -88,7 +88,9 @@ const efficiencyNote =
         <header className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-4xl font-semibold tracking-tight text-slate-900">PressureCal</h1>
-            <p className="mt-2 text-slate-600">Field Calibration &amp; Reference Tool</p>
+            <p className="mt-2 text-slate-600">
+  Professional Pressure System Calibration
+</p>
           </div>
 
           <div className={`mt-1 inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium ${badge.cls}`}>
