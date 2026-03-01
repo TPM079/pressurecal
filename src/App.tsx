@@ -28,9 +28,7 @@ function toPsi(value: number, unit: PressureUnit) {
   return unit === "psi" ? value : value * 14.5037738;
 }
 
-function toBar(value: number, unit: PressureUnit) {
-  return unit === "bar" ? value : value / 14.5037738;
-}
+
 
 export default function App() {
   const [inputs, setInputs] = useState<Inputs>({

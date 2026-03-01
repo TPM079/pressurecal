@@ -1,5 +1,9 @@
 /**
- * PressureCal V1 core
+ * PressureCal core (V1.1)
+ * Adds realistic unloader/max-pressure behaviour:
+ * - If a restrictive tip would require pressure above max,
+ *   pressure is clamped and flow at the gun drops.
+ * - The difference becomes bypass flow (unloader bypass).
  */
 
 export type PressureUnit = "psi" | "bar";
@@ -13,6 +17,10 @@ export interface Inputs {
   pumpPressureUnit: PressureUnit;
   pumpFlow: number;
   pumpFlowUnit: FlowUnit;
+
+  /** Unloader / maximum system pressure (usually same as rated) */
+  maxPressure: number;
+  maxPressureUnit: PressureUnit;
 
   hoseLength: number;
   hoseLengthUnit: LengthUnit;
@@ -29,15 +37,30 @@ export interface Inputs {
 }
 
 export interface SolveResult {
-  gunPressurePsi: number;
-  gunFlowGpm: number;
+  /** Actual operating values */
+  pumpPressurePsi: number;     // after unloader clamp
+  gunPressurePsi: number;      // after hose loss
+  gunFlowGpm: number;          // nozzle flow at gun pressure
+
+  /** What it would take to push full pump flow through nozzle */
+  requiredPumpPsi: number;
+  requiredGunPsi: number;
+
+  /** Hose */
   hoseLossPsi: number;
   hoseLossPct: number;
 
+  /** Bypass (unloader) */
+  isPressureLimited: boolean;
+  bypassFlowGpm: number;
+  bypassPct: number;
+
+  /** Nozzle selection (selected) */
   selectedNozzleQ4000Gpm: number;
   selectedTipCode: string;
   selectedOrificeMm: number;
 
+  /** Nozzle equivalent (calibrated to rated point) */
   calibratedNozzleQ4000Gpm: number;
   calibratedTipCode: string;
 
@@ -46,6 +69,7 @@ export interface SolveResult {
 }
 
 export const PSI_PER_BAR = 14.5037738;
+const LPM_PER_GPM = 3.785411784;
 
 export function psiFrom(value: number, unit: PressureUnit): number {
   return unit === "psi" ? value : value * PSI_PER_BAR;
@@ -55,10 +79,10 @@ export function barFromPsi(psi: number): number {
 }
 
 export function gpmFrom(value: number, unit: FlowUnit): number {
-  return unit === "gpm" ? value : value / 3.785411784;
+  return unit === "gpm" ? value : value / LPM_PER_GPM;
 }
 export function lpmFromGpm(gpm: number): number {
-  return gpm * 3.785411784;
+  return gpm * LPM_PER_GPM;
 }
 
 export function metersFrom(value: number, unit: LengthUnit): number {
@@ -72,15 +96,25 @@ function clampPos(n: number, min = 0): number {
   return Number.isFinite(n) ? Math.max(n, min) : min;
 }
 
+/**
+ * Parse tip text into Q@4000 (GPM @ 4000 PSI).
+ * - "040" => 4.0
+ * - "4.0" => 4.0
+ * - "40"  => 4.0
+ */
 export function parseTipToQ4000Gpm(text: string): number | null {
   const t = text.trim().replace(/[^0-9.]/g, "");
   if (!t) return null;
 
-  if (t.includes(".")) return Number(t);
+  if (t.includes(".")) {
+    const v = Number(t);
+    return Number.isFinite(v) ? v : null;
+  }
 
   const n = Number(t);
   if (!Number.isFinite(n)) return null;
 
+  // convention: 2+ digits implies tenths (e.g., "40" => 4.0)
   return t.length >= 2 ? n / 10 : n;
 }
 
@@ -89,10 +123,12 @@ export function q4000ToTipCode(q4000Gpm: number): string {
   return code.toString().padStart(3, "0");
 }
 
+/** Nozzle flow model: Q = Q4000 * sqrt(P / 4000) */
 export function flowAtPressureFromQ4000(q4000Gpm: number, pressurePsi: number): number {
   return q4000Gpm * Math.sqrt(clampPos(pressurePsi) / 4000);
 }
 
+/** Inverse: Q4000 = Q / sqrt(P / 4000) */
 export function q4000FromFlowAtPressure(flowGpm: number, pressurePsi: number): number {
   const p = clampPos(pressurePsi);
   if (p <= 0) return 0;
@@ -100,10 +136,10 @@ export function q4000FromFlowAtPressure(flowGpm: number, pressurePsi: number): n
 }
 
 function gpmToM3s(gpm: number): number {
-  return gpm * 0.003785411784 / 60;
+  return (gpm * 0.003785411784) / 60;
 }
 function m3sToGpm(m3s: number): number {
-  return m3s * 60 / 0.003785411784;
+  return (m3s * 60) / 0.003785411784;
 }
 
 function psiToPa(psi: number): number {
@@ -113,102 +149,166 @@ function paToPsi(pa: number): number {
   return pa / 6894.757293168;
 }
 
+/**
+ * Orifice equation (incompressible):
+ * Q = Cd * A * sqrt(2 * ΔP / ρ)
+ * Here ΔP ~ pressurePsi converted to Pa
+ */
 export function qFromOrificeMmAndP(orificeMm: number, pressurePsi: number, Cd: number, rho: number): number {
-  const d = orificeMm / 1000;
+  const d = clampPos(orificeMm) / 1000; // m
   const A = Math.PI * d * d / 4;
-  const dP = psiToPa(pressurePsi);
-  const v = Math.sqrt((2 * dP) / rho);
-  const Q = Cd * A * v;
+  const dP = psiToPa(clampPos(pressurePsi));
+  const v = Math.sqrt((2 * dP) / Math.max(rho, 1e-9));
+  const Q = Math.max(Cd, 0) * A * v;
   return m3sToGpm(Q);
 }
 
 export function orificeMmFromQandP(qGpm: number, pressurePsi: number, Cd: number, rho: number): number {
-  const Q = gpmToM3s(qGpm);
-  const dP = psiToPa(pressurePsi);
-  const term = Math.sqrt((2 * dP) / rho);
-  const A = Q / (Cd * term);
+  const Q = gpmToM3s(clampPos(qGpm));
+  const dP = psiToPa(clampPos(pressurePsi));
+  const term = Math.sqrt((2 * dP) / Math.max(rho, 1e-9));
+  const A = Q / (Math.max(Cd, 1e-9) * Math.max(term, 1e-12));
   const d = Math.sqrt((4 * A) / Math.PI);
   return d * 1000;
 }
 
-export function hoseLossPsi(flowGpm: number, lengthM: number, idMm: number, rho: number, roughnessMm: number): number {
-  const mu = 0.001;
-  const Q = gpmToM3s(flowGpm);
-  const D = idMm / 1000;
+/**
+ * Hose loss using Darcy–Weisbach with Swamee–Jain-type friction factor.
+ * Note: This is a simplified model but behaves well for typical hose flows.
+ */
+export function hoseLossPsi(
+  flowGpm: number,
+  lengthM: number,
+  idMm: number,
+  rho: number,
+  roughnessMm: number
+): number {
+  const mu = 0.001; // Pa*s (approx water at ~20°C)
+  const Q = gpmToM3s(clampPos(flowGpm));
+  const D = Math.max(clampPos(idMm), 1e-9) / 1000;
   const A = Math.PI * D * D / 4;
-  const v = Q / A;
+  const v = Q / Math.max(A, 1e-12);
 
-  const Re = (rho * v * D) / mu;
-  const eps = roughnessMm / 1000;
+  const Re = (Math.max(rho, 1e-9) * v * D) / Math.max(mu, 1e-12);
+
+  const eps = clampPos(roughnessMm) / 1000;
   const rel = eps / D;
 
-  const f = 0.25 / Math.pow(Math.log10(rel / 3.7 + 5.74 / Math.pow(Re, 0.9)), 2);
-  const dP = f * (lengthM / D) * (rho * v * v / 2);
+  // friction factor (turbulent approximation)
+  const f =
+    Re <= 0
+      ? 0
+      : 0.25 / Math.pow(Math.log10(rel / 3.7 + 5.74 / Math.pow(Re, 0.9)), 2);
 
+  const dP = f * (clampPos(lengthM) / D) * (Math.max(rho, 1e-9) * v * v / 2);
   return paToPsi(dP);
 }
 
 export function solvePressureCal(inputs: Inputs): SolveResult {
+  // Rated pump point
   const pumpPsiRated = psiFrom(inputs.pumpPressure, inputs.pumpPressureUnit);
-  const pumpGpm = gpmFrom(inputs.pumpFlow, inputs.pumpFlowUnit);
+  const pumpGpmRated = gpmFrom(inputs.pumpFlow, inputs.pumpFlowUnit);
 
+  // Unloader / max pressure
+  const maxPumpPsi = psiFrom(inputs.maxPressure, inputs.maxPressureUnit);
+
+  // Hose
   const Lm = metersFrom(inputs.hoseLength, inputs.hoseLengthUnit);
   const idMm = mmFrom(inputs.hoseId, inputs.hoseIdUnit);
 
-  // Calibrated nozzle for rated pump point (i.e., what tip matches the rated point)
-  const calibratedQ4000 = q4000FromFlowAtPressure(pumpGpm, pumpPsiRated);
+  // Calibrated nozzle (tip) that matches rated pump point
+  const calibratedQ4000 = q4000FromFlowAtPressure(pumpGpmRated, pumpPsiRated);
   const calibratedCode = q4000ToTipCode(calibratedQ4000);
 
-  // Selected nozzle -> derive Q4000 + equivalent orifice mm
+  // Selected nozzle -> derive Q4000 + equivalent orifice
   let selectedQ4000: number;
   let selectedOrificeMm: number;
 
   if (inputs.nozzleMode === "tipSize") {
     const q = parseTipToQ4000Gpm(inputs.nozzleSizeText);
     selectedQ4000 = q ?? calibratedQ4000;
-    selectedOrificeMm = orificeMmFromQandP(selectedQ4000, 4000, inputs.dischargeCoeffCd, inputs.waterDensity);
+    selectedOrificeMm = orificeMmFromQandP(
+      selectedQ4000,
+      4000,
+      inputs.dischargeCoeffCd,
+      inputs.waterDensity
+    );
   } else {
     selectedOrificeMm = clampPos(inputs.orificeMm);
-    selectedQ4000 = qFromOrificeMmAndP(selectedOrificeMm, 4000, inputs.dischargeCoeffCd, inputs.waterDensity);
+    selectedQ4000 = qFromOrificeMmAndP(
+      selectedOrificeMm,
+      4000,
+      inputs.dischargeCoeffCd,
+      inputs.waterDensity
+    );
   }
 
   const selectedTipCode = q4000ToTipCode(selectedQ4000);
 
-  // Hose loss at (approximately) pump flow
-  const lossPsi = hoseLossPsi(pumpGpm, Lm, idMm, inputs.waterDensity, inputs.hoseRoughnessMm);
+  // Hose loss at rated pump flow (reasonable approximation for first-pass model)
+  const lossPsi = hoseLossPsi(
+    pumpGpmRated,
+    Lm,
+    idMm,
+    inputs.waterDensity,
+    inputs.hoseRoughnessMm
+  );
 
-  // Determine gun pressure such that nozzle flow == pump flow
-  let gunPsi = 0;
+  // Required gun pressure to push *rated pump flow* through nozzle (ignoring unloader)
+  let requiredGunPsi = 0;
 
   if (inputs.nozzleMode === "tipSize") {
     // Q = Q4000 * sqrt(P/4000)  =>  P = 4000 * (Q/Q4000)^2
     const q4000 = Math.max(selectedQ4000, 1e-9);
-    gunPsi = 4000 * Math.pow(pumpGpm / q4000, 2);
+    requiredGunPsi = 4000 * Math.pow(pumpGpmRated / q4000, 2);
   } else {
-    // Invert orifice equation: Q = Cd*A*sqrt(2*ΔP/ρ)
-    // ΔP = ( (Q/(Cd*A))^2 ) * (ρ/2)
+    // Invert orifice equation for ΔP
     const d = Math.max(selectedOrificeMm, 1e-9) / 1000; // m
     const A = Math.PI * (d * d) / 4;
-    const Q = gpmToM3s(pumpGpm);
-    const Cd = Math.max(inputs.dischargeCoeffCd, 1e-6);
+
+    const Q = gpmToM3s(pumpGpmRated);
+    const Cd = Math.max(inputs.dischargeCoeffCd, 1e-9);
     const rho = Math.max(inputs.waterDensity, 1e-9);
 
     const term = Q / (Cd * Math.max(A, 1e-12));
     const dP_pa = (term * term) * (rho / 2);
-    gunPsi = paToPsi(dP_pa);
+    requiredGunPsi = paToPsi(dP_pa);
   }
 
-  // Pump operating pressure = gun + hose loss
-  const pumpPsiOperating = gunPsi + lossPsi;
+  const requiredPumpPsi = requiredGunPsi + lossPsi;
 
-  // Optional: cap at rated pressure (simple model)
-  // If cap triggers, flow would drop below rated; we'll keep V1 simple and just cap pressure.
-  const pumpPsi = Math.min(pumpPsiOperating, pumpPsiRated);
+  // Unloader clamp
+  const isPressureLimited = requiredPumpPsi > maxPumpPsi;
+  const pumpPsi = Math.min(requiredPumpPsi, maxPumpPsi);
+
+  // Gun pressure at operating point
   const gunPressurePsi = Math.max(pumpPsi - lossPsi, 0);
 
+  // Actual nozzle flow:
+  // - If not pressure-limited, assume pump delivers rated flow (no bypass).
+  // - If pressure-limited, flow is whatever the nozzle passes at the available gun pressure.
+  let gunFlowGpm = pumpGpmRated;
+
+  if (isPressureLimited) {
+    if (inputs.nozzleMode === "tipSize") {
+      gunFlowGpm = flowAtPressureFromQ4000(selectedQ4000, gunPressurePsi);
+    } else {
+      gunFlowGpm = qFromOrificeMmAndP(
+        selectedOrificeMm,
+        gunPressurePsi,
+        inputs.dischargeCoeffCd,
+        inputs.waterDensity
+      );
+    }
+  }
+
+  const bypassFlowGpm = Math.max(pumpGpmRated - gunFlowGpm, 0);
+  const bypassPct = pumpGpmRated > 0 ? (bypassFlowGpm / pumpGpmRated) * 100 : 0;
+
+  // Hose loss percentage (vs rated pressure)
   const lossPct = pumpPsiRated > 0 ? (lossPsi / pumpPsiRated) * 100 : 0;
 
-  // Status vs calibrated nozzle
+  // Calibration status vs calibrated nozzle size at rated point
   const ratio = selectedQ4000 / Math.max(calibratedQ4000, 1e-9);
   const tol = 0.05;
 
@@ -217,8 +317,16 @@ export function solvePressureCal(inputs: Inputs): SolveResult {
 
   if (ratio < 1 - tol) {
     status = "under-calibrated";
-    statusMessage =
-      "Selected nozzle is smaller than the calibrated requirement. Pressure may rise above the intended point (unloader/bypass likely).";
+
+    if (isPressureLimited) {
+      statusMessage =
+        `Tip is restrictive. System is pressure-limited (unloader bypass likely). ` +
+        `Approx bypass: ${bypassPct.toFixed(0)}% (${bypassFlowGpm.toFixed(2)} GPM). ` +
+        `Without the limit, required pressure would be ~${requiredPumpPsi.toFixed(0)} PSI.`;
+    } else {
+      statusMessage =
+        "Selected nozzle is smaller than the calibrated requirement. Pressure may rise above the intended point (unloader/bypass likely).";
+    }
   } else if (ratio > 1 + tol) {
     status = "over-calibrated";
     statusMessage =
@@ -226,11 +334,19 @@ export function solvePressureCal(inputs: Inputs): SolveResult {
   }
 
   return {
+    pumpPressurePsi: clampPos(pumpPsi),
+    requiredPumpPsi: clampPos(requiredPumpPsi),
+    requiredGunPsi: clampPos(requiredGunPsi),
+    isPressureLimited,
+
     gunPressurePsi: clampPos(gunPressurePsi),
-    gunFlowGpm: clampPos(pumpGpm), // flow-limited model
+    gunFlowGpm: clampPos(gunFlowGpm),
 
     hoseLossPsi: clampPos(lossPsi),
     hoseLossPct: clampPos(lossPct),
+
+    bypassFlowGpm: clampPos(bypassFlowGpm),
+    bypassPct: clampPos(bypassPct),
 
     selectedNozzleQ4000Gpm: clampPos(selectedQ4000),
     selectedTipCode,
