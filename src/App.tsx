@@ -1,3 +1,4 @@
+// src/App.tsx
 import { useMemo, useRef, useState } from "react";
 import { solvePressureCal, barFromPsi, lpmFromGpm } from "./pressurecal";
 import type { Inputs, PressureUnit, FlowUnit, LengthUnit, DiameterUnit } from "./pressurecal";
@@ -28,8 +29,6 @@ function toPsi(value: number, unit: PressureUnit) {
   return unit === "psi" ? value : value * 14.5037738;
 }
 
-
-
 export default function App() {
   const [inputs, setInputs] = useState<Inputs>({
     pumpPressure: 4000,
@@ -37,7 +36,7 @@ export default function App() {
     pumpFlow: 15,
     pumpFlowUnit: "lpm",
 
-    // NEW: unloader / max pressure
+    // Unloader / max pressure (synced to rated until manually edited)
     maxPressure: 4000,
     maxPressureUnit: "psi",
 
@@ -73,44 +72,141 @@ export default function App() {
   // Variance shown vs rated pressure
   const ratedPsi = toPsi(inputs.pumpPressure, inputs.pumpPressureUnit);
   const pressureVariancePct = ratedPsi > 0 ? ((r.gunPressurePsi - ratedPsi) / ratedPsi) * 100 : 0;
-  const lossPct = Math.abs(pressureVariancePct);
+  const lossPctAbs = Math.abs(pressureVariancePct);
 
   const efficiencyTier =
-    lossPct < 5 ? "Optimal" :
-    lossPct < 10 ? "Moderate loss" :
-    lossPct < 20 ? "High loss" :
+    lossPctAbs < 5 ? "Optimal" :
+    lossPctAbs < 10 ? "Moderate loss" :
+    lossPctAbs < 20 ? "High loss" :
     "Severe loss";
 
   const efficiencyNote =
-    lossPct < 5 ? "Very close to rated performance." :
-    lossPct < 10 ? "Some pressure drop—typically acceptable." :
-    lossPct < 20 ? "Noticeable drop—consider hose length or diameter." :
+    lossPctAbs < 5 ? "Very close to rated performance." :
+    lossPctAbs < 10 ? "Some pressure drop—typically acceptable." :
+    lossPctAbs < 20 ? "Noticeable drop—consider hose length or diameter." :
     "Large drop—hose length/ID is significantly reducing performance.";
 
   const badge = statusBadge(r.status);
 
-  // Optional: top-right “system” badge that reflects pressure limiting reality
+  // Optional: top-right badge reflects pressure limiting reality
   const systemBadge = r.isPressureLimited
     ? { text: "Pressure-limited (bypass)", cls: "bg-red-50 text-red-800 border-red-200" }
     : badge;
 
   return (
     <div className="min-h-screen bg-slate-100">
+      {/* ====== LANDING: HERO ====== */}
+      <section className="border-b border-slate-200 bg-white">
+        <div className="mx-auto max-w-5xl px-4 py-16 sm:py-20">
+          <div className="flex items-start justify-between gap-4">
+            <div className="max-w-3xl">
+              <h1 className="text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl">
+                Know what your pressure washer is actually doing.
+              </h1>
+              <p className="mt-5 text-lg text-slate-600">
+                See what’s really happening between pump and nozzle — including hose loss, nozzle calibration and bypass flow.
+              </p>
+
+              <div className="mt-8 flex flex-wrap items-center gap-3">
+                <a
+                  href="#calculator"
+                  className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800"
+                >
+                  Model Your Rig
+                </a>
+                <a
+                  href="#about"
+                  className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+                >
+                  What is this?
+                </a>
+              </div>
+
+              <p className="mt-6 text-sm text-slate-500">
+                Practical field modelling — not a simple unit converter.
+              </p>
+            </div>
+
+            <div className={`mt-1 hidden shrink-0 items-center rounded-full border px-3 py-1 text-sm font-medium lg:inline-flex ${systemBadge.cls}`}>
+              {systemBadge.text}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ====== LANDING: VALUE ====== */}
+      <section className="border-b border-slate-200 bg-slate-50">
+        <div className="mx-auto max-w-5xl px-4 py-12">
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="rounded-xl border border-slate-200 bg-white p-5">
+              <div className="text-sm font-semibold text-slate-900">Real hose pressure loss</div>
+              <p className="mt-2 text-sm text-slate-600">
+                Quantify the pressure drop from hose length and internal diameter — not guesswork.
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-white p-5">
+              <div className="text-sm font-semibold text-slate-900">Nozzle match to your pump</div>
+              <p className="mt-2 text-sm text-slate-600">
+                Instantly see if your tip is aligned, restrictive, or oversized vs your rated specs.
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-white p-5">
+              <div className="text-sm font-semibold text-slate-900">Unloader / bypass behaviour</div>
+              <p className="mt-2 text-sm text-slate-600">
+                If pressure is limited, see estimated bypass flow and how much performance is being diverted.
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-white p-5">
+              <div className="text-sm font-semibold text-slate-900">AS/NZS reference</div>
+              <p className="mt-2 text-sm text-slate-600">
+                Include P×Q reference classification (AS/NZS 4233.01) as part of the setup view.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-10 rounded-xl border border-slate-200 bg-white p-5">
+            <p className="text-sm text-slate-700">
+              Built for operators who want to understand their rig — not guess.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ====== LANDING: ABOUT ====== */}
+     <section id="about" className="border-b border-slate-200 bg-white">
+  <div className="mx-auto max-w-5xl px-4 py-12">
+    <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-900">
+      About PressureCal
+    </h2>
+
+    <p className="mt-4 max-w-3xl text-sm leading-6 text-slate-600">
+      PressureCal was built by a pressure equipment professional working within the Australian high-pressure cleaning industry.
+      It was created to model real-world hose loss, nozzle calibration and unloader behaviour — using engineering-based flow
+      relationships rather than guesswork.
+    </p>
+
+    <p className="mt-4 max-w-3xl text-sm leading-6 text-slate-600">
+      Too often, rigs are adjusted by feel. PressureCal helps operators understand what’s actually happening between pump
+      and nozzle so decisions can be made with clarity.
+    </p>
+
+    <p className="mt-4 max-w-3xl text-xs text-slate-500">
+      Calculations are based on standardised nozzle flow relationships and Darcy–Weisbach friction modelling. Results are indicative.
+    </p>
+  </div>
+</section>
+
+      {/* ====== TOOL ====== */}
       <div className="mx-auto max-w-5xl px-4 py-8">
-        {/* Header */}
-        <header className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-4xl font-semibold tracking-tight text-slate-900">PressureCal</h1>
-            <p className="mt-2 text-slate-600">Professional Pressure System Calibration</p>
-          </div>
+        {/* Small mobile badge */}
+        <div className={`mb-4 inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium lg:hidden ${systemBadge.cls}`}>
+          {systemBadge.text}
+        </div>
 
-          <div className={`mt-1 inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium ${systemBadge.cls}`}>
-            {systemBadge.text}
-          </div>
-        </header>
-
-        {/* Main grid */}
-        <main className="mt-8 grid gap-6 lg:grid-cols-2">
+        <main id="calculator" className="grid gap-6 lg:grid-cols-2">
           {/* Inputs */}
           <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
             <div className="border-b border-slate-200 px-5 py-4">
@@ -130,7 +226,6 @@ export default function App() {
                       const next = Number(e.target.value);
                       setInputs((s) => {
                         const nextState: Inputs = { ...s, pumpPressure: next };
-                        // keep maxPressure synced if user hasn't manually overridden it
                         if (!maxWasManuallyEditedRef.current) {
                           nextState.maxPressure = next;
                           nextState.maxPressureUnit = s.pumpPressureUnit;
@@ -146,7 +241,6 @@ export default function App() {
                       const u = e.target.value as PressureUnit;
                       setInputs((s) => {
                         const nextState: Inputs = { ...s, pumpPressureUnit: u };
-                        // if still synced, swap maxPressure unit too, preserving same numeric meaning
                         if (!maxWasManuallyEditedRef.current) {
                           nextState.maxPressureUnit = u;
                           nextState.maxPressure = s.pumpPressure;
@@ -182,11 +276,9 @@ export default function App() {
                 </div>
               </div>
 
-              {/* NEW: Max pressure (unloader) */}
+              {/* Max pressure (unloader) */}
               <div>
-                <label className="block text-sm font-medium text-slate-700">
-                  Max pressure (unloader)
-                </label>
+                <label className="block text-sm font-medium text-slate-700">Max pressure (unloader)</label>
                 <div className="mt-2 flex gap-3">
                   <input
                     className="w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900 outline-none focus:border-slate-400"
@@ -211,9 +303,7 @@ export default function App() {
                 </div>
 
                 {!maxWasManuallyEditedRef.current && (
-                  <div className="mt-2 text-xs text-slate-500">
-                    Synced to rated pressure. Edit to override.
-                  </div>
+                  <div className="mt-2 text-xs text-slate-500">Synced to rated pressure. Edit to override.</div>
                 )}
               </div>
 
@@ -312,14 +402,15 @@ export default function App() {
 
                 {r.isPressureLimited && (
                   <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">
-                    Pressure limited by unloader. Pump clamped at {fmt(r.pumpPressurePsi, 0)} PSI ({fmt(pumpBar, 1)} bar).<br />
+                    Pressure limited by unloader. Pump clamped at {fmt(r.pumpPressurePsi, 0)} PSI ({fmt(pumpBar, 1)} bar).
+                    <br />
                     Required (no limit): {fmt(r.requiredPumpPsi, 0)} PSI ({fmt(reqPumpBar, 1)} bar).
                   </div>
                 )}
               </div>
 
               <div
-                className={`mt-2 text-xs font-medium ${
+                className={`text-xs font-medium ${
                   Math.abs(pressureVariancePct) > 10
                     ? "text-red-600"
                     : Math.abs(pressureVariancePct) > 5
@@ -354,7 +445,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* NEW: Bypass tiles (only when pressure-limited) */}
+              {/* Bypass tiles (only when pressure-limited) */}
               {r.isPressureLimited && (
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="rounded-xl border border-slate-200 px-4 py-4">
@@ -370,14 +461,12 @@ export default function App() {
                     <div className="mt-2 text-xl font-semibold text-slate-900">
                       {fmt(r.bypassPct, 0)} <span className="text-sm font-medium text-slate-600">%</span>
                     </div>
-                    <div className="mt-2 text-xs text-slate-500">
-                      Portion of rated pump flow diverted to bypass.
-                    </div>
+                    <div className="mt-2 text-xs text-slate-500">Portion of rated pump flow diverted to bypass.</div>
                   </div>
                 </div>
               )}
 
-              {/* Status message */}
+              {/* Status */}
               <div className="rounded-xl border border-slate-200 px-4 py-4">
                 <div className="flex items-center justify-between gap-3">
                   <div className="text-sm font-semibold text-slate-900">Configuration status</div>
@@ -401,9 +490,7 @@ export default function App() {
                     Nozzle equivalent for rated pressure
                   </div>
                   <div className="mt-2 text-xl font-semibold text-slate-900">{r.calibratedTipCode}</div>
-                  <div className="mt-1 text-sm text-slate-600">
-                    ≈ {fmt(r.calibratedNozzleQ4000Gpm, 2)} GPM @ 4000
-                  </div>
+                  <div className="mt-1 text-sm text-slate-600">≈ {fmt(r.calibratedNozzleQ4000Gpm, 2)} GPM @ 4000</div>
                 </div>
               </div>
 
@@ -413,6 +500,11 @@ export default function App() {
             </div>
           </section>
         </main>
+
+        {/* ====== FOOTER ====== */}
+        <footer className="mt-10 border-t border-slate-200 pt-6 text-xs text-slate-500">
+          © {new Date().getFullYear()} PressureCal. Built as a practical field reference tool.
+        </footer>
       </div>
     </div>
   );

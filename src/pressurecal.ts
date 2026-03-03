@@ -1,9 +1,13 @@
 /**
- * PressureCal core (V1.1)
+ * PressureCal core (V1.2)
  * Adds realistic unloader/max-pressure behaviour:
  * - If a restrictive tip would require pressure above max,
  *   pressure is clamped and flow at the gun drops.
  * - The difference becomes bypass flow (unloader bypass).
+ *
+ * Adds AS/NZS 4233.01 reference classification:
+ * - Uses P(bar) × Q(L/min) threshold of 5600 to indicate Class A / Class B
+ * - Provides both rated (maximum output reference) and at-gun (indicative) values
  */
 
 export type PressureUnit = "psi" | "bar";
@@ -11,6 +15,7 @@ export type FlowUnit = "lpm" | "gpm";
 export type LengthUnit = "m" | "ft";
 export type DiameterUnit = "mm" | "in";
 export type NozzleInputMode = "tipSize" | "orificeMm";
+export type ANZSClass = "Class A" | "Class B";
 
 export interface Inputs {
   pumpPressure: number;
@@ -38,9 +43,9 @@ export interface Inputs {
 
 export interface SolveResult {
   /** Actual operating values */
-  pumpPressurePsi: number;     // after unloader clamp
-  gunPressurePsi: number;      // after hose loss
-  gunFlowGpm: number;          // nozzle flow at gun pressure
+  pumpPressurePsi: number; // after unloader clamp
+  gunPressurePsi: number; // after hose loss
+  gunFlowGpm: number; // nozzle flow at gun pressure
 
   /** What it would take to push full pump flow through nozzle */
   requiredPumpPsi: number;
@@ -64,12 +69,22 @@ export interface SolveResult {
   calibratedNozzleQ4000Gpm: number;
   calibratedTipCode: string;
 
+  /** AS/NZS 4233.01 reference (P×Q) */
+  ratedPQ: number; // bar·L/min using rated specs (maximum output reference)
+  ratedClass: ANZSClass;
+
+  gunPQ: number; // bar·L/min using calculated operating point (indicative)
+  gunClass: ANZSClass;
+
   status: "calibrated" | "under-calibrated" | "over-calibrated";
   statusMessage: string;
 }
 
 export const PSI_PER_BAR = 14.5037738;
 const LPM_PER_GPM = 3.785411784;
+
+// AS/NZS 4233.01 reference threshold (bar·L/min)
+const PQ_THRESHOLD = 5600;
 
 export function psiFrom(value: number, unit: PressureUnit): number {
   return unit === "psi" ? value : value * PSI_PER_BAR;
@@ -204,10 +219,21 @@ export function hoseLossPsi(
   return paToPsi(dP);
 }
 
+function anzsClassFromPQ(pq: number): ANZSClass {
+  return pq >= PQ_THRESHOLD ? "Class B" : "Class A";
+}
+
 export function solvePressureCal(inputs: Inputs): SolveResult {
   // Rated pump point
   const pumpPsiRated = psiFrom(inputs.pumpPressure, inputs.pumpPressureUnit);
   const pumpGpmRated = gpmFrom(inputs.pumpFlow, inputs.pumpFlowUnit);
+
+  // --- AS/NZS 4233.01 reference classification (P × Q) ---
+  // Rated/maximum output reference (nameplate values)
+  const ratedBar = barFromPsi(pumpPsiRated);
+  const ratedLpm = lpmFromGpm(pumpGpmRated);
+  const ratedPQ = ratedBar * ratedLpm;
+  const ratedClass = anzsClassFromPQ(ratedPQ);
 
   // Unloader / max pressure
   const maxPumpPsi = psiFrom(inputs.maxPressure, inputs.maxPressureUnit);
@@ -302,6 +328,12 @@ export function solvePressureCal(inputs: Inputs): SolveResult {
     }
   }
 
+  // --- Indicative at-gun AS/NZS energy (education) ---
+  const gunBar = barFromPsi(gunPressurePsi);
+  const gunLpm = lpmFromGpm(gunFlowGpm);
+  const gunPQ = gunBar * gunLpm;
+  const gunClass = anzsClassFromPQ(gunPQ);
+
   const bypassFlowGpm = Math.max(pumpGpmRated - gunFlowGpm, 0);
   const bypassPct = pumpGpmRated > 0 ? (bypassFlowGpm / pumpGpmRated) * 100 : 0;
 
@@ -354,6 +386,12 @@ export function solvePressureCal(inputs: Inputs): SolveResult {
 
     calibratedNozzleQ4000Gpm: clampPos(calibratedQ4000),
     calibratedTipCode: calibratedCode,
+
+    ratedPQ: clampPos(ratedPQ),
+    ratedClass,
+
+    gunPQ: clampPos(gunPQ),
+    gunClass,
 
     status,
     statusMessage
