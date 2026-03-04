@@ -101,11 +101,11 @@ export default function App() {
           <div className="flex items-start justify-between gap-4">
             <div className="max-w-3xl">
               <h1 className="text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl">
-                Know what your pressure washer is actually doing.
-              </h1>
-              <p className="mt-5 text-lg text-slate-600">
-                See what’s really happening between pump and nozzle — including hose loss, nozzle calibration and bypass flow.
-              </p>
+  Pressure Washer Calculator
+</h1>
+<p className="mt-5 text-lg text-slate-600">
+  Model nozzle size, hose pressure loss, and real at-gun performance.
+</p>
 
               <div className="mt-8 flex flex-wrap items-center gap-3">
                 <a
