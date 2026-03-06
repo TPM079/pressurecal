@@ -212,7 +212,7 @@ export default function App() {
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
             <Link
               to="/nozzle-size-calculator"
-              className="group rounded-xl border border-slate-200 bg-slate-50 p-5 hover:border-slate-300 hover:bg-white"
+              className="group block rounded-xl border border-slate-200 bg-slate-50 p-5 transition-all duration-200 hover:-translate-y-1 hover:border-slate-300 hover:bg-white hover:shadow-md"
             >
               <div className="text-sm font-semibold text-slate-900 group-hover:underline">
                 Nozzle Size Calculator
@@ -220,18 +220,31 @@ export default function App() {
               <p className="mt-2 text-sm text-slate-600">
                 Find the right tip size from pressure + flow. Includes orifice diameter and a shareable setup link.
               </p>
-              <div className="mt-3 text-xs font-semibold text-slate-700">Open tool →</div>
+              <div className="mt-3 flex items-center gap-1 text-xs font-semibold text-slate-700">
+                <span>Open tool</span>
+                <span className="transition-transform duration-300 ease-out group-hover:translate-x-1.5">
+                  →
+                </span>
+              </div>
             </Link>
 
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 opacity-80">
-              <div className="text-sm font-semibold text-slate-900">
+            <Link
+              to="/hose-pressure-loss-calculator"
+              className="group block rounded-xl border border-slate-200 bg-slate-50 p-5 transition-all duration-200 hover:-translate-y-1 hover:border-slate-300 hover:bg-white hover:shadow-md"
+            >
+              <div className="text-sm font-semibold text-slate-900 group-hover:underline">
                 Hose Pressure Loss Calculator
               </div>
               <p className="mt-2 text-sm text-slate-600">
                 Estimate pressure drop based on hose length and internal diameter — and see real at-gun pressure.
               </p>
-              <div className="mt-3 text-xs font-semibold text-slate-500">Open tool →</div>
-            </div>
+              <div className="mt-3 flex items-center gap-1 text-xs font-semibold text-slate-700">
+                <span>Open tool</span>
+                <span className="transition-transform duration-300 ease-out group-hover:translate-x-1.5">
+                  →
+                </span>
+              </div>
+            </Link>
 
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 opacity-80">
               <div className="text-sm font-semibold text-slate-900">
@@ -252,6 +265,23 @@ export default function App() {
               </p>
               <div className="mt-3 text-xs font-semibold text-slate-500">Coming soon</div>
             </div>
+          </div>
+
+          <div className="mt-8 rounded-xl border border-slate-200 bg-slate-50 p-5">
+            <h3 className="text-sm font-semibold text-slate-900">
+              Popular pressure washing calculations
+            </h3>
+
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              PressureCal helps operators calculate pressure washer nozzle size, hose pressure loss,
+              pressure drop at the gun, and real system performance based on hose length, flow rate,
+              and nozzle selection.
+            </p>
+
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              These tools are designed for pressure washing operators, contractors, and equipment
+              technicians who need quick answers without relying on guesswork or static charts.
+            </p>
           </div>
 
           <div className="mt-8 rounded-xl border border-slate-200 bg-white p-5">
