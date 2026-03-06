@@ -230,7 +230,7 @@ export default function App() {
               <p className="mt-2 text-sm text-slate-600">
                 Estimate pressure drop based on hose length and internal diameter — and see real at-gun pressure.
               </p>
-              <div className="mt-3 text-xs font-semibold text-slate-500">Coming soon</div>
+              <div className="mt-3 text-xs font-semibold text-slate-500">Open tool →</div>
             </div>
 
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 opacity-80">
