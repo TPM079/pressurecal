@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { solvePressureCal, barFromPsi, lpmFromGpm } from "./pressurecal";
 import type { Inputs, PressureUnit, FlowUnit, LengthUnit, DiameterUnit } from "./pressurecal";
 
@@ -27,6 +28,7 @@ function statusBadge(status: string) {
 function toPsi(value: number, unit: PressureUnit) {
   return unit === "psi" ? value : value * 14.5037738;
 }
+
 function toGpm(value: number, unit: FlowUnit) {
   return unit === "gpm" ? value : value / 3.785411784;
 }
@@ -38,7 +40,6 @@ export default function App() {
     pumpFlow: 15,
     pumpFlowUnit: "lpm",
 
-    // Unloader / max pressure (synced to rated until manually edited)
     maxPressure: 4000,
     maxPressureUnit: "psi",
 
@@ -56,12 +57,10 @@ export default function App() {
     hoseRoughnessMm: 0.0015
   });
 
-  // If maxPressure hasn't been manually edited, keep it synced to rated pressure.
   const maxWasManuallyEditedRef = useRef(false);
 
   const r = useMemo(() => solvePressureCal(inputs), [inputs]);
 
-  // ===== Display conversions =====
   const gunBar = barFromPsi(r.gunPressurePsi);
   const pumpBar = barFromPsi(r.pumpPressurePsi);
   const reqPumpBar = barFromPsi(r.requiredPumpPsi);
@@ -70,7 +69,6 @@ export default function App() {
   const lossBar = barFromPsi(r.hoseLossPsi);
   const bypassLpm = lpmFromGpm(r.bypassFlowGpm);
 
-  // ===== Variance vs rated pressure =====
   const ratedPsi = toPsi(inputs.pumpPressure, inputs.pumpPressureUnit);
   const pressureVariancePct = ratedPsi > 0 ? ((r.gunPressurePsi - ratedPsi) / ratedPsi) * 100 : 0;
   const lossPctAbs = Math.abs(pressureVariancePct);
@@ -89,13 +87,11 @@ export default function App() {
 
   const badge = statusBadge(r.status);
 
-  // Optional: top-right badge reflects pressure limiting reality
   const systemBadge = r.isPressureLimited
     ? { text: "Pressure-limited (bypass)", cls: "bg-red-50 text-red-800 border-red-200" }
     : badge;
 
-  // ===== AS/NZS 4233.01 P×Q reference (indicator only) =====
-  // Uses Pressure (bar) × Flow (L/min). Threshold commonly referenced: 5600.
+  // AS/NZS 4233.01 P×Q reference
   const ratedBar = barFromPsi(ratedPsi);
   const ratedGpm = toGpm(inputs.pumpFlow, inputs.pumpFlowUnit);
   const ratedLpm = lpmFromGpm(ratedGpm);
@@ -109,7 +105,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-100">
-      {/* ====== LANDING: HERO ====== */}
+      {/* HERO */}
       <section className="border-b border-slate-200 bg-white">
         <div className="mx-auto max-w-5xl px-4 py-16 sm:py-20">
           <div className="flex items-start justify-between gap-4">
@@ -151,7 +147,7 @@ export default function App() {
         </div>
       </section>
 
-      {/* ====== LANDING: VALUE ====== */}
+      {/* VALUE */}
       <section className="border-b border-slate-200 bg-slate-50">
         <div className="mx-auto max-w-5xl px-4 py-12">
           <div className="grid gap-6 md:grid-cols-2">
@@ -192,7 +188,7 @@ export default function App() {
         </div>
       </section>
 
-      {/* ====== LANDING: FREE CALCULATORS ====== */}
+      {/* FREE CALCULATORS */}
       <section className="border-b border-slate-200 bg-white">
         <div className="mx-auto max-w-5xl px-4 py-12">
           <div className="flex items-end justify-between gap-4">
@@ -214,8 +210,8 @@ export default function App() {
           </div>
 
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
-            <a
-             href="/#/hose-pressure-loss-calculator"
+            <Link
+              to="/nozzle-size-calculator"
               className="group rounded-xl border border-slate-200 bg-slate-50 p-5 hover:border-slate-300 hover:bg-white"
             >
               <div className="text-sm font-semibold text-slate-900 group-hover:underline">
@@ -225,46 +221,37 @@ export default function App() {
                 Find the right tip size from pressure + flow. Includes orifice diameter and a shareable setup link.
               </p>
               <div className="mt-3 text-xs font-semibold text-slate-700">Open tool →</div>
-            </a>
+            </Link>
 
-            <a
-              href="/hose-pressure-loss-calculator"
-              className="group rounded-xl border border-slate-200 bg-slate-50 p-5 hover:border-slate-300 hover:bg-white"
-            >
-              <div className="text-sm font-semibold text-slate-900 group-hover:underline">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 opacity-80">
+              <div className="text-sm font-semibold text-slate-900">
                 Hose Pressure Loss Calculator
               </div>
               <p className="mt-2 text-sm text-slate-600">
                 Estimate pressure drop based on hose length and internal diameter — and see real at-gun pressure.
               </p>
-              <div className="mt-3 text-xs font-semibold text-slate-700">Coming next →</div>
-            </a>
+              <div className="mt-3 text-xs font-semibold text-slate-500">Coming soon</div>
+            </div>
 
-            <a
-              href="/#/gpm-to-lpm"
-              className="group rounded-xl border border-slate-200 bg-slate-50 p-5 hover:border-slate-300 hover:bg-white"
-            >
-              <div className="text-sm font-semibold text-slate-900 group-hover:underline">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 opacity-80">
+              <div className="text-sm font-semibold text-slate-900">
                 PSI ↔ BAR Converter
               </div>
               <p className="mt-2 text-sm text-slate-600">
                 Instant unit conversion for pump specs, machine stickers and compliance docs.
               </p>
-              <div className="mt-3 text-xs font-semibold text-slate-700">Open tool →</div>
-            </a>
+              <div className="mt-3 text-xs font-semibold text-slate-500">Coming soon</div>
+            </div>
 
-            <a
-              href="/gpm-to-lpm"
-              className="group rounded-xl border border-slate-200 bg-slate-50 p-5 hover:border-slate-300 hover:bg-white"
-            >
-              <div className="text-sm font-semibold text-slate-900 group-hover:underline">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 opacity-80">
+              <div className="text-sm font-semibold text-slate-900">
                 GPM ↔ LPM Converter
               </div>
               <p className="mt-2 text-sm text-slate-600">
                 Convert flow rates for nozzle charts, injector sizing and hose loss calculations.
               </p>
-              <div className="mt-3 text-xs font-semibold text-slate-700">Open tool →</div>
-            </a>
+              <div className="mt-3 text-xs font-semibold text-slate-500">Coming soon</div>
+            </div>
           </div>
 
           <div className="mt-8 rounded-xl border border-slate-200 bg-white p-5">
@@ -275,7 +262,7 @@ export default function App() {
         </div>
       </section>
 
-      {/* ====== LANDING: ABOUT ====== */}
+      {/* ABOUT */}
       <section id="about" className="border-b border-slate-200 bg-white">
         <div className="mx-auto max-w-5xl px-4 py-12">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-900">
@@ -299,9 +286,8 @@ export default function App() {
         </div>
       </section>
 
-      {/* ====== TOOL ====== */}
+      {/* TOOL */}
       <div className="mx-auto max-w-5xl px-4 py-8">
-        {/* Small mobile badge */}
         <div className={`mb-4 inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium lg:hidden ${systemBadge.cls}`}>
           {systemBadge.text}
         </div>
@@ -314,7 +300,6 @@ export default function App() {
             </div>
 
             <div className="space-y-5 px-5 py-4">
-              {/* Rated pressure */}
               <div>
                 <label className="block text-sm font-medium text-slate-700">Rated pressure</label>
                 <div className="mt-2 flex gap-3">
@@ -355,7 +340,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Rated flow */}
               <div>
                 <label className="block text-sm font-medium text-slate-700">Rated flow</label>
                 <div className="mt-2 flex gap-3">
@@ -376,7 +360,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Max pressure (unloader) */}
               <div>
                 <label className="block text-sm font-medium text-slate-700">Max pressure (unloader)</label>
                 <div className="mt-2 flex gap-3">
@@ -409,7 +392,6 @@ export default function App() {
 
               <div className="h-px bg-slate-200" />
 
-              {/* Hose length */}
               <div>
                 <label className="block text-sm font-medium text-slate-700">Hose length (installed)</label>
                 <div className="mt-2 flex gap-3">
@@ -430,7 +412,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Hose ID */}
               <div>
                 <label className="block text-sm font-medium text-slate-700">Hose internal diameter</label>
                 <div className="mt-2 flex gap-3">
@@ -471,7 +452,6 @@ export default function App() {
 
               <div className="h-px bg-slate-200" />
 
-              {/* Nozzle */}
               <div>
                 <label className="block text-sm font-medium text-slate-700">Selected nozzle tip</label>
                 <input
@@ -490,7 +470,6 @@ export default function App() {
             </div>
 
             <div className="space-y-5 px-5 py-4">
-              {/* Primary */}
               <div className="rounded-xl border border-slate-300 bg-slate-100 px-5 py-5">
                 <div className="text-xs font-medium uppercase tracking-wide text-slate-600">
                   Estimated operating pressure (at gun)
@@ -525,7 +504,6 @@ export default function App() {
                 Efficiency tier: <strong>{efficiencyTier}</strong> — {efficiencyNote}
               </div>
 
-              {/* Two-up metrics */}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="rounded-xl border border-slate-200 px-4 py-4">
                   <div className="text-xs font-medium uppercase tracking-wide text-slate-600">Operating flow rate</div>
@@ -545,7 +523,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* AS/NZS 4233.01 P×Q block */}
               <div className="rounded-xl border border-slate-200 px-4 py-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -602,7 +579,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Bypass tiles (only when pressure-limited) */}
               {r.isPressureLimited && (
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="rounded-xl border border-slate-200 px-4 py-4">
@@ -623,7 +599,6 @@ export default function App() {
                 </div>
               )}
 
-              {/* Status */}
               <div className="rounded-xl border border-slate-200 px-4 py-4">
                 <div className="flex items-center justify-between gap-3">
                   <div className="text-sm font-semibold text-slate-900">Configuration status</div>
@@ -634,7 +609,6 @@ export default function App() {
                 <p className="mt-3 text-sm text-slate-700">{r.statusMessage}</p>
               </div>
 
-              {/* Nozzles */}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="rounded-xl border border-slate-200 px-4 py-4">
                   <div className="text-xs font-medium uppercase tracking-wide text-slate-600">Selected nozzle tip</div>
@@ -658,7 +632,6 @@ export default function App() {
           </section>
         </main>
 
-        {/* ====== FOOTER ====== */}
         <footer className="mt-10 border-t border-slate-200 pt-6 text-xs text-slate-500">
           © {new Date().getFullYear()} PressureCal. Built as a practical field reference tool.
         </footer>
