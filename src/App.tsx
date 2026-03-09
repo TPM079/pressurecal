@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import PressureCalHeroPreview from "./components/PressureCalHeroPreview";
 import { solvePressureCal, barFromPsi, lpmFromGpm } from "./pressurecal";
 import type {
   Inputs,
@@ -113,7 +114,7 @@ export default function App() {
 
   const systemBadge = r.isPressureLimited
     ? {
-        text: "Pressure-limited (bypass)",
+        text: "Bypass active",
         cls: "bg-red-50 text-red-800 border-red-200",
       }
     : badge;
@@ -132,8 +133,8 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-100">
       <section className="border-b border-slate-200 bg-white">
-        <div className="mx-auto max-w-5xl px-4 py-16 sm:py-20">
-          <div className="flex items-start justify-between gap-4">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
+          <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
             <div className="max-w-3xl">
               <h1 className="text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl">
                 PressureCal — Pressure Washer Calculator
@@ -165,10 +166,8 @@ export default function App() {
               </p>
             </div>
 
-            <div
-              className={`mt-1 hidden shrink-0 items-center rounded-full border px-3 py-1 text-sm font-medium lg:inline-flex ${systemBadge.cls}`}
-            >
-              {systemBadge.text}
+            <div className="hidden lg:block">
+              <PressureCalHeroPreview />
             </div>
           </div>
         </div>
@@ -368,12 +367,6 @@ export default function App() {
       </section>
 
       <div className="mx-auto max-w-5xl px-4 py-8">
-        <div
-          className={`mb-4 inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium lg:hidden ${systemBadge.cls}`}
-        >
-          {systemBadge.text}
-        </div>
-
         <main id="calculator" className="grid gap-6 lg:grid-cols-2">
           <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
             <div className="border-b border-slate-200 px-5 py-4">
@@ -621,12 +614,29 @@ export default function App() {
 
           <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
             <div className="border-b border-slate-200 px-5 py-4">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-900">
-                Calculated Performance
-              </h2>
-            </div>
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-900">
+                  Calculated Performance
+                </h2>
 
-            <div className="space-y-5 px-5 py-4">
+                <div
+                  className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${systemBadge.cls}`}
+                >
+                  {systemBadge.text}
+                </div>
+              </div>
+            </div>
+<div className="space-y-5 px-5 py-4">
+            {r.isPressureLimited && (
+  <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+    <strong>Pressure limited — bypass active.</strong>
+    <div className="mt-1">
+      Hose loss and nozzle restriction require {fmt(r.requiredPumpPsi, 0)} PSI at the pump.
+      The unloader is set to {fmt(r.pumpPressurePsi, 0)} PSI, so some flow is diverted to bypass.
+    </div>
+  </div>
+)}
+
               <div className="rounded-xl border border-slate-300 bg-slate-100 px-5 py-5">
                 <div className="text-xs font-medium uppercase tracking-wide text-slate-600">
                   Estimated operating pressure (at gun)
@@ -644,11 +654,11 @@ export default function App() {
                 </div>
 
                 {r.isPressureLimited && (
-                  <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">
-                    Pressure limited by unloader. Pump clamped at{" "}
-                    {fmt(r.pumpPressurePsi, 0)} PSI ({fmt(pumpBar, 1)} bar).
+                  <div className="mt-3 rounded-lg border border-red-200 bg-white px-3 py-2 text-xs text-red-800">
+                    Pump clamped at {fmt(r.pumpPressurePsi, 0)} PSI (
+                    {fmt(pumpBar, 1)} bar).
                     <br />
-                    Required (no limit): {fmt(r.requiredPumpPsi, 0)} PSI (
+                    Required without limit: {fmt(r.requiredPumpPsi, 0)} PSI (
                     {fmt(reqPumpBar, 1)} bar).
                   </div>
                 )}
@@ -809,7 +819,7 @@ export default function App() {
               <div className="rounded-xl border border-slate-200 px-4 py-4">
                 <div className="flex items-center justify-between gap-3">
                   <div className="text-sm font-semibold text-slate-900">
-                    Configuration status
+                    Nozzle calibration status
                   </div>
                   <div
                     className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${badge.cls}`}

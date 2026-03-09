@@ -188,8 +188,8 @@ export function orificeMmFromQandP(qGpm: number, pressurePsi: number, Cd: number
 }
 
 /**
- * Hose loss using Darcy–Weisbach with Swamee–Jain-type friction factor.
- * Note: This is a simplified model but behaves well for typical hose flows.
+ * Hose loss using Darcy–Weisbach with a Swamee–Jain-type friction factor.
+ * This function is used with the current operating flow, not just rated pump flow.
  */
 export function hoseLossPsi(
   flowGpm: number,
@@ -271,8 +271,30 @@ export function solvePressureCal(inputs: Inputs): SolveResult {
 
   const selectedTipCode = q4000ToTipCode(selectedQ4000);
 
-  // Hose loss at rated pump flow (reasonable approximation for first-pass model)
-  const lossPsi = hoseLossPsi(
+ // Required gun pressure to push rated pump flow through nozzle
+let requiredGunPsi = 0;
+
+if (inputs.nozzleMode === "tipSize") {
+  const q4000 = Math.max(selectedQ4000, 1e-9);
+  requiredGunPsi = 4000 * Math.pow(pumpGpmRated / q4000, 2);
+} else {
+  const d = Math.max(selectedOrificeMm, 1e-9) / 1000;
+  const A = Math.PI * (d * d) / 4;
+
+  const Q = gpmToM3s(pumpGpmRated);
+  const Cd = Math.max(inputs.dischargeCoeffCd, 1e-9);
+  const rho = Math.max(inputs.waterDensity, 1e-9);
+
+  const term = Q / (Cd * Math.max(A, 1e-12));
+  const dP_pa = (term * term) * (rho / 2);
+  requiredGunPsi = paToPsi(dP_pa);
+}
+
+// This is the pressure the pump would need to maintain full rated flow
+// through the selected nozzle and hose.
+const requiredPumpPsi =
+  requiredGunPsi +
+  hoseLossPsi(
     pumpGpmRated,
     Lm,
     idMm,
@@ -280,53 +302,57 @@ export function solvePressureCal(inputs: Inputs): SolveResult {
     inputs.hoseRoughnessMm
   );
 
-  // Required gun pressure to push *rated pump flow* through nozzle (ignoring unloader)
-  let requiredGunPsi = 0;
+// Unloader clamp
+const isPressureLimited = requiredPumpPsi > maxPumpPsi;
+const pumpPsi = Math.min(requiredPumpPsi, maxPumpPsi);
+
+// Solve actual operating flow iteratively using the pressure-limited pump pressure
+let gunFlowGpm = pumpGpmRated;
+let lossPsi = 0;
+let gunPressurePsi = 0;
+
+for (let i = 0; i < 20; i++) {
+  lossPsi = hoseLossPsi(
+    gunFlowGpm,
+    Lm,
+    idMm,
+    inputs.waterDensity,
+    inputs.hoseRoughnessMm
+  );
+
+  gunPressurePsi = Math.max(pumpPsi - lossPsi, 0);
+
+  let nextGunFlowGpm = 0;
 
   if (inputs.nozzleMode === "tipSize") {
-    // Q = Q4000 * sqrt(P/4000)  =>  P = 4000 * (Q/Q4000)^2
-    const q4000 = Math.max(selectedQ4000, 1e-9);
-    requiredGunPsi = 4000 * Math.pow(pumpGpmRated / q4000, 2);
+    nextGunFlowGpm = flowAtPressureFromQ4000(selectedQ4000, gunPressurePsi);
   } else {
-    // Invert orifice equation for ΔP
-    const d = Math.max(selectedOrificeMm, 1e-9) / 1000; // m
-    const A = Math.PI * (d * d) / 4;
-
-    const Q = gpmToM3s(pumpGpmRated);
-    const Cd = Math.max(inputs.dischargeCoeffCd, 1e-9);
-    const rho = Math.max(inputs.waterDensity, 1e-9);
-
-    const term = Q / (Cd * Math.max(A, 1e-12));
-    const dP_pa = (term * term) * (rho / 2);
-    requiredGunPsi = paToPsi(dP_pa);
+    nextGunFlowGpm = qFromOrificeMmAndP(
+      selectedOrificeMm,
+      gunPressurePsi,
+      inputs.dischargeCoeffCd,
+      inputs.waterDensity
+    );
   }
 
-  const requiredPumpPsi = requiredGunPsi + lossPsi;
-
-  // Unloader clamp
-  const isPressureLimited = requiredPumpPsi > maxPumpPsi;
-  const pumpPsi = Math.min(requiredPumpPsi, maxPumpPsi);
-
-  // Gun pressure at operating point
-  const gunPressurePsi = Math.max(pumpPsi - lossPsi, 0);
-
-  // Actual nozzle flow:
-  // - If not pressure-limited, assume pump delivers rated flow (no bypass).
-  // - If pressure-limited, flow is whatever the nozzle passes at the available gun pressure.
-  let gunFlowGpm = pumpGpmRated;
-
-  if (isPressureLimited) {
-    if (inputs.nozzleMode === "tipSize") {
-      gunFlowGpm = flowAtPressureFromQ4000(selectedQ4000, gunPressurePsi);
-    } else {
-      gunFlowGpm = qFromOrificeMmAndP(
-        selectedOrificeMm,
-        gunPressurePsi,
-        inputs.dischargeCoeffCd,
-        inputs.waterDensity
-      );
-    }
+  if (Math.abs(nextGunFlowGpm - gunFlowGpm) < 0.0001) {
+    gunFlowGpm = nextGunFlowGpm;
+    break;
   }
+
+  gunFlowGpm = nextGunFlowGpm;
+}
+
+// Final recompute using converged flow
+lossPsi = hoseLossPsi(
+  gunFlowGpm,
+  Lm,
+  idMm,
+  inputs.waterDensity,
+  inputs.hoseRoughnessMm
+);
+
+gunPressurePsi = Math.max(pumpPsi - lossPsi, 0);
 
   // --- Indicative at-gun AS/NZS energy (education) ---
   const gunBar = barFromPsi(gunPressurePsi);
@@ -345,7 +371,7 @@ export function solvePressureCal(inputs: Inputs): SolveResult {
   const tol = 0.05;
 
   let status: SolveResult["status"] = "calibrated";
-  let statusMessage = "Configuration is aligned with the rated pump operating point.";
+  let statusMessage = "Selected nozzle matches the rated pump operating point.";
 
   if (ratio < 1 - tol) {
     status = "under-calibrated";
