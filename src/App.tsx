@@ -132,12 +132,51 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-100">
+      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
+  <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+    <a href="/" className="inline-flex items-center">
+      <img
+        src="/PressureCal_primary_logo.png"
+        alt="PressureCal"
+        className="h-14 w-auto sm:h-16"
+      />
+    </a>
+
+    <nav className="hidden items-center gap-6 md:flex">
+      <a
+        href="#calculator"
+        className="text-sm font-medium text-slate-700 transition hover:text-slate-900"
+      >
+        Calculator
+      </a>
+
+      <a
+        href="#about"
+        className="text-sm font-medium text-slate-700 transition hover:text-slate-900"
+      >
+        About
+      </a>
+
+      <a
+        href="#calculator"
+        className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+      >
+        Model Your Rig
+      </a>
+    </nav>
+  </div>
+</header>
+
       <section className="border-b border-slate-200 bg-white">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
           <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
             <div className="max-w-3xl">
-              <h1 className="text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl">
-                PressureCal — Pressure Washer Calculator
+              <p className="text-sm font-medium uppercase tracking-[0.18em] text-slate-500">
+                Professional pressure washer calibration tool
+              </p>
+
+              <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl">
+                Pressure Washer Calculator
               </h1>
 
               <p className="mt-5 text-lg text-slate-600">
@@ -626,16 +665,17 @@ export default function App() {
                 </div>
               </div>
             </div>
-<div className="space-y-5 px-5 py-4">
-            {r.isPressureLimited && (
-  <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-    <strong>Pressure limited — bypass active.</strong>
-    <div className="mt-1">
-      Hose loss and nozzle restriction require {fmt(r.requiredPumpPsi, 0)} PSI at the pump.
-      The unloader is set to {fmt(r.pumpPressurePsi, 0)} PSI, so some flow is diverted to bypass.
-    </div>
-  </div>
-)}
+
+            <div className="space-y-5 px-5 py-4">
+              {r.isPressureLimited && (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                  <strong>Pressure limited — bypass active.</strong>
+                  <div className="mt-1">
+                    Hose loss and nozzle restriction require {fmt(r.requiredPumpPsi, 0)} PSI at the pump.
+                    The unloader is set to {fmt(r.pumpPressurePsi, 0)} PSI, so some flow is diverted to bypass.
+                  </div>
+                </div>
+              )}
 
               <div className="rounded-xl border border-slate-300 bg-slate-100 px-5 py-5">
                 <div className="text-xs font-medium uppercase tracking-wide text-slate-600">
