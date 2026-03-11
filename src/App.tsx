@@ -161,7 +161,7 @@ export default function App() {
         href="#calculator"
         className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
       >
-        Model Your Rig
+        Model Your Pressure Washer
       </a>
     </nav>
   </div>
@@ -189,7 +189,7 @@ export default function App() {
                   href="#calculator"
                   className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
                 >
-                  Model Your Rig
+                  Model Your Pressure Washer
                 </a>
 
                 <a
@@ -281,7 +281,7 @@ export default function App() {
               href="#calculator"
               className="hidden rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 sm:inline-flex"
             >
-              Model Your Rig
+              Model Your Pressure Washer
             </a>
           </div>
 
@@ -371,7 +371,7 @@ export default function App() {
 
           <div className="mt-8 rounded-xl border border-slate-200 bg-white p-5">
             <p className="text-sm text-slate-700">
-              Want the full picture? Use <strong>Model Your Rig</strong> to
+              Want the full picture? Use <strong>Model Your Pressure Washer</strong> to
               include hose loss, nozzle calibration and bypass behaviour.
             </p>
           </div>
