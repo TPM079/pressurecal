@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 
 type PressureUnit = "psi" | "bar";
 type FlowUnit = "gpm" | "lpm";
@@ -93,7 +94,8 @@ function estimateHoseLossPsi(flowGpm: number, lengthM: number, hoseIdMm: number)
     frictionFactor = 0.25 / Math.pow(Math.log10(a + b), 2);
   }
 
-  const dpPa = frictionFactor * (lengthM / d) * ((rho * velocity * velocity) / 2);
+  const dpPa =
+    frictionFactor * (lengthM / d) * ((rho * velocity * velocity) / 2);
   const dpPsi = dpPa / 6894.757293168;
 
   return Math.max(dpPsi, 0);
@@ -188,7 +190,10 @@ export default function HosePressureLossCalculator() {
     [hoseLength, hoseLengthUnit]
   );
 
-  const hoseIdMm = useMemo(() => toMm(hoseId, hoseIdUnit), [hoseId, hoseIdUnit]);
+  const hoseIdMm = useMemo(
+    () => toMm(hoseId, hoseIdUnit),
+    [hoseId, hoseIdUnit]
+  );
 
   const hoseLossPsi = useMemo(
     () => estimateHoseLossPsi(flowGpm, hoseLengthM, hoseIdMm),
@@ -260,227 +265,241 @@ export default function HosePressureLossCalculator() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      <div className="mx-auto max-w-5xl px-4 py-12">
-        <div className="text-center">
-          <div className="mb-4">
-            <Link
-              to="/"
-              className="text-sm font-semibold text-slate-600 hover:text-slate-900"
-            >
-              ← Back to PressureCal
-            </Link>
+    <>
+      <Helmet>
+        <title>Pressure Washer Hose Pressure Loss Calculator | PressureCal</title>
+        <meta
+          name="description"
+          content="Estimate pressure loss in a pressure washer hose based on hose length, internal diameter, pump pressure and flow rate."
+        />
+        <link
+          rel="canonical"
+          href="https://www.pressurecal.com/hose-pressure-loss-calculator"
+        />
+      </Helmet>
+
+      <div className="min-h-screen bg-slate-100">
+        <div className="mx-auto max-w-5xl px-4 py-12">
+          <div className="text-center">
+            <div className="mb-4">
+              <Link
+                to="/"
+                className="text-sm font-semibold text-slate-600 hover:text-slate-900"
+              >
+                ← Back to PressureCal
+              </Link>
+            </div>
+
+            <h1 className="text-5xl font-semibold tracking-tight text-slate-900">
+              Hose Pressure Loss Calculator
+            </h1>
+
+            <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-600">
+              Estimate pressure drop based on hose length and internal diameter.
+            </p>
+
+            <div className="mt-6 flex items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={swapUnits}
+                className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50"
+                title="Swap PSI↔BAR, GPM↔LPM, m↔ft and mm↔in"
+              >
+                Swap units
+              </button>
+
+              <button
+                type="button"
+                onClick={resetAll}
+                className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50"
+                title="Reset to defaults"
+              >
+                Reset
+              </button>
+            </div>
           </div>
 
-          <h1 className="text-5xl font-semibold tracking-tight text-slate-900">
-            Hose Pressure Loss Calculator
-          </h1>
+          <div className="mt-10 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+            <div className="space-y-8">
+              <div>
+                <div className="mb-2 text-center text-base font-semibold text-slate-800">
+                  Pump Pressure
+                </div>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center">
+                  <input
+                    className="w-full max-w-3xl rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
+                    type="number"
+                    inputMode="decimal"
+                    value={pressure}
+                    onChange={(e) => setPressure(Number(e.target.value))}
+                  />
 
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-600">
-            Estimate pressure drop based on hose length and internal diameter.
-          </p>
-
-          <div className="mt-6 flex items-center justify-center gap-2">
-            <button
-              type="button"
-              onClick={swapUnits}
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50"
-              title="Swap PSI↔BAR, GPM↔LPM, m↔ft and mm↔in"
-            >
-              Swap units
-            </button>
-
-            <button
-              type="button"
-              onClick={resetAll}
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50"
-              title="Reset to defaults"
-            >
-              Reset
-            </button>
-          </div>
-        </div>
-
-        <div className="mt-10 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-          <div className="space-y-8">
-            <div>
-              <div className="mb-2 text-center text-base font-semibold text-slate-800">
-                Pump Pressure
-              </div>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center">
-                <input
-                  className="w-full max-w-3xl rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
-                  type="number"
-                  inputMode="decimal"
-                  value={pressure}
-                  onChange={(e) => setPressure(Number(e.target.value))}
-                />
-
-                <select
-                  className="w-full max-w-[140px] rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
-                  value={pressureUnit}
-                  onChange={(e) =>
-                    setPressureUnit(e.target.value as PressureUnit)
-                  }
-                >
-                  <option value="psi">PSI</option>
-                  <option value="bar">BAR</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <div className="mb-2 text-center text-base font-semibold text-slate-800">
-                Pump Flow
-              </div>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center">
-                <input
-                  className="w-full max-w-3xl rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
-                  type="number"
-                  inputMode="decimal"
-                  value={flow}
-                  onChange={(e) => setFlow(Number(e.target.value))}
-                />
-
-                <select
-                  className="w-full max-w-[140px] rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
-                  value={flowUnit}
-                  onChange={(e) => setFlowUnit(e.target.value as FlowUnit)}
-                >
-                  <option value="gpm">GPM</option>
-                  <option value="lpm">L/min</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <div className="mb-2 text-center text-base font-semibold text-slate-800">
-                Hose Length
-              </div>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center">
-                <input
-                  className="w-full max-w-3xl rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
-                  type="number"
-                  inputMode="decimal"
-                  value={hoseLength}
-                  onChange={(e) => setHoseLength(Number(e.target.value))}
-                />
-
-                <select
-                  className="w-full max-w-[140px] rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
-                  value={hoseLengthUnit}
-                  onChange={(e) =>
-                    setHoseLengthUnit(e.target.value as LengthUnit)
-                  }
-                >
-                  <option value="m">m</option>
-                  <option value="ft">ft</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <div className="mb-2 text-center text-base font-semibold text-slate-800">
-                Hose Internal Diameter
-              </div>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center">
-                <input
-                  className="w-full max-w-3xl rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
-                  type="number"
-                  inputMode="decimal"
-                  value={hoseId}
-                  onChange={(e) => setHoseId(Number(e.target.value))}
-                />
-
-                <select
-                  className="w-full max-w-[140px] rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
-                  value={hoseIdUnit}
-                  onChange={(e) =>
-                    setHoseIdUnit(e.target.value as DiameterUnit)
-                  }
-                >
-                  <option value="mm">mm</option>
-                  <option value="in">in</option>
-                </select>
-              </div>
-
-              <div className="mt-4 flex flex-wrap justify-center gap-2">
-                {hosePresets.map((preset) => (
-                  <button
-                    key={preset.label}
-                    type="button"
-                    onClick={() => {
-                      setHoseId(preset.value);
-                      setHoseIdUnit(preset.unit);
-                    }}
-                    className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                  <select
+                    className="w-full max-w-[140px] rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
+                    value={pressureUnit}
+                    onChange={(e) =>
+                      setPressureUnit(e.target.value as PressureUnit)
+                    }
                   >
-                    {preset.label}
+                    <option value="psi">PSI</option>
+                    <option value="bar">BAR</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <div className="mb-2 text-center text-base font-semibold text-slate-800">
+                  Pump Flow
+                </div>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center">
+                  <input
+                    className="w-full max-w-3xl rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
+                    type="number"
+                    inputMode="decimal"
+                    value={flow}
+                    onChange={(e) => setFlow(Number(e.target.value))}
+                  />
+
+                  <select
+                    className="w-full max-w-[140px] rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
+                    value={flowUnit}
+                    onChange={(e) => setFlowUnit(e.target.value as FlowUnit)}
+                  >
+                    <option value="gpm">GPM</option>
+                    <option value="lpm">L/min</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <div className="mb-2 text-center text-base font-semibold text-slate-800">
+                  Hose Length
+                </div>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center">
+                  <input
+                    className="w-full max-w-3xl rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
+                    type="number"
+                    inputMode="decimal"
+                    value={hoseLength}
+                    onChange={(e) => setHoseLength(Number(e.target.value))}
+                  />
+
+                  <select
+                    className="w-full max-w-[140px] rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
+                    value={hoseLengthUnit}
+                    onChange={(e) =>
+                      setHoseLengthUnit(e.target.value as LengthUnit)
+                    }
+                  >
+                    <option value="m">m</option>
+                    <option value="ft">ft</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <div className="mb-2 text-center text-base font-semibold text-slate-800">
+                  Hose Internal Diameter
+                </div>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center">
+                  <input
+                    className="w-full max-w-3xl rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
+                    type="number"
+                    inputMode="decimal"
+                    value={hoseId}
+                    onChange={(e) => setHoseId(Number(e.target.value))}
+                  />
+
+                  <select
+                    className="w-full max-w-[140px] rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
+                    value={hoseIdUnit}
+                    onChange={(e) =>
+                      setHoseIdUnit(e.target.value as DiameterUnit)
+                    }
+                  >
+                    <option value="mm">mm</option>
+                    <option value="in">in</option>
+                  </select>
+                </div>
+
+                <div className="mt-4 flex flex-wrap justify-center gap-2">
+                  {hosePresets.map((preset) => (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() => {
+                        setHoseId(preset.value);
+                        setHoseIdUnit(preset.unit);
+                      }}
+                      className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-2xl bg-slate-100 px-6 py-10 text-center">
+                <div className="text-sm font-medium text-slate-600">
+                  Estimated Pressure Loss
+                </div>
+
+                <div className="mt-3 text-6xl font-semibold tracking-tight text-slate-900">
+                  {fmt(hoseLossPsi, 0)}
+                </div>
+
+                <div className="mt-2 text-sm text-slate-600">
+                  PSI • {fmt(fromPsi(hoseLossPsi, "bar"), 1)} bar
+                </div>
+
+                <div className="mt-6 text-sm text-slate-600">
+                  Pressure at gun{" "}
+                  <span className="font-semibold text-slate-800">
+                    {fmt(pressureAtGunPsi, 0)} PSI
+                  </span>{" "}
+                  •{" "}
+                  <span className="font-semibold text-slate-800">
+                    {fmt(fromPsi(pressureAtGunPsi, "bar"), 1)} bar
+                  </span>
+                </div>
+
+                <div className="mt-2 text-sm text-slate-500">
+                  Loss percentage ≈{" "}
+                  <span className="font-medium">{fmt(lossPct, 1)}%</span>
+                </div>
+
+                <div className="mt-8 flex flex-col items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={copySetupLink}
+                    className="rounded-xl bg-slate-900 px-8 py-3 text-sm font-semibold text-white hover:bg-slate-800"
+                  >
+                    Copy Setup Link
                   </button>
-                ))}
-              </div>
-            </div>
 
-            <div className="rounded-2xl bg-slate-100 px-6 py-10 text-center">
-              <div className="text-sm font-medium text-slate-600">
-                Estimated Pressure Loss
-              </div>
-
-              <div className="mt-3 text-6xl font-semibold tracking-tight text-slate-900">
-                {fmt(hoseLossPsi, 0)}
-              </div>
-
-              <div className="mt-2 text-sm text-slate-600">
-                PSI • {fmt(fromPsi(hoseLossPsi, "bar"), 1)} bar
-              </div>
-
-              <div className="mt-6 text-sm text-slate-600">
-                Pressure at gun{" "}
-                <span className="font-semibold text-slate-800">
-                  {fmt(pressureAtGunPsi, 0)} PSI
-                </span>{" "}
-                •{" "}
-                <span className="font-semibold text-slate-800">
-                  {fmt(fromPsi(pressureAtGunPsi, "bar"), 1)} bar
-                </span>
-              </div>
-
-              <div className="mt-2 text-sm text-slate-500">
-                Loss percentage ≈{" "}
-                <span className="font-medium">{fmt(lossPct, 1)}%</span>
-              </div>
-
-              <div className="mt-8 flex flex-col items-center gap-3">
-                <button
-                  type="button"
-                  onClick={copySetupLink}
-                  className="rounded-xl bg-slate-900 px-8 py-3 text-sm font-semibold text-white hover:bg-slate-800"
-                >
-                  Copy Setup Link
-                </button>
-
-                <div className="text-xs text-slate-500">
-                  {copyMessage || "Share link preserves your units and inputs."}
+                  <div className="text-xs text-slate-500">
+                    {copyMessage || "Share link preserves your units and inputs."}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="mt-8 text-center">
-          <Link
-            to="/"
-            className="text-sm font-semibold text-slate-700 underline hover:text-slate-900"
-          >
-            Open full PressureCal rig calculator
-          </Link>
-        </div>
+          <div className="mt-8 text-center">
+            <Link
+              to="/"
+              className="text-sm font-semibold text-slate-700 underline hover:text-slate-900"
+            >
+              Open full PressureCal rig calculator
+            </Link>
+          </div>
 
-        <div className="mt-10 text-center text-xs text-slate-500">
-          Results are indicative. Full PressureCal rig modelling includes nozzle
-          and unloader behaviour.
+          <div className="mt-10 text-center text-xs text-slate-500">
+            Results are indicative. Full PressureCal rig modelling includes nozzle
+            and unloader behaviour.
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 
 type PressureUnit = "psi" | "bar";
 type FlowUnit = "gpm" | "lpm";
@@ -176,158 +177,172 @@ export default function NozzleCalculator() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      <div className="mx-auto max-w-5xl px-4 py-12">
-        <div className="text-center">
-          <div className="mb-4">
-            <Link
-              to="/"
-              className="text-sm font-semibold text-slate-600 hover:text-slate-900"
-            >
-              ← Back to PressureCal
-            </Link>
-          </div>
+    <>
+      <Helmet>
+        <title>Pressure Washer Nozzle Size Calculator | PressureCal</title>
+        <meta
+          name="description"
+          content="Calculate the correct pressure washer nozzle size based on PSI and GPM. Includes orifice diameter and tip sizing for professional pressure washing setups."
+        />
+        <link
+          rel="canonical"
+          href="https://www.pressurecal.com/nozzle-size-calculator"
+        />
+      </Helmet>
 
-          <h1 className="text-5xl font-semibold tracking-tight text-slate-900">
-            Pressure Washer Nozzle Size Calculator
-          </h1>
-
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-600">
-            Calculate the correct pressure washer nozzle size based on pump
-            pressure and flow rate.
-          </p>
-
-          <div className="mt-6 flex items-center justify-center gap-2">
-            <button
-              type="button"
-              onClick={swapUnits}
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50"
-              title="Swap PSI↔BAR and GPM↔LPM"
-            >
-              Swap units
-            </button>
-
-            <button
-              type="button"
-              onClick={resetAll}
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50"
-              title="Reset to defaults"
-            >
-              Reset
-            </button>
-          </div>
-        </div>
-
-        <div className="mt-10 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-          <div className="space-y-8">
-            <div>
-              <div className="mb-2 text-center text-base font-semibold text-slate-800">
-                Pump Pressure
-              </div>
-
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center">
-                <input
-                  className="w-full max-w-3xl rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
-                  type="number"
-                  inputMode="decimal"
-                  value={pressure}
-                  onChange={(e) => setPressure(Number(e.target.value))}
-                />
-
-                <select
-                  className="w-full max-w-[140px] rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
-                  value={pressureUnit}
-                  onChange={(e) =>
-                    setPressureUnit(e.target.value as PressureUnit)
-                  }
-                >
-                  <option value="psi">PSI</option>
-                  <option value="bar">BAR</option>
-                </select>
-              </div>
+      <div className="min-h-screen bg-slate-100">
+        <div className="mx-auto max-w-5xl px-4 py-12">
+          <div className="text-center">
+            <div className="mb-4">
+              <Link
+                to="/"
+                className="text-sm font-semibold text-slate-600 hover:text-slate-900"
+              >
+                ← Back to PressureCal
+              </Link>
             </div>
 
-            <div>
-              <div className="mb-2 text-center text-base font-semibold text-slate-800">
-                Pump Flow
-              </div>
+            <h1 className="text-5xl font-semibold tracking-tight text-slate-900">
+              Pressure Washer Nozzle Size Calculator
+            </h1>
 
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center">
-                <input
-                  className="w-full max-w-3xl rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
-                  type="number"
-                  inputMode="decimal"
-                  value={flow}
-                  onChange={(e) => setFlow(Number(e.target.value))}
-                />
+            <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-600">
+              Calculate the correct pressure washer nozzle size based on pump
+              pressure and flow rate.
+            </p>
 
-                <select
-                  className="w-full max-w-[140px] rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
-                  value={flowUnit}
-                  onChange={(e) => setFlowUnit(e.target.value as FlowUnit)}
-                >
-                  <option value="gpm">GPM</option>
-                  <option value="lpm">L/min</option>
-                </select>
-              </div>
+            <div className="mt-6 flex items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={swapUnits}
+                className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50"
+                title="Swap PSI↔BAR and GPM↔LPM"
+              >
+                Swap units
+              </button>
+
+              <button
+                type="button"
+                onClick={resetAll}
+                className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50"
+                title="Reset to defaults"
+              >
+                Reset
+              </button>
             </div>
+          </div>
 
-            <div className="rounded-2xl bg-slate-100 px-6 py-10 text-center">
-              <div className="text-sm font-medium text-slate-600">
-                Recommended Nozzle Size
+          <div className="mt-10 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+            <div className="space-y-8">
+              <div>
+                <div className="mb-2 text-center text-base font-semibold text-slate-800">
+                  Pump Pressure
+                </div>
+
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center">
+                  <input
+                    className="w-full max-w-3xl rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
+                    type="number"
+                    inputMode="decimal"
+                    value={pressure}
+                    onChange={(e) => setPressure(Number(e.target.value))}
+                  />
+
+                  <select
+                    className="w-full max-w-[140px] rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
+                    value={pressureUnit}
+                    onChange={(e) =>
+                      setPressureUnit(e.target.value as PressureUnit)
+                    }
+                  >
+                    <option value="psi">PSI</option>
+                    <option value="bar">BAR</option>
+                  </select>
+                </div>
               </div>
 
-              <div className="mt-3 text-6xl font-semibold tracking-tight text-slate-900">
-                {tip}
+              <div>
+                <div className="mb-2 text-center text-base font-semibold text-slate-800">
+                  Pump Flow
+                </div>
+
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center">
+                  <input
+                    className="w-full max-w-3xl rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
+                    type="number"
+                    inputMode="decimal"
+                    value={flow}
+                    onChange={(e) => setFlow(Number(e.target.value))}
+                  />
+
+                  <select
+                    className="w-full max-w-[140px] rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
+                    value={flowUnit}
+                    onChange={(e) => setFlowUnit(e.target.value as FlowUnit)}
+                  >
+                    <option value="gpm">GPM</option>
+                    <option value="lpm">L/min</option>
+                  </select>
+                </div>
               </div>
 
-              <div className="mt-4 text-sm text-slate-600">
-                Orifice diameter{" "}
-                <span className="font-semibold text-slate-800">
-                  {fmt(orificeMm, 2)} mm
-                </span>{" "}
-                •{" "}
-                <span className="font-semibold text-slate-800">
-                  {fmt(orificeIn, 3)} in
-                </span>
-              </div>
+              <div className="rounded-2xl bg-slate-100 px-6 py-10 text-center">
+                <div className="text-sm font-medium text-slate-600">
+                  Recommended Nozzle Size
+                </div>
 
-              <div className="mt-2 text-sm text-slate-500">
-                Tip equivalent ≈{" "}
-                <span className="font-medium">{fmt(gpmAt4000, 2)} GPM</span> @
-                4000 PSI
-              </div>
+                <div className="mt-3 text-6xl font-semibold tracking-tight text-slate-900">
+                  {tip}
+                </div>
 
-              <div className="mt-8 flex flex-col items-center gap-3">
-                <button
-                  type="button"
-                  onClick={copySetupLink}
-                  className="rounded-xl bg-slate-900 px-8 py-3 text-sm font-semibold text-white hover:bg-slate-800"
-                >
-                  Copy Setup Link
-                </button>
+                <div className="mt-4 text-sm text-slate-600">
+                  Orifice diameter{" "}
+                  <span className="font-semibold text-slate-800">
+                    {fmt(orificeMm, 2)} mm
+                  </span>{" "}
+                  •{" "}
+                  <span className="font-semibold text-slate-800">
+                    {fmt(orificeIn, 3)} in
+                  </span>
+                </div>
 
-                <div className="text-xs text-slate-500">
-                  {copyMessage || "Share link preserves your units and inputs."}
+                <div className="mt-2 text-sm text-slate-500">
+                  Tip equivalent ≈{" "}
+                  <span className="font-medium">{fmt(gpmAt4000, 2)} GPM</span> @
+                  4000 PSI
+                </div>
+
+                <div className="mt-8 flex flex-col items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={copySetupLink}
+                    className="rounded-xl bg-slate-900 px-8 py-3 text-sm font-semibold text-white hover:bg-slate-800"
+                  >
+                    Copy Setup Link
+                  </button>
+
+                  <div className="text-xs text-slate-500">
+                    {copyMessage || "Share link preserves your units and inputs."}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="mt-8 text-center">
-          <Link
-            to="/"
-            className="text-sm font-semibold text-slate-700 underline hover:text-slate-900"
-          >
-            Open full PressureCal rig calculator
-          </Link>
-        </div>
+          <div className="mt-8 text-center">
+            <Link
+              to="/"
+              className="text-sm font-semibold text-slate-700 underline hover:text-slate-900"
+            >
+              Open full PressureCal rig calculator
+            </Link>
+          </div>
 
-        <div className="mt-10 text-center text-xs text-slate-500">
-          Results are indicative. Orifice estimate assumes water, Cd≈0.62.
+          <div className="mt-10 text-center text-xs text-slate-500">
+            Results are indicative. Orifice estimate assumes water, Cd≈0.62.
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
