@@ -11,12 +11,23 @@ const LPM_PER_GPM = 3.785411784;
 const FT_PER_M = 3.280839895;
 const MM_PER_IN = 25.4;
 
+const DEFAULTS = {
+  pressure: 4000,
+  pressureUnit: "psi" as PressureUnit,
+  flow: 4,
+  flowUnit: "gpm" as FlowUnit,
+  hoseLength: 30,
+  hoseLengthUnit: "m" as LengthUnit,
+  hoseId: 9.53,
+  hoseIdUnit: "mm" as DiameterUnit,
+};
+
 const hosePresets = [
   { label: '3/16" (4.76 mm)', value: 4.76, unit: "mm" as DiameterUnit },
   { label: '1/4" (6.35 mm)', value: 6.35, unit: "mm" as DiameterUnit },
   { label: '5/16" (7.94 mm)', value: 7.94, unit: "mm" as DiameterUnit },
   { label: '3/8" (9.53 mm)', value: 9.53, unit: "mm" as DiameterUnit },
-  { label: '1/2" (12.70 mm)', value: 12.7, unit: "mm" as DiameterUnit }
+  { label: '1/2" (12.70 mm)', value: 12.7, unit: "mm" as DiameterUnit },
 ];
 
 function fmt(n: number, dp = 2) {
@@ -44,8 +55,8 @@ function toMetres(value: number, unit: LengthUnit) {
   return unit === "m" ? value : value / FT_PER_M;
 }
 
-function fromMetres(m: number, unit: LengthUnit) {
-  return unit === "m" ? m : m * FT_PER_M;
+function fromMetres(metres: number, unit: LengthUnit) {
+  return unit === "m" ? metres : metres * FT_PER_M;
 }
 
 function toMm(value: number, unit: DiameterUnit) {
@@ -56,22 +67,16 @@ function fromMm(mm: number, unit: DiameterUnit) {
   return unit === "mm" ? mm : mm / MM_PER_IN;
 }
 
-/**
- * Darcy–Weisbach hose loss estimate using:
- * - water density ~1000 kg/m³
- * - water viscosity ~0.001 Pa·s
- * - Swamee-Jain style friction factor approximation
- */
 function estimateHoseLossPsi(flowGpm: number, lengthM: number, hoseIdMm: number) {
-  const rho = 1000; // kg/m³
-  const mu = 0.001; // Pa·s
-  const roughnessM = 0.0000015; // approx smooth pressure hose
+  const rho = 1000;
+  const mu = 0.001;
+  const roughnessM = 0.0000015;
 
   if (!(flowGpm > 0) || !(lengthM > 0) || !(hoseIdMm > 0)) return 0;
 
-  const q = (flowGpm * 0.003785411784) / 60; // gpm -> m³/s
-  const d = hoseIdMm / 1000; // mm -> m
-  const area = Math.PI * d * d / 4;
+  const q = (flowGpm * 0.003785411784) / 60;
+  const d = hoseIdMm / 1000;
+  const area = (Math.PI * d * d) / 4;
   const velocity = q / area;
 
   const re = (rho * velocity * d) / mu;
@@ -79,47 +84,41 @@ function estimateHoseLossPsi(flowGpm: number, lengthM: number, hoseIdMm: number)
 
   const relRoughness = roughnessM / d;
 
-  let f = 0;
+  let frictionFactor = 0;
   if (re < 2300) {
-    f = 64 / re;
+    frictionFactor = 64 / re;
   } else {
     const a = relRoughness / 3.7;
     const b = 5.74 / Math.pow(re, 0.9);
-    f = 0.25 / Math.pow(Math.log10(a + b), 2);
+    frictionFactor = 0.25 / Math.pow(Math.log10(a + b), 2);
   }
 
-  const dpPa = f * (lengthM / d) * (rho * velocity * velocity / 2);
+  const dpPa = frictionFactor * (lengthM / d) * ((rho * velocity * velocity) / 2);
   const dpPsi = dpPa / 6894.757293168;
 
   return Math.max(dpPsi, 0);
 }
 
 export default function HosePressureLossCalculator() {
-  const DEFAULTS = useMemo(
-    () => ({
-      pressure: 4000,
-      pressureUnit: "psi" as PressureUnit,
-      flow: 4,
-      flowUnit: "gpm" as FlowUnit,
-      hoseLength: 30,
-      hoseLengthUnit: "m" as LengthUnit,
-      hoseId: 9.53,
-      hoseIdUnit: "mm" as DiameterUnit
-    }),
-    []
-  );
-
   const [pressure, setPressure] = useState<number>(DEFAULTS.pressure);
-  const [pressureUnit, setPressureUnit] = useState<PressureUnit>(DEFAULTS.pressureUnit);
+  const [pressureUnit, setPressureUnit] = useState<PressureUnit>(
+    DEFAULTS.pressureUnit
+  );
 
   const [flow, setFlow] = useState<number>(DEFAULTS.flow);
   const [flowUnit, setFlowUnit] = useState<FlowUnit>(DEFAULTS.flowUnit);
 
   const [hoseLength, setHoseLength] = useState<number>(DEFAULTS.hoseLength);
-  const [hoseLengthUnit, setHoseLengthUnit] = useState<LengthUnit>(DEFAULTS.hoseLengthUnit);
+  const [hoseLengthUnit, setHoseLengthUnit] = useState<LengthUnit>(
+    DEFAULTS.hoseLengthUnit
+  );
 
   const [hoseId, setHoseId] = useState<number>(DEFAULTS.hoseId);
-  const [hoseIdUnit, setHoseIdUnit] = useState<DiameterUnit>(DEFAULTS.hoseIdUnit);
+  const [hoseIdUnit, setHoseIdUnit] = useState<DiameterUnit>(
+    DEFAULTS.hoseIdUnit
+  );
+
+  const [copyMessage, setCopyMessage] = useState("");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -143,7 +142,7 @@ export default function HosePressureLossCalculator() {
     const nextLength = lRaw !== null ? Number(lRaw) : null;
     const nextDiameter = dRaw !== null ? Number(dRaw) : null;
 
-    const hasAny =
+    const hasAnyParams =
       (nextPressure !== null && Number.isFinite(nextPressure)) ||
       (nextFlow !== null && Number.isFinite(nextFlow)) ||
       (nextLength !== null && Number.isFinite(nextLength)) ||
@@ -153,22 +152,42 @@ export default function HosePressureLossCalculator() {
       luRaw !== null ||
       duRaw !== null;
 
-    if (!hasAny) return;
+    if (!hasAnyParams) return;
 
     setPressureUnit(nextPressureUnit);
     setFlowUnit(nextFlowUnit);
     setHoseLengthUnit(nextLengthUnit);
     setHoseIdUnit(nextDiameterUnit);
 
-    if (nextPressure !== null && Number.isFinite(nextPressure)) setPressure(nextPressure);
-    if (nextFlow !== null && Number.isFinite(nextFlow)) setFlow(nextFlow);
-    if (nextLength !== null && Number.isFinite(nextLength)) setHoseLength(nextLength);
-    if (nextDiameter !== null && Number.isFinite(nextDiameter)) setHoseId(nextDiameter);
+    if (nextPressure !== null && Number.isFinite(nextPressure)) {
+      setPressure(nextPressure);
+    }
+
+    if (nextFlow !== null && Number.isFinite(nextFlow)) {
+      setFlow(nextFlow);
+    }
+
+    if (nextLength !== null && Number.isFinite(nextLength)) {
+      setHoseLength(nextLength);
+    }
+
+    if (nextDiameter !== null && Number.isFinite(nextDiameter)) {
+      setHoseId(nextDiameter);
+    }
   }, []);
 
-  const pressurePsi = useMemo(() => toPsi(pressure, pressureUnit), [pressure, pressureUnit]);
+  const pressurePsi = useMemo(
+    () => toPsi(pressure, pressureUnit),
+    [pressure, pressureUnit]
+  );
+
   const flowGpm = useMemo(() => toGpm(flow, flowUnit), [flow, flowUnit]);
-  const hoseLengthM = useMemo(() => toMetres(hoseLength, hoseLengthUnit), [hoseLength, hoseLengthUnit]);
+
+  const hoseLengthM = useMemo(
+    () => toMetres(hoseLength, hoseLengthUnit),
+    [hoseLength, hoseLengthUnit]
+  );
+
   const hoseIdMm = useMemo(() => toMm(hoseId, hoseIdUnit), [hoseId, hoseIdUnit]);
 
   const hoseLossPsi = useMemo(
@@ -176,8 +195,15 @@ export default function HosePressureLossCalculator() {
     [flowGpm, hoseLengthM, hoseIdMm]
   );
 
-  const pressureAtGunPsi = Math.max(pressurePsi - hoseLossPsi, 0);
-  const lossPct = pressurePsi > 0 ? (hoseLossPsi / pressurePsi) * 100 : 0;
+  const pressureAtGunPsi = useMemo(
+    () => Math.max(pressurePsi - hoseLossPsi, 0),
+    [pressurePsi, hoseLossPsi]
+  );
+
+  const lossPct = useMemo(
+    () => (pressurePsi > 0 ? (hoseLossPsi / pressurePsi) * 100 : 0),
+    [pressurePsi, hoseLossPsi]
+  );
 
   function resetAll() {
     setPressure(DEFAULTS.pressure);
@@ -188,29 +214,27 @@ export default function HosePressureLossCalculator() {
     setHoseLengthUnit(DEFAULTS.hoseLengthUnit);
     setHoseId(DEFAULTS.hoseId);
     setHoseIdUnit(DEFAULTS.hoseIdUnit);
+    setCopyMessage("");
     window.history.replaceState({}, "", window.location.pathname);
   }
 
   function swapUnits() {
-    const nextPressureUnit: PressureUnit = pressureUnit === "psi" ? "bar" : "psi";
+    const nextPressureUnit: PressureUnit =
+      pressureUnit === "psi" ? "bar" : "psi";
     const nextFlowUnit: FlowUnit = flowUnit === "gpm" ? "lpm" : "gpm";
     const nextLengthUnit: LengthUnit = hoseLengthUnit === "m" ? "ft" : "m";
     const nextDiameterUnit: DiameterUnit = hoseIdUnit === "mm" ? "in" : "mm";
-
-    const pPsi = pressurePsi;
-    const fGpm = flowGpm;
-    const lengthM = hoseLengthM;
-    const diameterMm = hoseIdMm;
 
     setPressureUnit(nextPressureUnit);
     setFlowUnit(nextFlowUnit);
     setHoseLengthUnit(nextLengthUnit);
     setHoseIdUnit(nextDiameterUnit);
 
-    setPressure(Number(fmt(fromPsi(pPsi, nextPressureUnit), 2)));
-    setFlow(Number(fmt(fromGpm(fGpm, nextFlowUnit), 2)));
-    setHoseLength(Number(fmt(fromMetres(lengthM, nextLengthUnit), 2)));
-    setHoseId(Number(fmt(fromMm(diameterMm, nextDiameterUnit), 3)));
+    setPressure(Number(fromPsi(pressurePsi, nextPressureUnit).toFixed(2)));
+    setFlow(Number(fromGpm(flowGpm, nextFlowUnit).toFixed(2)));
+    setHoseLength(Number(fromMetres(hoseLengthM, nextLengthUnit).toFixed(2)));
+    setHoseId(Number(fromMm(hoseIdMm, nextDiameterUnit).toFixed(3)));
+    setCopyMessage("");
   }
 
   async function copySetupLink() {
@@ -228,7 +252,8 @@ export default function HosePressureLossCalculator() {
 
     try {
       await navigator.clipboard.writeText(url);
-      alert("Setup link copied");
+      setCopyMessage("Setup link copied");
+      window.setTimeout(() => setCopyMessage(""), 2000);
     } catch {
       window.prompt("Copy this link:", url);
     }
@@ -238,9 +263,19 @@ export default function HosePressureLossCalculator() {
     <div className="min-h-screen bg-slate-100">
       <div className="mx-auto max-w-5xl px-4 py-12">
         <div className="text-center">
+          <div className="mb-4">
+            <Link
+              to="/"
+              className="text-sm font-semibold text-slate-600 hover:text-slate-900"
+            >
+              ← Back to PressureCal
+            </Link>
+          </div>
+
           <h1 className="text-5xl font-semibold tracking-tight text-slate-900">
             Hose Pressure Loss Calculator
           </h1>
+
           <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-600">
             Estimate pressure drop based on hose length and internal diameter.
           </p>
@@ -268,9 +303,10 @@ export default function HosePressureLossCalculator() {
 
         <div className="mt-10 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
           <div className="space-y-8">
-            {/* Pressure */}
             <div>
-              <div className="mb-2 text-center text-base font-semibold text-slate-800">Pump Pressure</div>
+              <div className="mb-2 text-center text-base font-semibold text-slate-800">
+                Pump Pressure
+              </div>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center">
                 <input
                   className="w-full max-w-3xl rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
@@ -282,18 +318,21 @@ export default function HosePressureLossCalculator() {
 
                 <select
                   className="w-full max-w-[140px] rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
-                  value={pressureUnit === "psi" ? "PSI" : "BAR"}
-                  onChange={(e) => setPressureUnit(e.target.value === "BAR" ? "bar" : "psi")}
+                  value={pressureUnit}
+                  onChange={(e) =>
+                    setPressureUnit(e.target.value as PressureUnit)
+                  }
                 >
-                  <option>PSI</option>
-                  <option>BAR</option>
+                  <option value="psi">PSI</option>
+                  <option value="bar">BAR</option>
                 </select>
               </div>
             </div>
 
-            {/* Flow */}
             <div>
-              <div className="mb-2 text-center text-base font-semibold text-slate-800">Pump Flow</div>
+              <div className="mb-2 text-center text-base font-semibold text-slate-800">
+                Pump Flow
+              </div>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center">
                 <input
                   className="w-full max-w-3xl rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
@@ -305,18 +344,19 @@ export default function HosePressureLossCalculator() {
 
                 <select
                   className="w-full max-w-[140px] rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
-                  value={flowUnit === "gpm" ? "GPM" : "L/min"}
-                  onChange={(e) => setFlowUnit(e.target.value === "L/min" ? "lpm" : "gpm")}
+                  value={flowUnit}
+                  onChange={(e) => setFlowUnit(e.target.value as FlowUnit)}
                 >
-                  <option>GPM</option>
-                  <option>L/min</option>
+                  <option value="gpm">GPM</option>
+                  <option value="lpm">L/min</option>
                 </select>
               </div>
             </div>
 
-            {/* Hose Length */}
             <div>
-              <div className="mb-2 text-center text-base font-semibold text-slate-800">Hose Length</div>
+              <div className="mb-2 text-center text-base font-semibold text-slate-800">
+                Hose Length
+              </div>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center">
                 <input
                   className="w-full max-w-3xl rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
@@ -328,18 +368,21 @@ export default function HosePressureLossCalculator() {
 
                 <select
                   className="w-full max-w-[140px] rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
-                  value={hoseLengthUnit === "m" ? "m" : "ft"}
-                  onChange={(e) => setHoseLengthUnit(e.target.value === "ft" ? "ft" : "m")}
+                  value={hoseLengthUnit}
+                  onChange={(e) =>
+                    setHoseLengthUnit(e.target.value as LengthUnit)
+                  }
                 >
-                  <option>m</option>
-                  <option>ft</option>
+                  <option value="m">m</option>
+                  <option value="ft">ft</option>
                 </select>
               </div>
             </div>
 
-            {/* Hose ID */}
             <div>
-              <div className="mb-2 text-center text-base font-semibold text-slate-800">Hose Internal Diameter</div>
+              <div className="mb-2 text-center text-base font-semibold text-slate-800">
+                Hose Internal Diameter
+              </div>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center">
                 <input
                   className="w-full max-w-3xl rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
@@ -351,11 +394,13 @@ export default function HosePressureLossCalculator() {
 
                 <select
                   className="w-full max-w-[140px] rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
-                  value={hoseIdUnit === "mm" ? "mm" : "in"}
-                  onChange={(e) => setHoseIdUnit(e.target.value === "in" ? "in" : "mm")}
+                  value={hoseIdUnit}
+                  onChange={(e) =>
+                    setHoseIdUnit(e.target.value as DiameterUnit)
+                  }
                 >
-                  <option>mm</option>
-                  <option>in</option>
+                  <option value="mm">mm</option>
+                  <option value="in">in</option>
                 </select>
               </div>
 
@@ -376,9 +421,10 @@ export default function HosePressureLossCalculator() {
               </div>
             </div>
 
-            {/* Result */}
             <div className="rounded-2xl bg-slate-100 px-6 py-10 text-center">
-              <div className="text-sm font-medium text-slate-600">Estimated Pressure Loss</div>
+              <div className="text-sm font-medium text-slate-600">
+                Estimated Pressure Loss
+              </div>
 
               <div className="mt-3 text-6xl font-semibold tracking-tight text-slate-900">
                 {fmt(hoseLossPsi, 0)}
@@ -400,7 +446,8 @@ export default function HosePressureLossCalculator() {
               </div>
 
               <div className="mt-2 text-sm text-slate-500">
-                Loss percentage ≈ <span className="font-medium">{fmt(lossPct, 1)}%</span>
+                Loss percentage ≈{" "}
+                <span className="font-medium">{fmt(lossPct, 1)}%</span>
               </div>
 
               <div className="mt-8 flex flex-col items-center gap-3">
@@ -411,7 +458,10 @@ export default function HosePressureLossCalculator() {
                 >
                   Copy Setup Link
                 </button>
-                <div className="text-xs text-slate-500">Share link preserves your units & inputs.</div>
+
+                <div className="text-xs text-slate-500">
+                  {copyMessage || "Share link preserves your units and inputs."}
+                </div>
               </div>
             </div>
           </div>
@@ -427,7 +477,8 @@ export default function HosePressureLossCalculator() {
         </div>
 
         <div className="mt-10 text-center text-xs text-slate-500">
-          Results are indicative. Full PressureCal rig modelling includes nozzle and unloader behaviour.
+          Results are indicative. Full PressureCal rig modelling includes nozzle
+          and unloader behaviour.
         </div>
       </div>
     </div>

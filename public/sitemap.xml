@@ -4,6 +4,9 @@
     <loc>https://www.pressurecal.com/</loc>
   </url>
   <url>
-    <loc>https://www.pressurecal.com/#calculator</loc>
+    <loc>https://www.pressurecal.com/nozzle-size-calculator</loc>
+  </url>
+  <url>
+    <loc>https://www.pressurecal.com/hose-pressure-loss-calculator</loc>
   </url>
 </urlset>

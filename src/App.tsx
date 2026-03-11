@@ -1,6 +1,8 @@
 import { useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Route, Routes } from "react-router-dom";
 import PressureCalHeroPreview from "./components/PressureCalHeroPreview";
+import NozzleCalculator from "./pages/NozzleCalculator";
+import HosePressureLossCalculator from "./pages/HosePressureLossCalculator";
 import { solvePressureCal, barFromPsi, lpmFromGpm } from "./pressurecal";
 import type {
   Inputs,
@@ -51,7 +53,7 @@ function toGpm(value: number, unit: FlowUnit) {
   return unit === "gpm" ? value : value / 3.785411784;
 }
 
-export default function App() {
+function HomePage() {
   const [inputs, setInputs] = useState<Inputs>({
     pumpPressure: 4000,
     pumpPressureUnit: "psi",
@@ -133,39 +135,39 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-100">
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
-  <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-    <a href="/" className="inline-flex items-center">
-      <img
-        src="/PressureCal_primary_logo.png"
-        alt="PressureCal"
-        className="h-14 w-auto sm:h-16"
-      />
-    </a>
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+          <Link to="/" className="inline-flex items-center">
+            <img
+              src="/PressureCal_primary_logo.png"
+              alt="PressureCal"
+              className="h-14 w-auto sm:h-16"
+            />
+          </Link>
 
-    <nav className="hidden items-center gap-6 md:flex">
-      <a
-        href="#calculator"
-        className="text-sm font-medium text-slate-700 transition hover:text-slate-900"
-      >
-        Calculator
-      </a>
+          <nav className="hidden items-center gap-6 md:flex">
+            <a
+              href="#calculator"
+              className="text-sm font-medium text-slate-700 transition hover:text-slate-900"
+            >
+              Calculator
+            </a>
 
-      <a
-        href="#about"
-        className="text-sm font-medium text-slate-700 transition hover:text-slate-900"
-      >
-        About
-      </a>
+            <a
+              href="#about"
+              className="text-sm font-medium text-slate-700 transition hover:text-slate-900"
+            >
+              About
+            </a>
 
-      <a
-        href="#calculator"
-        className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
-      >
-        Model Your Pressure Washer
-      </a>
-    </nav>
-  </div>
-</header>
+            <a
+              href="#calculator"
+              className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+            >
+              Model Your Pressure Washer
+            </a>
+          </nav>
+        </div>
+      </header>
 
       <section className="border-b border-slate-200 bg-white">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
@@ -371,8 +373,9 @@ export default function App() {
 
           <div className="mt-8 rounded-xl border border-slate-200 bg-white p-5">
             <p className="text-sm text-slate-700">
-              Want the full picture? Use <strong>Model Your Pressure Washer</strong> to
-              include hose loss, nozzle calibration and bypass behaviour.
+              Want the full picture? Use{" "}
+              <strong>Model Your Pressure Washer</strong> to include hose loss,
+              nozzle calibration and bypass behaviour.
             </p>
           </div>
         </div>
@@ -671,8 +674,10 @@ export default function App() {
                 <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
                   <strong>Pressure limited — bypass active.</strong>
                   <div className="mt-1">
-                    Hose loss and nozzle restriction require {fmt(r.requiredPumpPsi, 0)} PSI at the pump.
-                    The unloader is set to {fmt(r.pumpPressurePsi, 0)} PSI, so some flow is diverted to bypass.
+                    Hose loss and nozzle restriction require{" "}
+                    {fmt(r.requiredPumpPsi, 0)} PSI at the pump. The unloader is
+                    set to {fmt(r.pumpPressurePsi, 0)} PSI, so some flow is
+                    diverted to bypass.
                   </div>
                 </div>
               )}
@@ -912,5 +917,21 @@ export default function App() {
         </footer>
       </div>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route
+        path="/nozzle-size-calculator"
+        element={<NozzleCalculator />}
+      />
+      <Route
+        path="/hose-pressure-loss-calculator"
+        element={<HosePressureLossCalculator />}
+      />
+    </Routes>
   );
 }

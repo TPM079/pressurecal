@@ -1,4 +1,3 @@
-// src/pages/NozzleCalculator.tsx
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -8,20 +7,23 @@ type FlowUnit = "gpm" | "lpm";
 const PSI_PER_BAR = 14.5037738;
 const LPM_PER_GPM = 3.785411784;
 
-// Common nozzle sizing convention: tip code ~ (GPM @ 4000 PSI) * 10
+const DEFAULTS = {
+  pressure: 4000,
+  pressureUnit: "psi" as PressureUnit,
+  flow: 4,
+  flowUnit: "gpm" as FlowUnit,
+};
+
 function tipFromGpmAt4000(gpmAt4000: number) {
-  const n = Math.max(0, gpmAt4000);
-  const tip = Math.round(n * 10);
+  const tip = Math.round(Math.max(0, gpmAt4000) * 10);
   return String(tip).padStart(3, "0");
 }
 
-// Standard nozzle rating scaling: Q ∝ sqrt(P)
 function gpmAt4000FromFlowAtPressure(flowGpm: number, pressurePsi: number) {
   if (!(pressurePsi > 0) || !(flowGpm > 0)) return 0;
   return flowGpm * Math.sqrt(4000 / pressurePsi);
 }
 
-// Estimate orifice diameter using orifice equation
 function orificeDiameterMmFromFlowAndPressure(
   flowLpm: number,
   pressurePsi: number,
@@ -30,8 +32,8 @@ function orificeDiameterMmFromFlowAndPressure(
 ) {
   if (!(pressurePsi > 0) || !(flowLpm > 0) || !(cd > 0)) return 0;
 
-  const q = (flowLpm / 1000) / 60; // L/min -> m^3/s
-  const pa = pressurePsi * 6894.757293168; // psi -> Pa
+  const q = (flowLpm / 1000) / 60;
+  const pa = pressurePsi * 6894.757293168;
 
   const denom = cd * Math.sqrt((2 * pa) / rho);
   if (!(denom > 0)) return 0;
@@ -39,8 +41,8 @@ function orificeDiameterMmFromFlowAndPressure(
   const area = q / denom;
   if (!(area > 0)) return 0;
 
-  const d = Math.sqrt((4 * area) / Math.PI); // m
-  return d * 1000; // mm
+  const d = Math.sqrt((4 * area) / Math.PI);
+  return d * 1000;
 }
 
 function fmt(n: number, dp = 2) {
@@ -52,33 +54,26 @@ function toPsi(value: number, unit: PressureUnit) {
   return unit === "psi" ? value : value * PSI_PER_BAR;
 }
 
-function fromPsi(psi: number, unit: PressureUnit) {
-  return unit === "psi" ? psi : psi / PSI_PER_BAR;
+function fromPsi(valuePsi: number, unit: PressureUnit) {
+  return unit === "psi" ? valuePsi : valuePsi / PSI_PER_BAR;
 }
 
 function toGpm(value: number, unit: FlowUnit) {
   return unit === "gpm" ? value : value / LPM_PER_GPM;
 }
 
-function fromGpm(gpm: number, unit: FlowUnit) {
-  return unit === "gpm" ? gpm : gpm * LPM_PER_GPM;
+function fromGpm(valueGpm: number, unit: FlowUnit) {
+  return unit === "gpm" ? valueGpm : valueGpm * LPM_PER_GPM;
 }
 
 export default function NozzleCalculator() {
-  const DEFAULTS = useMemo(
-    () => ({
-      pressure: 4000,
-      pressureUnit: "psi" as PressureUnit,
-      flow: 4,
-      flowUnit: "gpm" as FlowUnit
-    }),
-    []
-  );
-
   const [pressure, setPressure] = useState<number>(DEFAULTS.pressure);
-  const [pressureUnit, setPressureUnit] = useState<PressureUnit>(DEFAULTS.pressureUnit);
+  const [pressureUnit, setPressureUnit] = useState<PressureUnit>(
+    DEFAULTS.pressureUnit
+  );
   const [flow, setFlow] = useState<number>(DEFAULTS.flow);
   const [flowUnit, setFlowUnit] = useState<FlowUnit>(DEFAULTS.flowUnit);
+  const [copyMessage, setCopyMessage] = useState("");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -88,29 +83,39 @@ export default function NozzleCalculator() {
     const fRaw = params.get("f");
     const fuRaw = params.get("fu");
 
-    const nextPu: PressureUnit = puRaw === "bar" ? "bar" : "psi";
-    const nextFu: FlowUnit = fuRaw === "lpm" ? "lpm" : "gpm";
+    const nextPressureUnit: PressureUnit = puRaw === "bar" ? "bar" : "psi";
+    const nextFlowUnit: FlowUnit = fuRaw === "lpm" ? "lpm" : "gpm";
 
-    const nextP = pRaw !== null ? Number(pRaw) : null;
-    const nextF = fRaw !== null ? Number(fRaw) : null;
+    const nextPressure = pRaw !== null ? Number(pRaw) : null;
+    const nextFlow = fRaw !== null ? Number(fRaw) : null;
 
-    const hasAny =
-      (nextP !== null && Number.isFinite(nextP)) ||
-      (nextF !== null && Number.isFinite(nextF)) ||
+    const hasAnyParams =
+      (nextPressure !== null && Number.isFinite(nextPressure)) ||
+      (nextFlow !== null && Number.isFinite(nextFlow)) ||
       puRaw !== null ||
       fuRaw !== null;
 
-    if (!hasAny) return;
+    if (!hasAnyParams) return;
 
-    setPressureUnit(nextPu);
-    setFlowUnit(nextFu);
+    setPressureUnit(nextPressureUnit);
+    setFlowUnit(nextFlowUnit);
 
-    if (nextP !== null && Number.isFinite(nextP)) setPressure(nextP);
-    if (nextF !== null && Number.isFinite(nextF)) setFlow(nextF);
+    if (nextPressure !== null && Number.isFinite(nextPressure)) {
+      setPressure(nextPressure);
+    }
+
+    if (nextFlow !== null && Number.isFinite(nextFlow)) {
+      setFlow(nextFlow);
+    }
   }, []);
 
-  const pressurePsi = useMemo(() => toPsi(pressure, pressureUnit), [pressure, pressureUnit]);
+  const pressurePsi = useMemo(
+    () => toPsi(pressure, pressureUnit),
+    [pressure, pressureUnit]
+  );
+
   const flowGpm = useMemo(() => toGpm(flow, flowUnit), [flow, flowUnit]);
+
   const flowLpm = useMemo(() => flowGpm * LPM_PER_GPM, [flowGpm]);
 
   const gpmAt4000 = useMemo(
@@ -121,7 +126,7 @@ export default function NozzleCalculator() {
   const tip = useMemo(() => tipFromGpmAt4000(gpmAt4000), [gpmAt4000]);
 
   const orificeMm = useMemo(
-    () => orificeDiameterMmFromFlowAndPressure(flowLpm, pressurePsi, 0.62, 1000),
+    () => orificeDiameterMmFromFlowAndPressure(flowLpm, pressurePsi),
     [flowLpm, pressurePsi]
   );
 
@@ -132,21 +137,24 @@ export default function NozzleCalculator() {
     setPressureUnit(DEFAULTS.pressureUnit);
     setFlow(DEFAULTS.flow);
     setFlowUnit(DEFAULTS.flowUnit);
+    setCopyMessage("");
     window.history.replaceState({}, "", window.location.pathname);
   }
 
   function swapUnits() {
-    const nextPressureUnit: PressureUnit = pressureUnit === "psi" ? "bar" : "psi";
+    const nextPressureUnit: PressureUnit =
+      pressureUnit === "psi" ? "bar" : "psi";
     const nextFlowUnit: FlowUnit = flowUnit === "gpm" ? "lpm" : "gpm";
 
-    const pPsi = pressurePsi;
-    const fGpm = flowGpm;
+    const currentPressurePsi = pressurePsi;
+    const currentFlowGpm = flowGpm;
 
     setPressureUnit(nextPressureUnit);
     setFlowUnit(nextFlowUnit);
 
-    setPressure(Number(fmt(fromPsi(pPsi, nextPressureUnit), 2)));
-    setFlow(Number(fmt(fromGpm(fGpm, nextFlowUnit), 2)));
+    setPressure(Number(fromPsi(currentPressurePsi, nextPressureUnit).toFixed(2)));
+    setFlow(Number(fromGpm(currentFlowGpm, nextFlowUnit).toFixed(2)));
+    setCopyMessage("");
   }
 
   async function copySetupLink() {
@@ -160,7 +168,8 @@ export default function NozzleCalculator() {
 
     try {
       await navigator.clipboard.writeText(url);
-      alert("Setup link copied");
+      setCopyMessage("Setup link copied");
+      window.setTimeout(() => setCopyMessage(""), 2000);
     } catch {
       window.prompt("Copy this link:", url);
     }
@@ -170,11 +179,22 @@ export default function NozzleCalculator() {
     <div className="min-h-screen bg-slate-100">
       <div className="mx-auto max-w-5xl px-4 py-12">
         <div className="text-center">
+          <div className="mb-4">
+            <Link
+              to="/"
+              className="text-sm font-semibold text-slate-600 hover:text-slate-900"
+            >
+              ← Back to PressureCal
+            </Link>
+          </div>
+
           <h1 className="text-5xl font-semibold tracking-tight text-slate-900">
             Pressure Washer Nozzle Size Calculator
           </h1>
+
           <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-600">
-            Calculate the correct pressure washer nozzle size based on pump pressure and flow rate.
+            Calculate the correct pressure washer nozzle size based on pump
+            pressure and flow rate.
           </p>
 
           <div className="mt-6 flex items-center justify-center gap-2">
@@ -201,7 +221,10 @@ export default function NozzleCalculator() {
         <div className="mt-10 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
           <div className="space-y-8">
             <div>
-              <div className="mb-2 text-center text-base font-semibold text-slate-800">Pump Pressure</div>
+              <div className="mb-2 text-center text-base font-semibold text-slate-800">
+                Pump Pressure
+              </div>
+
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center">
                 <input
                   className="w-full max-w-3xl rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
@@ -213,17 +236,22 @@ export default function NozzleCalculator() {
 
                 <select
                   className="w-full max-w-[140px] rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
-                  value={pressureUnit === "psi" ? "PSI" : "BAR"}
-                  onChange={(e) => setPressureUnit(e.target.value === "BAR" ? "bar" : "psi")}
+                  value={pressureUnit}
+                  onChange={(e) =>
+                    setPressureUnit(e.target.value as PressureUnit)
+                  }
                 >
-                  <option>PSI</option>
-                  <option>BAR</option>
+                  <option value="psi">PSI</option>
+                  <option value="bar">BAR</option>
                 </select>
               </div>
             </div>
 
             <div>
-              <div className="mb-2 text-center text-base font-semibold text-slate-800">Pump Flow</div>
+              <div className="mb-2 text-center text-base font-semibold text-slate-800">
+                Pump Flow
+              </div>
+
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center">
                 <input
                   className="w-full max-w-3xl rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
@@ -235,28 +263,39 @@ export default function NozzleCalculator() {
 
                 <select
                   className="w-full max-w-[140px] rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
-                  value={flowUnit === "gpm" ? "GPM" : "L/min"}
-                  onChange={(e) => setFlowUnit(e.target.value === "L/min" ? "lpm" : "gpm")}
+                  value={flowUnit}
+                  onChange={(e) => setFlowUnit(e.target.value as FlowUnit)}
                 >
-                  <option>GPM</option>
-                  <option>L/min</option>
+                  <option value="gpm">GPM</option>
+                  <option value="lpm">L/min</option>
                 </select>
               </div>
             </div>
 
             <div className="rounded-2xl bg-slate-100 px-6 py-10 text-center">
-              <div className="text-sm font-medium text-slate-600">Recommended Nozzle Size</div>
+              <div className="text-sm font-medium text-slate-600">
+                Recommended Nozzle Size
+              </div>
 
-              <div className="mt-3 text-6xl font-semibold tracking-tight text-slate-900">{tip}</div>
+              <div className="mt-3 text-6xl font-semibold tracking-tight text-slate-900">
+                {tip}
+              </div>
 
               <div className="mt-4 text-sm text-slate-600">
                 Orifice diameter{" "}
-                <span className="font-semibold text-slate-800">{fmt(orificeMm, 2)} mm</span> •{" "}
-                <span className="font-semibold text-slate-800">{fmt(orificeIn, 3)} in</span>
+                <span className="font-semibold text-slate-800">
+                  {fmt(orificeMm, 2)} mm
+                </span>{" "}
+                •{" "}
+                <span className="font-semibold text-slate-800">
+                  {fmt(orificeIn, 3)} in
+                </span>
               </div>
 
               <div className="mt-2 text-sm text-slate-500">
-                Tip equivalent ≈ <span className="font-medium">{fmt(gpmAt4000, 2)} GPM</span> @ 4000 PSI
+                Tip equivalent ≈{" "}
+                <span className="font-medium">{fmt(gpmAt4000, 2)} GPM</span> @
+                4000 PSI
               </div>
 
               <div className="mt-8 flex flex-col items-center gap-3">
@@ -267,7 +306,10 @@ export default function NozzleCalculator() {
                 >
                   Copy Setup Link
                 </button>
-                <div className="text-xs text-slate-500">Share link preserves your units & inputs.</div>
+
+                <div className="text-xs text-slate-500">
+                  {copyMessage || "Share link preserves your units and inputs."}
+                </div>
               </div>
             </div>
           </div>
