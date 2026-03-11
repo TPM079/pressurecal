@@ -191,6 +191,18 @@ export default function NozzleCalculator() {
       </Helmet>
 
       <div className="min-h-screen bg-slate-100">
+        <header className="border-b border-slate-200 bg-white">
+          <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+            <a href="/" className="inline-flex items-center">
+              <img
+                src="/PressureCal_primary_logo.png"
+                alt="PressureCal"
+                className="h-14 w-auto sm:h-16"
+              />
+            </a>
+          </div>
+        </header>
+
         <div className="mx-auto max-w-5xl px-4 py-12">
           <div className="text-center">
             <div className="mb-4">

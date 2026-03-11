@@ -136,13 +136,13 @@ function HomePage() {
     <div className="min-h-screen bg-slate-100">
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <Link to="/" className="inline-flex items-center">
-            <img
-              src="/PressureCal_primary_logo.png"
-              alt="PressureCal"
-              className="h-14 w-auto sm:h-16"
-            />
-          </Link>
+          <a href="/" className="inline-flex items-center">
+  <img
+    src="/PressureCal_primary_logo.png"
+    alt="PressureCal"
+    className="h-14 w-auto sm:h-16"
+  />
+</a>
 
           <nav className="hidden items-center gap-6 md:flex">
             <a
