@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, Route, Routes, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import PressureCalHeroPreview from "./components/PressureCalHeroPreview";
@@ -55,12 +55,12 @@ function toGpm(value: number, unit: FlowUnit) {
   return unit === "gpm" ? value : value / 3.785411784;
 }
 
-function PageTransition({ children }: { children: React.ReactNode }) {
+function PageTransition({ children }: { children: ReactNode }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
+      initial={{ opacity: 0, y: 10, filter: "blur(6px)" }}
+      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+      exit={{ opacity: 0, y: -6, filter: "blur(4px)" }}
       transition={{ duration: 0.22, ease: "easeOut" }}
     >
       {children}
