@@ -509,6 +509,105 @@ export default function HosePressureLossCalculator() {
             </div>
           </div>
 
+          <section className="mt-10 space-y-6 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+            <div>
+              <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+                How hose pressure loss affects real cleaning performance
+              </h2>
+              <p className="mt-4 text-sm leading-7 text-slate-600">
+                Hose pressure loss is one of the main reasons real pressure at
+                the gun can be lower than the rated pump pressure. As water
+                travels through the hose, friction between the water and the
+                hose wall creates resistance. That resistance becomes pressure
+                drop, which means the pressure available at the nozzle is lower
+                than what is produced at the pump.
+              </p>
+              <p className="mt-4 text-sm leading-7 text-slate-600">
+                Longer hose runs increase total resistance, and smaller hose
+                internal diameters increase velocity, which can make the loss
+                much worse. That is why a setup with a long 1/4&quot; hose can
+                feel very different from the same machine running a shorter
+                3/8&quot; hose, even though the pump itself has not changed.
+              </p>
+              <p className="mt-4 text-sm leading-7 text-slate-600">
+                PressureCal estimates hose loss using flow rate, hose length and
+                hose internal diameter, then shows the approximate pressure
+                remaining at the gun. This makes it easier to understand whether
+                weak performance is caused by the machine itself or by the hose
+                setup between the pump and the nozzle.
+              </p>
+            </div>
+
+            <div>
+              <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+                Common hose pressure loss questions
+              </h2>
+
+              <div className="mt-6 space-y-5">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+                  <h3 className="text-sm font-semibold text-slate-900">
+                    Does longer hose reduce pressure?
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    Yes. As hose length increases, friction losses increase as
+                    well. All else being equal, a longer hose run will normally
+                    reduce pressure at the gun.
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+                  <h3 className="text-sm font-semibold text-slate-900">
+                    Does a smaller hose ID increase pressure loss?
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    Yes. Smaller hose diameters generally increase water
+                    velocity, which increases friction loss. This is why 1/4&quot;
+                    hose can lose pressure much faster than 3/8&quot; hose on
+                    the same flow rate.
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+                  <h3 className="text-sm font-semibold text-slate-900">
+                    Why does my machine feel weaker at the gun than at the pump?
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    Real operating pressure at the gun is affected by hose
+                    friction, fittings, reels, bends, nozzle selection and
+                    unloader settings. The pump rating is only part of the
+                    overall picture.
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+                  <h3 className="text-sm font-semibold text-slate-900">
+                    Is hose pressure loss the only reason pressure drops?
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    No. Nozzle size, unloader setting and bypass behaviour also
+                    affect the final operating point. Hose loss is important,
+                    but it should be considered together with the rest of the
+                    rig.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+              <p className="text-sm text-slate-700">
+                Also need to match your nozzle to pump pressure and flow? Use
+                the{" "}
+                <Link
+                  to="/nozzle-size-calculator"
+                  className="font-semibold text-slate-900 underline hover:text-slate-700"
+                >
+                  Nozzle Size Calculator
+                </Link>
+                .
+              </p>
+            </div>
+          </section>
+
           <div className="mt-8 text-center">
             <Link
               to="/"
