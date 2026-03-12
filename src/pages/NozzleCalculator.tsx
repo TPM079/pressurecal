@@ -188,6 +188,18 @@ export default function NozzleCalculator() {
           rel="canonical"
           href="https://www.pressurecal.com/nozzle-size-calculator"
         />
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebApplication",
+            name: "Pressure Washer Nozzle Size Calculator",
+            url: "https://www.pressurecal.com/nozzle-size-calculator",
+            applicationCategory: "Calculator",
+            operatingSystem: "Web",
+            description:
+              "Calculate the correct pressure washer nozzle size based on pump pressure and flow rate.",
+          })}
+        </script>
       </Helmet>
 
       <div className="min-h-screen bg-slate-100">
