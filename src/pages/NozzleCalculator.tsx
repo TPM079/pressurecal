@@ -353,6 +353,102 @@ export default function NozzleCalculator() {
             </div>
           </div>
 
+          <section className="mt-10 space-y-6 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+            <div>
+              <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+                How to choose the correct pressure washer nozzle size
+              </h2>
+              <p className="mt-4 text-sm leading-7 text-slate-600">
+                Choosing the correct pressure washer nozzle size is important for
+                maintaining the intended pressure and flow of your machine. A
+                nozzle that is too small can increase pressure, place extra load
+                on the pump and engine, and cause the unloader to work harder. A
+                nozzle that is too large can reduce operating pressure and make
+                cleaning performance feel weak at the gun.
+              </p>
+              <p className="mt-4 text-sm leading-7 text-slate-600">
+                PressureCal estimates the nozzle tip size by using your pump
+                pressure and flow rate, then converts that to the common tip
+                sizing convention based on flow at 4000 PSI. It also estimates
+                the approximate orifice diameter so you can better understand
+                what the nozzle is physically doing.
+              </p>
+              <p className="mt-4 text-sm leading-7 text-slate-600">
+                In practical terms, both PSI and GPM matter. Pressure influences
+                impact force, while flow influences rinsing ability and overall
+                cleaning speed. The best nozzle is the one that matches your
+                machine’s rated output rather than relying on guesswork or a
+                generic chart.
+              </p>
+            </div>
+
+            <div>
+              <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+                Common nozzle sizing questions
+              </h2>
+
+              <div className="mt-6 space-y-5">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+                  <h3 className="text-sm font-semibold text-slate-900">
+                    What nozzle size do I need for 4 GPM at 4000 PSI?
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    A 4 GPM machine at 4000 PSI commonly corresponds to a 040
+                    tip. PressureCal calculates this directly from the values
+                    you enter and also shows the estimated orifice diameter.
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+                  <h3 className="text-sm font-semibold text-slate-900">
+                    What happens if my nozzle is too small?
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    A nozzle that is too small can increase pressure above the
+                    intended operating point, increase engine load, and
+                    contribute to unloader cycling or bypass activity.
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+                  <h3 className="text-sm font-semibold text-slate-900">
+                    What happens if my nozzle is too large?
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    A nozzle that is too large usually reduces pressure at the
+                    gun. The machine may still flow water, but cleaning
+                    performance and impact can drop noticeably.
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+                  <h3 className="text-sm font-semibold text-slate-900">
+                    Is nozzle size the only thing that affects real pressure?
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    No. Hose length, hose internal diameter, fittings, and
+                    unloader settings all affect real operating pressure. For a
+                    more complete picture, combine this page with the hose loss
+                    tool and the full PressureCal rig calculator.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+              <p className="text-sm text-slate-700">
+                Also need to estimate pressure drop through the hose? Use the{" "}
+                <Link
+                  to="/hose-pressure-loss-calculator"
+                  className="font-semibold text-slate-900 underline hover:text-slate-700"
+                >
+                  Hose Pressure Loss Calculator
+                </Link>
+                .
+              </p>
+            </div>
+          </section>
+
           <div className="mt-8 text-center">
             <Link
               to="/"
