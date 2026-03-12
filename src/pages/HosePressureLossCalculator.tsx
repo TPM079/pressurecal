@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
+import BackToTopButton from "../components/BackToTopButton";
 
 type PressureUnit = "psi" | "bar";
 type FlowUnit = "gpm" | "lpm";
@@ -622,6 +623,7 @@ export default function HosePressureLossCalculator() {
             and unloader behaviour.
           </div>
         </div>
+        <BackToTopButton />
       </div>
     </>
   );

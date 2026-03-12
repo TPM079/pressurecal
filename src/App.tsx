@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { Link, Route, Routes } from "react-router-dom";
 import PressureCalHeroPreview from "./components/PressureCalHeroPreview";
+import BackToTopButton from "./components/BackToTopButton";
 import NozzleCalculator from "./pages/NozzleCalculator";
 import HosePressureLossCalculator from "./pages/HosePressureLossCalculator";
 import { solvePressureCal, barFromPsi, lpmFromGpm } from "./pressurecal";
@@ -916,6 +917,8 @@ function HomePage() {
           reference tool.
         </footer>
       </div>
+
+      <BackToTopButton />
     </div>
   );
 }
