@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { roundTipCodeToFive } from "../pressurecal";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import BackToTopButton from "../components/BackToTopButton";
@@ -17,8 +18,11 @@ const DEFAULTS = {
 };
 
 function tipFromGpmAt4000(gpmAt4000: number) {
-  const tip = Math.round(Math.max(0, gpmAt4000) * 10);
-  return String(tip).padStart(3, "0");
+  const tip = Math.round(Math.max(0, gpmAt4000) * 10)
+    .toString()
+    .padStart(3, "0");
+
+  return roundTipCodeToFive(tip);
 }
 
 function gpmAt4000FromFlowAtPressure(flowGpm: number, pressurePsi: number) {
@@ -120,17 +124,17 @@ export default function NozzleCalculator() {
 
   const flowLpm = useMemo(() => flowGpm * LPM_PER_GPM, [flowGpm]);
 
-  const gpmAt4000 = useMemo(
-    () => gpmAt4000FromFlowAtPressure(flowGpm, pressurePsi),
-    [flowGpm, pressurePsi]
-  );
+const gpmAt4000 = useMemo(
+  () => gpmAt4000FromFlowAtPressure(flowGpm, pressurePsi),
+  [flowGpm, pressurePsi]
+);
 
-  const tip = useMemo(() => tipFromGpmAt4000(gpmAt4000), [gpmAt4000]);
+const tip = useMemo(() => tipFromGpmAt4000(gpmAt4000), [gpmAt4000]);
 
-  const orificeMm = useMemo(
-    () => orificeDiameterMmFromFlowAndPressure(flowLpm, pressurePsi),
-    [flowLpm, pressurePsi]
-  );
+const orificeMm = useMemo(
+  () => orificeDiameterMmFromFlowAndPressure(flowLpm, pressurePsi),
+  [flowLpm, pressurePsi]
+);
 
   const orificeIn = useMemo(() => orificeMm / 25.4, [orificeMm]);
 

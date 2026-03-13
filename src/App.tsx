@@ -4,8 +4,14 @@ import { AnimatePresence, motion } from "framer-motion";
 import PressureCalHeroPreview from "./components/PressureCalHeroPreview";
 import BackToTopButton from "./components/BackToTopButton";
 import NozzleCalculator from "./pages/NozzleCalculator";
+import NozzleSizeChartPage from "./pages/NozzleSizeChartPage";
 import HosePressureLossCalculator from "./pages/HosePressureLossCalculator";
-import { solvePressureCal, barFromPsi, lpmFromGpm } from "./pressurecal";
+import {
+  solvePressureCal,
+  barFromPsi,
+  lpmFromGpm,
+  roundTipCodeToFive,
+} from "./pressurecal";
 import type {
   Inputs,
   PressureUnit,
@@ -147,6 +153,9 @@ function HomePage() {
   const pqClassRated = pqRated >= PQ_THRESHOLD ? "Class B" : "Class A";
   const pqClassGun = pqAtGun >= PQ_THRESHOLD ? "Class B" : "Class A";
 
+  const selectedDisplayTipCode = roundTipCodeToFive(r.selectedTipCode);
+  const calibratedDisplayTipCode = roundTipCodeToFive(r.calibratedTipCode);
+
   return (
     <PageTransition>
       <div className="min-h-screen bg-slate-100">
@@ -167,6 +176,13 @@ function HomePage() {
               >
                 Calculator
               </a>
+
+              <Link
+                to="/nozzle-size-chart"
+                className="text-sm font-medium text-slate-700 transition hover:text-slate-900"
+              >
+                Nozzle Chart
+              </Link>
 
               <a
                 href="#about"
@@ -209,6 +225,13 @@ function HomePage() {
                   >
                     Model Your Pressure Washer
                   </a>
+
+                  <Link
+                    to="/nozzle-size-chart"
+                    className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
+                  >
+                    View Nozzle Chart
+                  </Link>
 
                   <a
                     href="#about"
@@ -324,6 +347,25 @@ function HomePage() {
               </Link>
 
               <Link
+                to="/nozzle-size-chart"
+                className="group block rounded-xl border border-slate-200 bg-slate-50 p-5 transition-all duration-200 hover:-translate-y-1 hover:border-slate-300 hover:bg-white hover:shadow-md"
+              >
+                <div className="text-sm font-semibold text-slate-900 group-hover:underline">
+                  Nozzle Size Chart
+                </div>
+                <p className="mt-2 text-sm text-slate-600">
+                  Quick reference nozzle charts with dual units in PSI (BAR) and
+                  LPM (GPM), including standard and high-pressure ranges.
+                </p>
+                <div className="mt-3 flex items-center gap-1 text-xs font-semibold text-slate-700">
+                  <span>Open chart</span>
+                  <span className="transition-transform duration-300 ease-out group-hover:translate-x-1.5">
+                    →
+                  </span>
+                </div>
+              </Link>
+
+              <Link
                 to="/hose-pressure-loss-calculator"
                 className="group block rounded-xl border border-slate-200 bg-slate-50 p-5 transition-all duration-200 hover:-translate-y-1 hover:border-slate-300 hover:bg-white hover:shadow-md"
               >
@@ -355,7 +397,7 @@ function HomePage() {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 opacity-80">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 opacity-80 sm:col-span-2">
                 <div className="text-sm font-semibold text-slate-900">
                   GPM ↔ LPM Converter
                 </div>
@@ -383,7 +425,15 @@ function HomePage() {
               <p className="mt-3 text-sm leading-6 text-slate-600">
                 These tools are designed for pressure washing operators,
                 contractors, and equipment technicians who need quick answers
-                without relying on guesswork or static charts.
+                without relying on guesswork. For fast field reference, you can
+                also use the{" "}
+                <Link
+                  to="/nozzle-size-chart"
+                  className="font-medium text-slate-900 underline underline-offset-4"
+                >
+                  PressureCal Nozzle Size Chart
+                </Link>
+                .
               </p>
             </div>
 
@@ -899,7 +949,7 @@ function HomePage() {
                       Selected nozzle tip
                     </div>
                     <div className="mt-2 text-xl font-semibold text-slate-900">
-                      {r.selectedTipCode}
+                      {selectedDisplayTipCode}
                     </div>
                     <div className="mt-1 text-sm text-slate-600">
                       Orifice {fmt(r.selectedOrificeMm, 2)} mm
@@ -911,7 +961,7 @@ function HomePage() {
                       Nozzle equivalent for rated pressure
                     </div>
                     <div className="mt-2 text-xl font-semibold text-slate-900">
-                      {r.calibratedTipCode}
+                      {calibratedDisplayTipCode}
                     </div>
                     <div className="mt-1 text-sm text-slate-600">
                       ≈ {fmt(r.calibratedNozzleQ4000Gpm, 2)} GPM @ 4000
@@ -947,6 +997,7 @@ export default function App() {
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<HomePage />} />
         <Route path="/nozzle-size-calculator" element={<NozzleCalculator />} />
+        <Route path="/nozzle-size-chart" element={<NozzleSizeChartPage />} />
         <Route
           path="/hose-pressure-loss-calculator"
           element={<HosePressureLossCalculator />}

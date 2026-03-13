@@ -138,6 +138,18 @@ export function q4000ToTipCode(q4000Gpm: number): string {
   return code.toString().padStart(3, "0");
 }
 
+export function roundTipCodeToFive(tipCode: string): string {
+  const n = Number(tipCode);
+  if (!Number.isFinite(n)) return tipCode;
+
+  const rounded = Math.round(n / 5) * 5;
+  return rounded.toString().padStart(3, "0");
+}
+
+export function q4000ToDisplayTipCode(q4000Gpm: number): string {
+  return roundTipCodeToFive(q4000ToTipCode(q4000Gpm));
+}
+
 /** Nozzle flow model: Q = Q4000 * sqrt(P / 4000) */
 export function flowAtPressureFromQ4000(q4000Gpm: number, pressurePsi: number): number {
   return q4000Gpm * Math.sqrt(clampPos(pressurePsi) / 4000);
@@ -271,47 +283,79 @@ export function solvePressureCal(inputs: Inputs): SolveResult {
 
   const selectedTipCode = q4000ToTipCode(selectedQ4000);
 
- // Required gun pressure to push rated pump flow through nozzle
-let requiredGunPsi = 0;
+  // Required gun pressure to push rated pump flow through nozzle
+  let requiredGunPsi = 0;
 
-if (inputs.nozzleMode === "tipSize") {
-  const q4000 = Math.max(selectedQ4000, 1e-9);
-  requiredGunPsi = 4000 * Math.pow(pumpGpmRated / q4000, 2);
-} else {
-  const d = Math.max(selectedOrificeMm, 1e-9) / 1000;
-  const A = Math.PI * (d * d) / 4;
+  if (inputs.nozzleMode === "tipSize") {
+    const q4000 = Math.max(selectedQ4000, 1e-9);
+    requiredGunPsi = 4000 * Math.pow(pumpGpmRated / q4000, 2);
+  } else {
+    const d = Math.max(selectedOrificeMm, 1e-9) / 1000;
+    const A = Math.PI * (d * d) / 4;
 
-  const Q = gpmToM3s(pumpGpmRated);
-  const Cd = Math.max(inputs.dischargeCoeffCd, 1e-9);
-  const rho = Math.max(inputs.waterDensity, 1e-9);
+    const Q = gpmToM3s(pumpGpmRated);
+    const Cd = Math.max(inputs.dischargeCoeffCd, 1e-9);
+    const rho = Math.max(inputs.waterDensity, 1e-9);
 
-  const term = Q / (Cd * Math.max(A, 1e-12));
-  const dP_pa = (term * term) * (rho / 2);
-  requiredGunPsi = paToPsi(dP_pa);
-}
+    const term = Q / (Cd * Math.max(A, 1e-12));
+    const dP_pa = (term * term) * (rho / 2);
+    requiredGunPsi = paToPsi(dP_pa);
+  }
 
-// This is the pressure the pump would need to maintain full rated flow
-// through the selected nozzle and hose.
-const requiredPumpPsi =
-  requiredGunPsi +
-  hoseLossPsi(
-    pumpGpmRated,
-    Lm,
-    idMm,
-    inputs.waterDensity,
-    inputs.hoseRoughnessMm
-  );
+  // This is the pressure the pump would need to maintain full rated flow
+  // through the selected nozzle and hose.
+  const requiredPumpPsi =
+    requiredGunPsi +
+    hoseLossPsi(
+      pumpGpmRated,
+      Lm,
+      idMm,
+      inputs.waterDensity,
+      inputs.hoseRoughnessMm
+    );
 
-// Unloader clamp
-const isPressureLimited = requiredPumpPsi > maxPumpPsi;
-const pumpPsi = Math.min(requiredPumpPsi, maxPumpPsi);
+  // Unloader clamp
+  const isPressureLimited = requiredPumpPsi > maxPumpPsi;
+  const pumpPsi = Math.min(requiredPumpPsi, maxPumpPsi);
 
-// Solve actual operating flow iteratively using the pressure-limited pump pressure
-let gunFlowGpm = pumpGpmRated;
-let lossPsi = 0;
-let gunPressurePsi = 0;
+  // Solve actual operating flow iteratively using the pressure-limited pump pressure
+  let gunFlowGpm = pumpGpmRated;
+  let lossPsi = 0;
+  let gunPressurePsi = 0;
 
-for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 20; i++) {
+    lossPsi = hoseLossPsi(
+      gunFlowGpm,
+      Lm,
+      idMm,
+      inputs.waterDensity,
+      inputs.hoseRoughnessMm
+    );
+
+    gunPressurePsi = Math.max(pumpPsi - lossPsi, 0);
+
+    let nextGunFlowGpm = 0;
+
+    if (inputs.nozzleMode === "tipSize") {
+      nextGunFlowGpm = flowAtPressureFromQ4000(selectedQ4000, gunPressurePsi);
+    } else {
+      nextGunFlowGpm = qFromOrificeMmAndP(
+        selectedOrificeMm,
+        gunPressurePsi,
+        inputs.dischargeCoeffCd,
+        inputs.waterDensity
+      );
+    }
+
+    if (Math.abs(nextGunFlowGpm - gunFlowGpm) < 0.0001) {
+      gunFlowGpm = nextGunFlowGpm;
+      break;
+    }
+
+    gunFlowGpm = nextGunFlowGpm;
+  }
+
+  // Final recompute using converged flow
   lossPsi = hoseLossPsi(
     gunFlowGpm,
     Lm,
@@ -321,38 +365,6 @@ for (let i = 0; i < 20; i++) {
   );
 
   gunPressurePsi = Math.max(pumpPsi - lossPsi, 0);
-
-  let nextGunFlowGpm = 0;
-
-  if (inputs.nozzleMode === "tipSize") {
-    nextGunFlowGpm = flowAtPressureFromQ4000(selectedQ4000, gunPressurePsi);
-  } else {
-    nextGunFlowGpm = qFromOrificeMmAndP(
-      selectedOrificeMm,
-      gunPressurePsi,
-      inputs.dischargeCoeffCd,
-      inputs.waterDensity
-    );
-  }
-
-  if (Math.abs(nextGunFlowGpm - gunFlowGpm) < 0.0001) {
-    gunFlowGpm = nextGunFlowGpm;
-    break;
-  }
-
-  gunFlowGpm = nextGunFlowGpm;
-}
-
-// Final recompute using converged flow
-lossPsi = hoseLossPsi(
-  gunFlowGpm,
-  Lm,
-  idMm,
-  inputs.waterDensity,
-  inputs.hoseRoughnessMm
-);
-
-gunPressurePsi = Math.max(pumpPsi - lossPsi, 0);
 
   // --- Indicative at-gun AS/NZS energy (education) ---
   const gunBar = barFromPsi(gunPressurePsi);
