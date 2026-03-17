@@ -1,3 +1,4 @@
+import PsiBarCalculatorPage from "./pages/PsiBarCalculatorPage";
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, Route, Routes, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
@@ -1001,7 +1002,8 @@ export default function App() {
         <Route
           path="/hose-pressure-loss-calculator"
           element={<HosePressureLossCalculator />}
-        />
+                  />
+        <Route path="/psi-bar-calculator" element={<PsiBarCalculatorPage />} />
       </Routes>
     </AnimatePresence>
   );
