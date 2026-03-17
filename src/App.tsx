@@ -1,3 +1,4 @@
+import GpmLpmCalculatorPage from "./pages/GpmLpmCalculatorPage";
 import PsiBarCalculatorPage from "./pages/PsiBarCalculatorPage";
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, Route, Routes, useLocation } from "react-router-dom";
@@ -1004,6 +1005,7 @@ export default function App() {
           element={<HosePressureLossCalculator />}
                   />
         <Route path="/psi-bar-calculator" element={<PsiBarCalculatorPage />} />
+        <Route path="/gpm-lpm-calculator" element={<GpmLpmCalculatorPage />} />
       </Routes>
     </AnimatePresence>
   );

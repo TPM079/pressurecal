@@ -6,7 +6,8 @@ type PressureCalLayoutProps = {
 };
 
 const navLinks = [
-  { to: "/psi-bar-calculator", label: "PSI ↔ BAR" },
+      { to: "/psi-bar-calculator", label: "PSI ↔ BAR" },
+      { to: "/gpm-lpm-calculator", label: "GPM ↔ LPM" },
   { to: "/nozzle-size-calculator", label: "Nozzle Size" },
   { to: "/hose-pressure-loss-calculator", label: "Hose Loss" },
 ];
