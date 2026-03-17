@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, Route, Routes, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
@@ -81,6 +82,15 @@ function PageTransition({ children }: { children: ReactNode }) {
 }
 
 function HomePage() {
+  <Helmet>
+  <title>
+    PressureCal – Pressure Washer Calculator for PSI, GPM, Nozzle Size & Hose Loss
+  </title>
+  <meta
+    name="description"
+    content="Professional pressure washer calculator for PSI ↔ BAR, GPM ↔ LPM, nozzle sizing, hose pressure loss, and equipment setup. Built for pressure washing operators."
+  />
+</Helmet>
   useEffect(() => {
     document.title =
       "PressureCal – Pressure Washer Calculator for PSI, GPM, Nozzle Size & Hose Loss";
