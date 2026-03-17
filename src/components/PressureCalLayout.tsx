@@ -6,8 +6,8 @@ type PressureCalLayoutProps = {
 };
 
 const navLinks = [
-      { to: "/psi-bar-calculator", label: "PSI ↔ BAR" },
-      { to: "/gpm-lpm-calculator", label: "GPM ↔ LPM" },
+  { to: "/psi-bar-calculator", label: "PSI ↔ BAR" },
+  { to: "/gpm-lpm-calculator", label: "GPM ↔ LPM" },
   { to: "/nozzle-size-calculator", label: "Nozzle Size" },
   { to: "/hose-pressure-loss-calculator", label: "Hose Loss" },
 ];
@@ -17,6 +17,7 @@ export default function PressureCalLayout({
 }: PressureCalLayoutProps) {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
+      {/* HEADER */}
       <header className="border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
           <Link
@@ -31,6 +32,7 @@ export default function PressureCalLayout({
             />
           </Link>
 
+          {/* Desktop Nav */}
           <nav className="hidden items-center gap-5 md:flex">
             {navLinks.map((link) => (
               <Link
@@ -44,6 +46,7 @@ export default function PressureCalLayout({
           </nav>
         </div>
 
+        {/* Mobile Nav */}
         <div className="border-t border-slate-100 bg-white md:hidden">
           <div className="mx-auto flex max-w-6xl gap-4 overflow-x-auto px-4 py-3">
             {navLinks.map((link) => (
@@ -59,33 +62,28 @@ export default function PressureCalLayout({
         </div>
       </header>
 
+      {/* MAIN */}
       <main className="px-4 py-8 sm:py-10">{children}</main>
 
+      {/* FOOTER */}
       <footer className="border-t border-slate-200 bg-white">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-6 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} PressureCal</p>
+
           <div className="flex flex-wrap gap-4">
             <Link to="/" className="transition hover:text-slate-700">
               Home
             </Link>
-            <Link
-              to="/psi-bar-calculator"
-              className="transition hover:text-slate-700"
-            >
-              PSI ↔ BAR
-            </Link>
-            <Link
-              to="/nozzle-size-calculator"
-              className="transition hover:text-slate-700"
-            >
-              Nozzle Size
-            </Link>
-            <Link
-              to="/hose-pressure-loss-calculator"
-              className="transition hover:text-slate-700"
-            >
-              Hose Loss
-            </Link>
+
+            {navLinks.map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                className="transition hover:text-slate-700"
+              >
+                {link.label}
+              </Link>
+            ))}
           </div>
         </div>
       </footer>
