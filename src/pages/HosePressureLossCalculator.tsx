@@ -69,7 +69,11 @@ function fromMm(mm: number, unit: DiameterUnit) {
   return unit === "mm" ? mm : mm / MM_PER_IN;
 }
 
-function estimateHoseLossPsi(flowGpm: number, lengthM: number, hoseIdMm: number) {
+function estimateHoseLossPsi(
+  flowGpm: number,
+  lengthM: number,
+  hoseIdMm: number
+) {
   const rho = 1000;
   const mu = 0.001;
   const roughnessM = 0.0000015;
@@ -191,10 +195,7 @@ export default function HosePressureLossCalculator() {
     [hoseLength, hoseLengthUnit]
   );
 
-  const hoseIdMm = useMemo(
-    () => toMm(hoseId, hoseIdUnit),
-    [hoseId, hoseIdUnit]
-  );
+  const hoseIdMm = useMemo(() => toMm(hoseId, hoseIdUnit), [hoseId, hoseIdUnit]);
 
   const hoseLossPsi = useMemo(
     () => estimateHoseLossPsi(flowGpm, hoseLengthM, hoseIdMm),
@@ -268,10 +269,10 @@ export default function HosePressureLossCalculator() {
   return (
     <>
       <Helmet>
-        <title>Pressure Washer Hose Pressure Loss Calculator | PressureCal</title>
+        <title>Hose Pressure Loss Calculator | PressureCal</title>
         <meta
           name="description"
-          content="Estimate pressure loss in a pressure washer hose based on hose length, internal diameter, pump pressure and flow rate."
+          content="Calculate pressure loss in hoses based on length, internal diameter, and flow rate. Essential tool for accurate pressure washer system setup."
         />
         <link
           rel="canonical"
@@ -513,7 +514,7 @@ export default function HosePressureLossCalculator() {
           <section className="mt-10 space-y-6 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
             <div>
               <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-                How hose pressure loss affects real cleaning performance
+                Pressure Loss in Hoses
               </h2>
               <p className="mt-4 text-sm leading-7 text-slate-600">
                 Hose pressure loss is one of the main reasons real pressure at
@@ -531,8 +532,8 @@ export default function HosePressureLossCalculator() {
                 3/8&quot; hose, even though the pump itself has not changed.
               </p>
               <p className="mt-4 text-sm leading-7 text-slate-600">
-                PressureCal estimates hose loss using flow rate, hose length and
-                hose internal diameter, then shows the approximate pressure
+                PressureCal estimates hose loss using flow rate, hose length,
+                and hose internal diameter, then shows the approximate pressure
                 remaining at the gun. This makes it easier to understand whether
                 weak performance is caused by the machine itself or by the hose
                 setup between the pump and the nozzle.
@@ -562,9 +563,9 @@ export default function HosePressureLossCalculator() {
                   </h3>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
                     Yes. Smaller hose diameters generally increase water
-                    velocity, which increases friction loss. This is why 1/4&quot;
-                    hose can lose pressure much faster than 3/8&quot; hose on
-                    the same flow rate.
+                    velocity, which increases friction loss. This is why
+                    1/4&quot; hose can lose pressure much faster than 3/8&quot;
+                    hose on the same flow rate.
                   </p>
                 </div>
 
@@ -574,7 +575,7 @@ export default function HosePressureLossCalculator() {
                   </h3>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
                     Real operating pressure at the gun is affected by hose
-                    friction, fittings, reels, bends, nozzle selection and
+                    friction, fittings, reels, bends, nozzle selection, and
                     unloader settings. The pump rating is only part of the
                     overall picture.
                   </p>
@@ -585,7 +586,7 @@ export default function HosePressureLossCalculator() {
                     Is hose pressure loss the only reason pressure drops?
                   </h3>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
-                    No. Nozzle size, unloader setting and bypass behaviour also
+                    No. Nozzle size, unloader setting, and bypass behaviour also
                     affect the final operating point. Hose loss is important,
                     but it should be considered together with the rest of the
                     rig.
@@ -619,10 +620,11 @@ export default function HosePressureLossCalculator() {
           </div>
 
           <div className="mt-10 text-center text-xs text-slate-500">
-            Results are indicative. Full PressureCal rig modelling includes nozzle
-            and unloader behaviour.
+            Results are indicative. Full PressureCal rig modelling includes
+            nozzle and unloader behaviour.
           </div>
         </div>
+
         <BackToTopButton />
       </div>
     </>

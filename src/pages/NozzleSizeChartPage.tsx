@@ -72,7 +72,7 @@ function tipCodeFromFlowAndPressure(flowGpm: number, pressurePsi: number) {
 function buildChartRows(
   pressures: Array<{ psi: number; bar: number }>,
   flows: Array<{ gpm: string; lpm: string }>
-) {
+): ChartRow[] {
   return pressures.map((pressure) => ({
     psi: pressure.psi,
     bar: pressure.bar,
@@ -895,7 +895,7 @@ function SEOContentBlocks() {
       <section className="rounded-3xl border border-slate-300 bg-white shadow-sm">
         <div className="border-b border-slate-300 px-5 py-4 md:px-6">
           <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-            Pressure Washer Nozzle Size Chart Guide
+            Nozzle Size Chart
           </h2>
         </div>
 
@@ -1085,10 +1085,10 @@ export default function NozzleSizeChartPage() {
   return (
     <>
       <Helmet>
-        <title>Pressure Washer Nozzle Size Chart | PressureCal</title>
+        <title>Pressure Washer Nozzle Size Chart (PSI & GPM) | PressureCal</title>
         <meta
           name="description"
-          content="Use the PressureCal pressure washer nozzle size chart to match machine pressure and flow to the correct tip code. Includes standard and industrial charts, dual units, and calculator links."
+          content="View a complete pressure washer nozzle size chart based on PSI and GPM. Quickly find the correct nozzle size for your setup."
         />
         <link
           rel="canonical"
@@ -1185,7 +1185,6 @@ export default function NozzleSizeChartPage() {
 
           <div id="standard-chart" className="mt-8 print:mt-0">
             <ReferenceTable
-              tableId="standard-reference-table"
               title="Standard Pressure Washer Nozzle Reference Table"
               subtitle="Reference chart for standard single-nozzle pressure washer setups from 70 BAR to 350 BAR in 10 BAR increments."
               flowHeaders={flowHeaders}
@@ -1199,12 +1198,12 @@ export default function NozzleSizeChartPage() {
               }
               copiedTipCode={copiedTipCode}
               onCopyTipCode={handleCopyTipCode}
+              tableId="standard-reference-table"
             />
           </div>
 
           <div id="high-chart" className="mt-8 print:mt-6">
             <ReferenceTable
-              tableId="high-reference-table"
               title="High Pressure / Industrial Nozzle Reference Table"
               subtitle="Reference chart for higher-pressure single-nozzle setups from 360 BAR to 500 BAR in 10 BAR increments."
               flowHeaders={flowHeaders}
@@ -1218,6 +1217,7 @@ export default function NozzleSizeChartPage() {
               }
               copiedTipCode={copiedTipCode}
               onCopyTipCode={handleCopyTipCode}
+              tableId="high-reference-table"
             />
           </div>
 

@@ -121,20 +121,19 @@ export default function NozzleCalculator() {
   );
 
   const flowGpm = useMemo(() => toGpm(flow, flowUnit), [flow, flowUnit]);
-
   const flowLpm = useMemo(() => flowGpm * LPM_PER_GPM, [flowGpm]);
 
-const gpmAt4000 = useMemo(
-  () => gpmAt4000FromFlowAtPressure(flowGpm, pressurePsi),
-  [flowGpm, pressurePsi]
-);
+  const gpmAt4000 = useMemo(
+    () => gpmAt4000FromFlowAtPressure(flowGpm, pressurePsi),
+    [flowGpm, pressurePsi]
+  );
 
-const tip = useMemo(() => tipFromGpmAt4000(gpmAt4000), [gpmAt4000]);
+  const tip = useMemo(() => tipFromGpmAt4000(gpmAt4000), [gpmAt4000]);
 
-const orificeMm = useMemo(
-  () => orificeDiameterMmFromFlowAndPressure(flowLpm, pressurePsi),
-  [flowLpm, pressurePsi]
-);
+  const orificeMm = useMemo(
+    () => orificeDiameterMmFromFlowAndPressure(flowLpm, pressurePsi),
+    [flowLpm, pressurePsi]
+  );
 
   const orificeIn = useMemo(() => orificeMm / 25.4, [orificeMm]);
 
@@ -157,7 +156,6 @@ const orificeMm = useMemo(
 
     setPressureUnit(nextPressureUnit);
     setFlowUnit(nextFlowUnit);
-
     setPressure(Number(fromPsi(currentPressurePsi, nextPressureUnit).toFixed(2)));
     setFlow(Number(fromGpm(currentFlowGpm, nextFlowUnit).toFixed(2)));
     setCopyMessage("");
@@ -187,7 +185,7 @@ const orificeMm = useMemo(
         <title>Pressure Washer Nozzle Size Calculator | PressureCal</title>
         <meta
           name="description"
-          content="Calculate the correct pressure washer nozzle size based on PSI and GPM. Includes orifice diameter and tip sizing for professional pressure washing setups."
+          content="Calculate the correct pressure washer nozzle size using PSI and GPM. Get accurate tip sizing for optimal performance, cleaning power, and equipment protection."
         />
         <link
           rel="canonical"
@@ -467,6 +465,7 @@ const orificeMm = useMemo(
             Results are indicative. Orifice estimate assumes water, Cd≈0.62.
           </div>
         </div>
+
         <BackToTopButton />
       </div>
     </>
