@@ -1,19 +1,23 @@
-import GpmLpmCalculatorPage from "./pages/GpmLpmCalculatorPage";
-import PsiBarCalculatorPage from "./pages/PsiBarCalculatorPage";
-import { useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, Route, Routes, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
+
 import PressureCalHeroPreview from "./components/PressureCalHeroPreview";
 import BackToTopButton from "./components/BackToTopButton";
+
 import NozzleCalculator from "./pages/NozzleCalculator";
 import NozzleSizeChartPage from "./pages/NozzleSizeChartPage";
 import HosePressureLossCalculator from "./pages/HosePressureLossCalculator";
+import PsiBarCalculatorPage from "./pages/PsiBarCalculatorPage";
+import GpmLpmCalculatorPage from "./pages/GpmLpmCalculatorPage";
+
 import {
   solvePressureCal,
   barFromPsi,
   lpmFromGpm,
   roundTipCodeToFive,
 } from "./pressurecal";
+
 import type {
   Inputs,
   PressureUnit,
@@ -77,6 +81,11 @@ function PageTransition({ children }: { children: ReactNode }) {
 }
 
 function HomePage() {
+  useEffect(() => {
+    document.title =
+      "PressureCal – Pressure Washer Calculator for PSI, GPM, Nozzle Size & Hose Loss";
+  }, []);
+
   const [inputs, setInputs] = useState<Inputs>({
     pumpPressure: 4000,
     pumpPressureUnit: "psi",
@@ -133,7 +142,7 @@ function HomePage() {
       ? "Some pressure drop—typically acceptable."
       : lossPctAbs < 20
       ? "Noticeable drop—consider hose length or diameter."
-      : "Large drop—hose length/ID is significantly reducing performance.";
+      : "Large drop—hose length or ID is significantly reducing performance.";
 
   const badge = statusBadge(r.status);
 
@@ -186,6 +195,20 @@ function HomePage() {
                 Nozzle Chart
               </Link>
 
+              <Link
+                to="/psi-bar-calculator"
+                className="text-sm font-medium text-slate-700 transition hover:text-slate-900"
+              >
+                PSI ↔ BAR
+              </Link>
+
+              <Link
+                to="/gpm-lpm-calculator"
+                className="text-sm font-medium text-slate-700 transition hover:text-slate-900"
+              >
+                GPM ↔ LPM
+              </Link>
+
               <a
                 href="#about"
                 className="text-sm font-medium text-slate-700 transition hover:text-slate-900"
@@ -212,12 +235,13 @@ function HomePage() {
                 </p>
 
                 <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl">
-                  Pressure Washer Calculator
+                  The Pressure Washer Calculator Built for Real Operators
                 </h1>
 
                 <p className="mt-5 text-lg text-slate-600">
-                  Model nozzle size, hose pressure loss, and real at-gun
-                  performance.
+                  Calculate nozzle size, pressure, flow rate, and hose loss
+                  instantly. Designed for pressure washing professionals and
+                  equipment builders.
                 </p>
 
                 <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -263,8 +287,8 @@ function HomePage() {
                   Real hose pressure loss
                 </div>
                 <p className="mt-2 text-sm text-slate-600">
-                  Quantify the pressure drop from hose length and internal diameter
-                  — not guesswork.
+                  Quantify the pressure drop from hose length and internal
+                  diameter — not guesswork.
                 </p>
               </div>
 
@@ -274,7 +298,7 @@ function HomePage() {
                 </div>
                 <p className="mt-2 text-sm text-slate-600">
                   Instantly see if your tip is aligned, restrictive, or oversized
-                  vs your rated specs.
+                  versus your rated specs.
                 </p>
               </div>
 
@@ -312,7 +336,7 @@ function HomePage() {
             <div className="flex items-end justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-                  Free Pressure Washing Calculators
+                  Pressure Washer Calculators
                 </h2>
                 <p className="mt-2 max-w-2xl text-sm text-slate-600">
                   Quick, practical tools for operators — built to be shared on
@@ -337,8 +361,8 @@ function HomePage() {
                   Nozzle Size Calculator
                 </div>
                 <p className="mt-2 text-sm text-slate-600">
-                  Find the right tip size from pressure + flow. Includes orifice
-                  diameter and a shareable setup link.
+                  Find the correct tip size from pressure and flow. Includes
+                  orifice diameter and a shareable setup link.
                 </p>
                 <div className="mt-3 flex items-center gap-1 text-xs font-semibold text-slate-700">
                   <span>Open tool</span>
@@ -356,8 +380,8 @@ function HomePage() {
                   Nozzle Size Chart
                 </div>
                 <p className="mt-2 text-sm text-slate-600">
-                  Quick reference nozzle charts with dual units in PSI (BAR) and
-                  LPM (GPM), including standard and high-pressure ranges.
+                  Quick reference nozzle charts with dual units in PSI, BAR, GPM,
+                  and LPM across standard and high-pressure ranges.
                 </p>
                 <div className="mt-3 flex items-center gap-1 text-xs font-semibold text-slate-700">
                   <span>Open chart</span>
@@ -375,8 +399,8 @@ function HomePage() {
                   Hose Pressure Loss Calculator
                 </div>
                 <p className="mt-2 text-sm text-slate-600">
-                  Estimate pressure drop based on hose length and internal
-                  diameter — and see real at-gun pressure.
+                  Estimate pressure drop based on hose length, internal diameter,
+                  and flow rate — and see real at-gun pressure.
                 </p>
                 <div className="mt-3 flex items-center gap-1 text-xs font-semibold text-slate-700">
                   <span>Open tool</span>
@@ -386,31 +410,43 @@ function HomePage() {
                 </div>
               </Link>
 
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 opacity-80">
-                <div className="text-sm font-semibold text-slate-900">
-                  PSI ↔ BAR Converter
+              <Link
+                to="/psi-bar-calculator"
+                className="group block rounded-xl border border-slate-200 bg-slate-50 p-5 transition-all duration-200 hover:-translate-y-1 hover:border-slate-300 hover:bg-white hover:shadow-md"
+              >
+                <div className="text-sm font-semibold text-slate-900 group-hover:underline">
+                  PSI ↔ BAR Calculator
                 </div>
                 <p className="mt-2 text-sm text-slate-600">
-                  Instant unit conversion for pump specs, machine stickers and
-                  compliance docs.
+                  Convert PSI to BAR and BAR to PSI instantly for pressure washer
+                  setup, pump specs, machine stickers, and equipment calibration.
                 </p>
-                <div className="mt-3 text-xs font-semibold text-slate-500">
-                  Coming soon
+                <div className="mt-3 flex items-center gap-1 text-xs font-semibold text-slate-700">
+                  <span>Open tool</span>
+                  <span className="transition-transform duration-300 ease-out group-hover:translate-x-1.5">
+                    →
+                  </span>
                 </div>
-              </div>
+              </Link>
 
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 opacity-80 sm:col-span-2">
-                <div className="text-sm font-semibold text-slate-900">
-                  GPM ↔ LPM Converter
+              <Link
+                to="/gpm-lpm-calculator"
+                className="group block rounded-xl border border-slate-200 bg-slate-50 p-5 transition-all duration-200 hover:-translate-y-1 hover:border-slate-300 hover:bg-white hover:shadow-md sm:col-span-2"
+              >
+                <div className="text-sm font-semibold text-slate-900 group-hover:underline">
+                  GPM ↔ LPM Calculator
                 </div>
                 <p className="mt-2 text-sm text-slate-600">
-                  Convert flow rates for nozzle charts, injector sizing and hose
-                  loss calculations.
+                  Convert GPM to LPM and LPM to GPM instantly for pump sizing,
+                  nozzle charts, injector sizing, and hose loss calculations.
                 </p>
-                <div className="mt-3 text-xs font-semibold text-slate-500">
-                  Coming soon
+                <div className="mt-3 flex items-center gap-1 text-xs font-semibold text-slate-700">
+                  <span>Open tool</span>
+                  <span className="transition-transform duration-300 ease-out group-hover:translate-x-1.5">
+                    →
+                  </span>
                 </div>
-              </div>
+              </Link>
             </div>
 
             <div className="mt-8 rounded-xl border border-slate-200 bg-slate-50 p-5">
@@ -421,7 +457,8 @@ function HomePage() {
               <p className="mt-3 text-sm leading-6 text-slate-600">
                 PressureCal helps operators calculate pressure washer nozzle size,
                 hose pressure loss, pressure drop at the gun, and real system
-                performance based on hose length, flow rate, and nozzle selection.
+                performance based on hose length, flow rate, and nozzle
+                selection.
               </p>
 
               <p className="mt-3 text-sm leading-6 text-slate-600">
@@ -443,7 +480,7 @@ function HomePage() {
               <p className="text-sm text-slate-700">
                 Want the full picture? Use{" "}
                 <strong>Model Your Pressure Washer</strong> to include hose loss,
-                nozzle calibration and bypass behaviour.
+                nozzle calibration, and bypass behaviour.
               </p>
             </div>
           </div>
@@ -458,7 +495,7 @@ function HomePage() {
             <p className="mt-4 max-w-3xl text-sm leading-6 text-slate-600">
               PressureCal was built by a pressure equipment professional working
               within the Australian high-pressure cleaning industry. It was
-              created to model real-world hose loss, nozzle calibration and
+              created to model real-world hose loss, nozzle calibration, and
               unloader behaviour — using engineering-based flow relationships
               rather than guesswork.
             </p>
@@ -470,8 +507,8 @@ function HomePage() {
             </p>
 
             <p className="mt-4 max-w-3xl text-xs text-slate-500">
-              Calculations are based on standardised nozzle flow relationships and
-              Darcy–Weisbach friction modelling. Results are indicative.
+              Calculations are based on standardised nozzle flow relationships
+              and Darcy–Weisbach friction modelling. Results are indicative.
             </p>
           </div>
         </section>
@@ -1003,7 +1040,7 @@ export default function App() {
         <Route
           path="/hose-pressure-loss-calculator"
           element={<HosePressureLossCalculator />}
-                  />
+        />
         <Route path="/psi-bar-calculator" element={<PsiBarCalculatorPage />} />
         <Route path="/gpm-lpm-calculator" element={<GpmLpmCalculatorPage />} />
       </Routes>
