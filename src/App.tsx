@@ -221,7 +221,93 @@ function HomePage() {
     hoseRoughnessMm: 0.0015,
   });
 
+  const [homepageCopyMessage, setHomepageCopyMessage] = useState("");
+  const [highlightSetup, setHighlightSetup] = useState(false);
   const maxWasManuallyEditedRef = useRef(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    const pumpPressure = params.get("pumpPressure");
+    const pumpPressureUnit = params.get("pumpPressureUnit");
+    const pumpFlow = params.get("pumpFlow");
+    const pumpFlowUnit = params.get("pumpFlowUnit");
+    const maxPressure = params.get("maxPressure");
+    const maxPressureUnit = params.get("maxPressureUnit");
+    const hoseLength = params.get("hoseLength");
+    const hoseLengthUnit = params.get("hoseLengthUnit");
+    const hoseId = params.get("hoseId");
+    const hoseIdUnit = params.get("hoseIdUnit");
+    const nozzleSizeText = params.get("nozzleSizeText");
+
+    const hasAnyParams =
+      pumpPressure !== null ||
+      pumpPressureUnit !== null ||
+      pumpFlow !== null ||
+      pumpFlowUnit !== null ||
+      maxPressure !== null ||
+      maxPressureUnit !== null ||
+      hoseLength !== null ||
+      hoseLengthUnit !== null ||
+      hoseId !== null ||
+      hoseIdUnit !== null ||
+      nozzleSizeText !== null;
+
+    if (!hasAnyParams) return;
+
+    setInputs((prev) => ({
+      ...prev,
+      pumpPressure:
+        pumpPressure !== null && Number.isFinite(Number(pumpPressure))
+          ? Number(pumpPressure)
+          : prev.pumpPressure,
+      pumpPressureUnit:
+        pumpPressureUnit === "bar" || pumpPressureUnit === "psi"
+          ? pumpPressureUnit
+          : prev.pumpPressureUnit,
+      pumpFlow:
+        pumpFlow !== null && Number.isFinite(Number(pumpFlow))
+          ? Number(pumpFlow)
+          : prev.pumpFlow,
+      pumpFlowUnit:
+        pumpFlowUnit === "gpm" || pumpFlowUnit === "lpm"
+          ? pumpFlowUnit
+          : prev.pumpFlowUnit,
+      maxPressure:
+        maxPressure !== null && Number.isFinite(Number(maxPressure))
+          ? Number(maxPressure)
+          : prev.maxPressure,
+      maxPressureUnit:
+        maxPressureUnit === "bar" || maxPressureUnit === "psi"
+          ? maxPressureUnit
+          : prev.maxPressureUnit,
+      hoseLength:
+        hoseLength !== null && Number.isFinite(Number(hoseLength))
+          ? Number(hoseLength)
+          : prev.hoseLength,
+      hoseLengthUnit:
+        hoseLengthUnit === "ft" || hoseLengthUnit === "m"
+          ? hoseLengthUnit
+          : prev.hoseLengthUnit,
+      hoseId:
+        hoseId !== null && Number.isFinite(Number(hoseId))
+          ? Number(hoseId)
+          : prev.hoseId,
+      hoseIdUnit:
+        hoseIdUnit === "in" || hoseIdUnit === "mm"
+          ? hoseIdUnit
+          : prev.hoseIdUnit,
+      nozzleSizeText: nozzleSizeText ?? prev.nozzleSizeText,
+    }));
+
+    setHighlightSetup(true);
+
+    const timer = window.setTimeout(() => {
+      setHighlightSetup(false);
+    }, 1600);
+
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const r = useMemo(() => solvePressureCal(inputs), [inputs]);
 
@@ -278,6 +364,73 @@ function HomePage() {
 
   const selectedDisplayTipCode = roundTipCodeToFive(r.selectedTipCode);
   const calibratedDisplayTipCode = roundTipCodeToFive(r.calibratedTipCode);
+
+  const displayPressureUnitLabel =
+    inputs.pumpPressureUnit === "psi" ? "PSI" : "BAR";
+
+  const displayFlowUnitLabel =
+    inputs.pumpFlowUnit === "gpm" ? "GPM" : "L/min";
+
+  const displayLengthUnitLabel =
+    inputs.hoseLengthUnit === "ft" ? "ft" : "m";
+
+  const displayDiameterUnitLabel =
+    inputs.hoseIdUnit === "in" ? "in" : "mm";
+
+  const liveSetupItems = [
+    {
+      label: "Pressure",
+      value: `${fmt(inputs.pumpPressure, 0)} ${displayPressureUnitLabel}`,
+    },
+    {
+      label: "Flow",
+      value: `${fmt(inputs.pumpFlow, 1)} ${displayFlowUnitLabel}`,
+    },
+    {
+      label: "Hose length",
+      value: `${fmt(inputs.hoseLength, 0)} ${displayLengthUnitLabel}`,
+    },
+    {
+      label: "Hose ID",
+      value: `${fmt(
+        inputs.hoseId,
+        inputs.hoseIdUnit === "in" ? 2 : 1
+      )} ${displayDiameterUnitLabel}`,
+    },
+    {
+      label: "Nozzle",
+      value: inputs.nozzleSizeText || "—",
+    },
+  ];
+
+  async function copyHomepageSetupLink() {
+    const params = new URLSearchParams();
+
+    params.set("pumpPressure", String(inputs.pumpPressure));
+    params.set("pumpPressureUnit", inputs.pumpPressureUnit);
+    params.set("pumpFlow", String(inputs.pumpFlow));
+    params.set("pumpFlowUnit", inputs.pumpFlowUnit);
+    params.set("maxPressure", String(inputs.maxPressure));
+    params.set("maxPressureUnit", inputs.maxPressureUnit);
+    params.set("hoseLength", String(inputs.hoseLength));
+    params.set("hoseLengthUnit", inputs.hoseLengthUnit);
+    params.set("hoseId", String(inputs.hoseId));
+    params.set("hoseIdUnit", inputs.hoseIdUnit);
+    params.set("nozzleSizeText", inputs.nozzleSizeText);
+
+    const url = `${window.location.origin}${window.location.pathname}?${params.toString()}#calculator`;
+
+    try {
+      await navigator.clipboard.writeText(url);
+      setHomepageCopyMessage("Setup link copied");
+
+      window.setTimeout(() => {
+        setHomepageCopyMessage("");
+      }, 2000);
+    } catch {
+      window.prompt("Copy this link:", url);
+    }
+  }
 
   return (
     <PageTransition>
@@ -589,6 +742,59 @@ function HomePage() {
                 Engineering-based modelling for hose loss, nozzle calibration,
                 and unloader-limited systems.
               </p>
+            </div>
+
+            <div
+              className={`mb-6 rounded-2xl border px-5 py-4 shadow-sm transition-all duration-700 ${
+                highlightSetup
+                  ? "border-blue-300 bg-blue-50 shadow-lg"
+                  : "border-slate-200 bg-white"
+              }`}
+            >
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    Your setup
+                  </div>
+                  <div className="mt-1 text-sm text-slate-600">
+                    Live summary of the inputs currently being modelled.
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {liveSetupItems.map((item) => (
+                    <div
+                      key={item.label}
+                      className={`rounded-full border px-3 py-1 text-sm transition ${
+                        highlightSetup
+                          ? "border-blue-300 bg-blue-100 text-slate-900"
+                          : "border-slate-200 bg-slate-50 text-slate-700"
+                      }`}
+                    >
+                      <span className="font-medium text-slate-500">
+                        {item.label}:
+                      </span>{" "}
+                      <span className="font-semibold text-slate-900">
+                        {item.value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex flex-col items-start gap-2 lg:items-end">
+                  <button
+                    type="button"
+                    onClick={copyHomepageSetupLink}
+                    className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-slate-800 hover:shadow-lg"
+                  >
+                    {homepageCopyMessage ? "Copied ✓" : "Copy Setup Link"}
+                  </button>
+
+                  <div className="text-xs text-slate-500">
+                    {homepageCopyMessage || "Share this exact rig setup."}
+                  </div>
+                </div>
+              </div>
             </div>
 
             <main className="grid gap-6 lg:grid-cols-2">
