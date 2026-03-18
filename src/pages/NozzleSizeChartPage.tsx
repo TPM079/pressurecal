@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import BackToTopButton from "../components/BackToTopButton";
+import PressureCalLayout from "../components/PressureCalLayout";
 import { roundTipCodeToFive } from "../pressurecal";
 
 const flowHeaders = [
@@ -1050,10 +1051,6 @@ export default function NozzleSizeChartPage() {
   }, [location.search]);
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "auto" });
-  }, []);
-
-  useEffect(() => {
     return () => {
       if (copiedTimerRef.current) {
         window.clearTimeout(copiedTimerRef.current);
@@ -1106,162 +1103,153 @@ export default function NozzleSizeChartPage() {
         </script>
       </Helmet>
 
-      <header className="border-b border-slate-200 bg-white print:hidden">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <a href="/" className="inline-flex items-center">
-            <img
-              src="/PressureCal_primary_logo.png"
-              alt="PressureCal"
-              className="h-14 w-auto sm:h-16"
-            />
-          </a>
-        </div>
-      </header>
-
-      <main className="bg-slate-100 print:bg-white">
-        <section className="border-b border-slate-200 bg-white print:hidden">
-          <div className="mx-auto max-w-7xl px-4 py-10 md:px-6 md:py-12">
-            <div className="max-w-4xl">
-              <div className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
-                PressureCal Technical Reference Sheet
-              </div>
-
-              <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-900 md:text-5xl">
-                Pressure Washer Nozzle Size Chart
-              </h1>
-
-              <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">
-                A technical reference chart for selecting pressure washer nozzle
-                tip codes from machine pressure and flow rate. Built with the
-                same sizing logic as the PressureCal live nozzle calculator.
-              </p>
-
-              <div className="mt-6 flex flex-wrap gap-3">
-                <Link
-                  to="/nozzle-size-calculator"
-                  className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
-                >
-                  Open Nozzle Calculator
-                </Link>
-                <a
-                  href="#standard-chart"
-                  className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                >
-                  Jump to Reference Table
-                </a>
-                <button
-                  type="button"
-                  onClick={handlePrint}
-                  className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                >
-                  Download PDF
-                </button>
-              </div>
-
-              {selectedCell && (
-                <div className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4 text-sm text-blue-900">
-                  Highlighted from URL:{" "}
-                  <strong>{selectedCell.pressureBar} BAR</strong> and{" "}
-                  <strong>{selectedCell.flowLpm.toFixed(1)} LPM</strong>.
+      <PressureCalLayout>
+        <main className="-mx-4 -my-8 bg-slate-100 print:bg-white sm:-my-10">
+          <section className="border-b border-slate-200 bg-white print:hidden">
+            <div className="mx-auto max-w-7xl px-4 py-10 md:px-6 md:py-12">
+              <div className="max-w-4xl">
+                <div className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+                  PressureCal Technical Reference Sheet
                 </div>
-              )}
-            </div>
-          </div>
-        </section>
 
-        <div className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-10 print:max-w-none print:px-0 print:py-0">
-          <div className="grid gap-6 lg:grid-cols-[1.35fr_0.9fr] print:hidden">
-            <TechnicalNotesPanel />
-            <ExamplePanel />
-          </div>
+                <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-900 md:text-5xl">
+                  Pressure Washer Nozzle Size Chart
+                </h1>
 
-          <div className="mt-8 print:hidden">
-            <PresetExamples />
-          </div>
+                <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">
+                  A technical reference chart for selecting pressure washer
+                  nozzle tip codes from machine pressure and flow rate. Built
+                  with the same sizing logic as the PressureCal live nozzle
+                  calculator.
+                </p>
 
-          <div className="mt-8 print:hidden">
-            <SurfaceCleanerHelper />
-          </div>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Link
+                    to="/nozzle-size-calculator"
+                    className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+                  >
+                    Open Nozzle Calculator
+                  </Link>
+                  <a
+                    href="#standard-chart"
+                    className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  >
+                    Jump to Reference Table
+                  </a>
+                  <button
+                    type="button"
+                    onClick={handlePrint}
+                    className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  >
+                    Download PDF
+                  </button>
+                </div>
 
-          <div id="standard-chart" className="mt-8 print:mt-0">
-            <ReferenceTable
-              title="Standard Pressure Washer Nozzle Reference Table"
-              subtitle="Reference chart for standard single-nozzle pressure washer setups from 70 BAR to 350 BAR in 10 BAR increments."
-              flowHeaders={flowHeaders}
-              rows={standardNozzleChart}
-              minWidthClass="min-w-[1150px]"
-              selectedRowIndex={
-                selectedCell?.table === "standard" ? selectedCell.rowIndex : null
-              }
-              selectedColIndex={
-                selectedCell?.table === "standard" ? selectedCell.colIndex : null
-              }
-              copiedTipCode={copiedTipCode}
-              onCopyTipCode={handleCopyTipCode}
-              tableId="standard-reference-table"
-            />
-          </div>
-
-          <div id="high-chart" className="mt-8 print:mt-6">
-            <ReferenceTable
-              title="High Pressure / Industrial Nozzle Reference Table"
-              subtitle="Reference chart for higher-pressure single-nozzle setups from 360 BAR to 500 BAR in 10 BAR increments."
-              flowHeaders={flowHeaders}
-              rows={highPressureNozzleChart}
-              minWidthClass="min-w-[1150px]"
-              selectedRowIndex={
-                selectedCell?.table === "high" ? selectedCell.rowIndex : null
-              }
-              selectedColIndex={
-                selectedCell?.table === "high" ? selectedCell.colIndex : null
-              }
-              copiedTipCode={copiedTipCode}
-              onCopyTipCode={handleCopyTipCode}
-              tableId="high-reference-table"
-            />
-          </div>
-
-          <div className="mt-8 print:hidden">
-            <NozzleColourGuide />
-          </div>
-
-          <div className="mt-8 print:hidden">
-            <SEOContentBlocks />
-          </div>
-
-          <section className="mt-8 rounded-3xl border border-slate-300 bg-white shadow-sm print:hidden">
-            <div className="border-b border-slate-300 px-5 py-4 md:px-6">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                Calculator
-              </div>
-              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">
-                Need a Live Calculation?
-              </h2>
-            </div>
-
-            <div className="px-5 py-5 md:px-6">
-              <p className="max-w-3xl text-sm leading-6 text-slate-600">
-                These tables are intended for quick field reference. For custom
-                inputs, unusual machine setups, or direct link sharing, use the
-                PressureCal nozzle size calculator.
-              </p>
-
-              <div className="mt-5">
-                <Link
-                  to="/nozzle-size-calculator"
-                  className="inline-flex rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
-                >
-                  Go to Nozzle Size Calculator
-                </Link>
+                {selectedCell && (
+                  <div className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4 text-sm text-blue-900">
+                    Highlighted from URL:{" "}
+                    <strong>{selectedCell.pressureBar} BAR</strong> and{" "}
+                    <strong>{selectedCell.flowLpm.toFixed(1)} LPM</strong>.
+                  </div>
+                )}
               </div>
             </div>
           </section>
-        </div>
 
-        <div className="print:hidden">
-          <BackToTopButton />
-        </div>
-      </main>
+          <div className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-10 print:max-w-none print:px-0 print:py-0">
+            <div className="grid gap-6 lg:grid-cols-[1.35fr_0.9fr] print:hidden">
+              <TechnicalNotesPanel />
+              <ExamplePanel />
+            </div>
+
+            <div className="mt-8 print:hidden">
+              <PresetExamples />
+            </div>
+
+            <div className="mt-8 print:hidden">
+              <SurfaceCleanerHelper />
+            </div>
+
+            <div id="standard-chart" className="mt-8 print:mt-0">
+              <ReferenceTable
+                title="Standard Pressure Washer Nozzle Reference Table"
+                subtitle="Reference chart for standard single-nozzle pressure washer setups from 70 BAR to 350 BAR in 10 BAR increments."
+                flowHeaders={flowHeaders}
+                rows={standardNozzleChart}
+                minWidthClass="min-w-[1150px]"
+                selectedRowIndex={
+                  selectedCell?.table === "standard" ? selectedCell.rowIndex : null
+                }
+                selectedColIndex={
+                  selectedCell?.table === "standard" ? selectedCell.colIndex : null
+                }
+                copiedTipCode={copiedTipCode}
+                onCopyTipCode={handleCopyTipCode}
+                tableId="standard-reference-table"
+              />
+            </div>
+
+            <div id="high-chart" className="mt-8 print:mt-6">
+              <ReferenceTable
+                title="High Pressure / Industrial Nozzle Reference Table"
+                subtitle="Reference chart for higher-pressure single-nozzle setups from 360 BAR to 500 BAR in 10 BAR increments."
+                flowHeaders={flowHeaders}
+                rows={highPressureNozzleChart}
+                minWidthClass="min-w-[1150px]"
+                selectedRowIndex={
+                  selectedCell?.table === "high" ? selectedCell.rowIndex : null
+                }
+                selectedColIndex={
+                  selectedCell?.table === "high" ? selectedCell.colIndex : null
+                }
+                copiedTipCode={copiedTipCode}
+                onCopyTipCode={handleCopyTipCode}
+                tableId="high-reference-table"
+              />
+            </div>
+
+            <div className="mt-8 print:hidden">
+              <NozzleColourGuide />
+            </div>
+
+            <div className="mt-8 print:hidden">
+              <SEOContentBlocks />
+            </div>
+
+            <section className="mt-8 rounded-3xl border border-slate-300 bg-white shadow-sm print:hidden">
+              <div className="border-b border-slate-300 px-5 py-4 md:px-6">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Calculator
+                </div>
+                <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">
+                  Need a Live Calculation?
+                </h2>
+              </div>
+
+              <div className="px-5 py-5 md:px-6">
+                <p className="max-w-3xl text-sm leading-6 text-slate-600">
+                  These tables are intended for quick field reference. For
+                  custom inputs, unusual machine setups, or direct link sharing,
+                  use the PressureCal nozzle size calculator.
+                </p>
+
+                <div className="mt-5">
+                  <Link
+                    to="/nozzle-size-calculator"
+                    className="inline-flex rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+                  >
+                    Go to Nozzle Size Calculator
+                  </Link>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div className="print:hidden">
+            <BackToTopButton />
+          </div>
+        </main>
+      </PressureCalLayout>
     </>
   );
 }
