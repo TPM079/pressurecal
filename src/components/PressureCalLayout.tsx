@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import type { ReactNode } from "react";
+import FeedbackWidget from "./FeedbackWidget";
 
 type PressureCalLayoutProps = {
   children: ReactNode;
@@ -120,6 +121,8 @@ export default function PressureCalLayout({
           </div>
         </div>
       </footer>
+
+      <FeedbackWidget />
     </div>
   );
 }
