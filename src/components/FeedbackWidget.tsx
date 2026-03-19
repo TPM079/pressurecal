@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
+import { supabase } from "../lib/supabase";
 
 type SubmitState = "idle" | "sending" | "sent" | "error";
 
@@ -15,6 +16,7 @@ export default function FeedbackWidget() {
 
   useEffect(() => {
     if (!isOpen) return;
+
     const timer = window.setTimeout(() => {
       textareaRef.current?.focus();
     }, 180);
@@ -35,29 +37,37 @@ export default function FeedbackWidget() {
 
     setSubmitState("sending");
 
-    try {
-      const response = await fetch("https://formspree.io/f/xojkydez", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          message: message.trim(),
-          email: email.trim(),
-          source: `${location.pathname}${location.search}${location.hash}`,
-          page: location.pathname,
-        }),
-      });
+    const payload = {
+      message: message.trim(),
+      email: email.trim() || null,
+      tag: "general",
+      page: location.pathname,
+      source_url: `${window.location.origin}${location.pathname}${location.search}${location.hash}`,
+      calculator_context: {
+        pathname: location.pathname,
+        search: location.search,
+        hash: location.hash,
+        params: Object.fromEntries(
+          new URLSearchParams(window.location.search).entries()
+        ),
+      },
+      status: "new",
+    };
 
-      if (!response.ok) {
-        throw new Error("Submission failed");
+    try {
+      const { error } = await supabase.from("feedback").insert([payload]);
+
+      if (error) {
+        console.error("Feedback submit error:", error);
+        setSubmitState("error");
+        return;
       }
 
       setSubmitState("sent");
       setMessage("");
       setEmail("");
-    } catch {
+    } catch (error) {
+      console.error("Unexpected feedback submit error:", error);
       setSubmitState("error");
     }
   }
