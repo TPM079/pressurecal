@@ -1,18 +1,32 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { supabase } from "../lib/supabase";
+import { supabase, hasSupabaseEnv } from "../lib/supabase";
 
 type SubmitState = "idle" | "sending" | "sent" | "error";
+type FeedbackTag = "general" | "bug" | "idea" | "calculation" | "ux";
 
 export default function FeedbackWidget() {
   const location = useLocation();
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const autoCloseTimerRef = useRef<number | null>(null);
 
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [email, setEmail] = useState("");
+  const [tag, setTag] = useState<FeedbackTag>("general");
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
+
+  useEffect(() => {
+    const path = location.pathname.toLowerCase();
+
+    if (path.includes("nozzle") || path.includes("hose")) {
+      setTag("calculation");
+      return;
+    }
+
+    setTag("general");
+  }, [location.pathname]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -24,33 +38,65 @@ export default function FeedbackWidget() {
     return () => window.clearTimeout(timer);
   }, [isOpen]);
 
+  useEffect(() => {
+    return () => {
+      if (autoCloseTimerRef.current) {
+        window.clearTimeout(autoCloseTimerRef.current);
+      }
+    };
+  }, []);
+
+  if (!hasSupabaseEnv) return null;
+
   function resetForm() {
     setMessage("");
     setEmail("");
     setSubmitState("idle");
+
+    const path = location.pathname.toLowerCase();
+    if (path.includes("nozzle") || path.includes("hose")) {
+      setTag("calculation");
+    } else {
+      setTag("general");
+    }
   }
+
+  function buildCalculatorContext() {
+    return {
+      pathname: location.pathname,
+      search: location.search,
+      hash: location.hash,
+      params: Object.fromEntries(
+        new URLSearchParams(window.location.search).entries()
+      ),
+    };
+  }
+
+  const feedbackPlaceholder =
+    tag === "calculation"
+      ? "Something off with the numbers?"
+      : tag === "bug"
+      ? "What broke?"
+      : tag === "idea"
+      ? "What would you like added?"
+      : tag === "ux"
+      ? "What feels confusing or clunky?"
+      : "What’s missing or annoying?";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!message.trim()) return;
+    if (!message.trim() || !supabase) return;
 
     setSubmitState("sending");
 
     const payload = {
       message: message.trim(),
       email: email.trim() || null,
-      tag: "general",
+      tag,
       page: location.pathname,
       source_url: `${window.location.origin}${location.pathname}${location.search}${location.hash}`,
-      calculator_context: {
-        pathname: location.pathname,
-        search: location.search,
-        hash: location.hash,
-        params: Object.fromEntries(
-          new URLSearchParams(window.location.search).entries()
-        ),
-      },
+      calculator_context: buildCalculatorContext(),
       status: "new",
     };
 
@@ -66,6 +112,15 @@ export default function FeedbackWidget() {
       setSubmitState("sent");
       setMessage("");
       setEmail("");
+
+      if (autoCloseTimerRef.current) {
+        window.clearTimeout(autoCloseTimerRef.current);
+      }
+
+      autoCloseTimerRef.current = window.setTimeout(() => {
+        setIsOpen(false);
+        resetForm();
+      }, 1800);
     } catch (error) {
       console.error("Unexpected feedback submit error:", error);
       setSubmitState("error");
@@ -115,7 +170,10 @@ export default function FeedbackWidget() {
 
                 <button
                   type="button"
-                  onClick={() => setIsOpen(false)}
+                  onClick={() => {
+                    setIsOpen(false);
+                    resetForm();
+                  }}
                   className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
                   aria-label="Close feedback form"
                 >
@@ -140,7 +198,11 @@ export default function FeedbackWidget() {
                     <button
                       type="button"
                       onClick={() => {
+                        if (autoCloseTimerRef.current) {
+                          window.clearTimeout(autoCloseTimerRef.current);
+                        }
                         resetForm();
+                        setSubmitState("idle");
                         textareaRef.current?.focus();
                       }}
                       className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
@@ -150,7 +212,13 @@ export default function FeedbackWidget() {
 
                     <button
                       type="button"
-                      onClick={() => setIsOpen(false)}
+                      onClick={() => {
+                        if (autoCloseTimerRef.current) {
+                          window.clearTimeout(autoCloseTimerRef.current);
+                        }
+                        setIsOpen(false);
+                        resetForm();
+                      }}
                       className="flex-1 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
                     >
                       Close
@@ -159,6 +227,27 @@ export default function FeedbackWidget() {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-3">
+                  <div>
+                    <label
+                      htmlFor="feedback-tag"
+                      className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500"
+                    >
+                      Type
+                    </label>
+                    <select
+                      id="feedback-tag"
+                      value={tag}
+                      onChange={(e) => setTag(e.target.value as FeedbackTag)}
+                      className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
+                    >
+                      <option value="general">General feedback</option>
+                      <option value="bug">Bug / something broken</option>
+                      <option value="idea">Feature idea</option>
+                      <option value="calculation">Calculation issue</option>
+                      <option value="ux">UX / confusing</option>
+                    </select>
+                  </div>
+
                   <div>
                     <label
                       htmlFor="feedback-message"
@@ -171,7 +260,7 @@ export default function FeedbackWidget() {
                       id="feedback-message"
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
-                      placeholder="What’s missing or annoying?"
+                      placeholder={feedbackPlaceholder}
                       rows={5}
                       className="w-full resize-none rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400"
                       required
@@ -212,7 +301,10 @@ export default function FeedbackWidget() {
                   <div className="flex gap-2 pt-1">
                     <button
                       type="button"
-                      onClick={() => setIsOpen(false)}
+                      onClick={() => {
+                        setIsOpen(false);
+                        resetForm();
+                      }}
                       className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                     >
                       Cancel
@@ -223,7 +315,9 @@ export default function FeedbackWidget() {
                       disabled={submitState === "sending" || !message.trim()}
                       className="flex-1 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      {submitState === "sending" ? "Sending..." : "Send feedback"}
+                      {submitState === "sending"
+                        ? "Sending..."
+                        : "Send feedback"}
                     </button>
                   </div>
                 </form>

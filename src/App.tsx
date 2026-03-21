@@ -14,7 +14,7 @@ import {
   useNavigationType,
 } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-
+import AdminFeedbackPage from "./pages/AdminFeedbackPage";
 import PressureCalHeroPreview from "./components/PressureCalHeroPreview";
 import BackToTopButton from "./components/BackToTopButton";
 import PressureCalLayout from "./components/PressureCalLayout";
@@ -1334,6 +1334,7 @@ export default function App() {
             path="/hose-pressure-loss-calculator"
             element={<HosePressureLossCalculator />}
           />
+          <Route path="/admin-feedback" element={<AdminFeedbackPage />} />
           <Route path="/psi-bar-calculator" element={<PsiBarCalculatorPage />} />
           <Route path="/gpm-lpm-calculator" element={<GpmLpmCalculatorPage />} />
         </Routes>
