@@ -155,7 +155,7 @@ function selectAllOnFocus(e: React.FocusEvent<HTMLInputElement>) {
   e.target.select();
 }
 
-function calculateHydraulicHp(pressurePsi: number, flowGpm: number, efficiency = 0.9) {
+function calculateRequiredHp(pressurePsi: number, flowGpm: number, efficiency = 0.9) {
   if (!Number.isFinite(pressurePsi) || !Number.isFinite(flowGpm) || efficiency <= 0) {
     return 0;
   }
@@ -168,22 +168,22 @@ function calculateUsableEngineHp(ratedHp: number, factor = 0.85) {
   return ratedHp * factor;
 }
 
-function hpStatus(requiredEngineHp: number, usableHp: number) {
+function hpStatus(requiredHp: number, usableHp: number) {
   if (usableHp <= 0) {
     return {
-      text: "Enter engine HP to evaluate engine sizing.",
+      text: "Enter engine HP to evaluate power status.",
       cls: "bg-slate-50 text-slate-700 border-slate-200",
     };
   }
 
-  if (usableHp < requiredEngineHp) {
+  if (usableHp < requiredHp) {
     return {
-      text: "Engine undersized for rated pump output.",
+      text: "Engine undersized for this setup.",
       cls: "bg-red-50 text-red-800 border-red-200",
     };
   }
 
-  if (usableHp < requiredEngineHp * 1.1) {
+  if (usableHp < requiredHp * 1.1) {
     return {
       text: "Operating near engine limit.",
       cls: "bg-amber-50 text-amber-900 border-amber-200",
@@ -192,8 +192,8 @@ function hpStatus(requiredEngineHp: number, usableHp: number) {
 
   return {
     text: "Engine power looks healthy.",
-      cls: "bg-green-50 text-green-800 border-green-200",
-    };
+    cls: "bg-green-50 text-green-800 border-green-200",
+  };
 }
 
 function PageTransition({ children }: { children: ReactNode }) {
@@ -409,22 +409,11 @@ const r = solvePressureCal(safeInputs);
   const gunLpm = lpmFromGpm(r.gunFlowGpm);
   const lossBar = barFromPsi(r.hoseLossPsi);
   const bypassLpm = lpmFromGpm(r.bypassFlowGpm);
+  const requiredHp = calculateRequiredHp(r.gunPressurePsi, r.gunFlowGpm, 0.9);
+  const usableEngineHp = calculateUsableEngineHp(Number(inputs.engineHp || 0), 0.85);
+  const enginePowerBadge = hpStatus(requiredHp, usableEngineHp);
 
-  const ratedPsi = toPsi(safeInputs.pumpPressure, safeInputs.pumpPressureUnit);
-const ratedGpm = toGpm(safeInputs.pumpFlow, safeInputs.pumpFlowUnit);
-
-  const requiredEngineHp = calculateHydraulicHp(ratedPsi, ratedGpm, 0.9);
-  const effectiveCleaningHp = calculateHydraulicHp(r.gunPressurePsi, r.gunFlowGpm, 0.9);
-  const usableEngineHp = calculateUsableEngineHp(safeInputs.engineHp, 0.85);
-  const enginePowerBadge = hpStatus(requiredEngineHp, usableEngineHp);
-  const engineHpShortfall = Math.max(requiredEngineHp - usableEngineHp, 0);
-  const engineHpMargin = Math.max(usableEngineHp - requiredEngineHp, 0);
-  const deliveredPowerPct =
-    requiredEngineHp > 0 ? (effectiveCleaningHp / requiredEngineHp) * 100 : 0;
-  const hydraulicPowerLossPct =
-    requiredEngineHp > 0 ? ((requiredEngineHp - effectiveCleaningHp) / requiredEngineHp) * 100 : 0;
-
-
+  const ratedPsi = toPsi(Number(inputs.pumpPressure || 0), inputs.pumpPressureUnit);
   const pressureVariancePct =
     ratedPsi > 0 ? ((r.gunPressurePsi - ratedPsi) / ratedPsi) * 100 : 0;
   const lossPctAbs = Math.abs(pressureVariancePct);
@@ -457,6 +446,7 @@ const ratedGpm = toGpm(safeInputs.pumpFlow, safeInputs.pumpFlowUnit);
     : badge;
 
   const ratedBar = barFromPsi(ratedPsi);
+  const ratedGpm = toGpm(Number(inputs.pumpFlow || 0), inputs.pumpFlowUnit);
   const ratedLpm = lpmFromGpm(ratedGpm);
 
   const pqRated = ratedBar * ratedLpm;
@@ -484,20 +474,20 @@ const ratedGpm = toGpm(safeInputs.pumpFlow, safeInputs.pumpFlowUnit);
   const liveSetupItems = [
     {
       label: "Pressure",
-      value: `${fmt(inputs.pumpPressure, 0)} ${displayPressureUnitLabel}`,
+      value: `${fmt(Number(inputs.pumpPressure || 0), 0)} ${displayPressureUnitLabel}`,
     },
     {
       label: "Flow",
-      value: `${fmt(inputs.pumpFlow, 1)} ${displayFlowUnitLabel}`,
+      value: `${fmt(Number(inputs.pumpFlow || 0), 1)} ${displayFlowUnitLabel}`,
     },
     {
       label: "Hose length",
-      value: `${fmt(inputs.hoseLength, 0)} ${displayLengthUnitLabel}`,
+      value: `${fmt(Number(inputs.hoseLength || 0), 0)} ${displayLengthUnitLabel}`,
     },
     {
       label: "Hose ID",
       value: `${fmt(
-        inputs.hoseId,
+        Number(inputs.hoseId || 0),
         inputs.hoseIdUnit === "in" ? 2 : 1
       )} ${displayDiameterUnitLabel}`,
     },
@@ -510,7 +500,7 @@ const ratedGpm = toGpm(safeInputs.pumpFlow, safeInputs.pumpFlowUnit);
     },
     {
       label: "Engine",
-      value: `${fmt(inputs.engineHp, 1)} HP`,
+      value: `${fmt(Number(inputs.engineHp || 0), 1)} HP`,
     },
   ];
 
@@ -959,7 +949,7 @@ const ratedGpm = toGpm(safeInputs.pumpFlow, safeInputs.pumpFlowUnit);
                           setInputs((s) => {
                             if (s.pumpPressureUnit === nextUnit) return s;
 
-                            const pumpPressurePsi = toPsi(s.pumpPressure, s.pumpPressureUnit);
+                            const pumpPressurePsi = toPsi(Number(s.pumpPressure || 0), s.pumpPressureUnit);
                             const convertedPumpPressure = fromPsi(pumpPressurePsi, nextUnit);
 
                             const nextState: Inputs = {
@@ -1017,7 +1007,7 @@ const ratedGpm = toGpm(safeInputs.pumpFlow, safeInputs.pumpFlowUnit);
                             const nextUnit = e.target.value as FlowUnit;
                             if (s.pumpFlowUnit === nextUnit) return s;
 
-                            const flowGpm = toGpm(s.pumpFlow, s.pumpFlowUnit);
+                            const flowGpm = toGpm(Number(s.pumpFlow || 0), s.pumpFlowUnit);
                             const convertedFlow = fromGpm(flowGpm, nextUnit);
 
                             return {
@@ -1065,7 +1055,7 @@ const ratedGpm = toGpm(safeInputs.pumpFlow, safeInputs.pumpFlowUnit);
                             const nextUnit = e.target.value as PressureUnit;
                             if (s.maxPressureUnit === nextUnit) return s;
 
-                            const maxPressurePsi = toPsi(s.maxPressure, s.maxPressureUnit);
+                            const maxPressurePsi = toPsi(Number(s.maxPressure || 0), s.maxPressureUnit);
                             const convertedMaxPressure = fromPsi(maxPressurePsi, nextUnit);
 
                             return {
@@ -1174,7 +1164,7 @@ const ratedGpm = toGpm(safeInputs.pumpFlow, safeInputs.pumpFlowUnit);
                       </div>
 
                       <div className="mt-2 text-xs text-slate-500">
-                        Tip size is entered and interpreted per nozzle when surface cleaner mode is enabled.
+                        Tip size is treated as per nozzle when surface cleaner mode is enabled.
                       </div>
                     </div>
                   )}
@@ -1209,7 +1199,7 @@ const ratedGpm = toGpm(safeInputs.pumpFlow, safeInputs.pumpFlowUnit);
                             const nextUnit = e.target.value as LengthUnit;
                             if (s.hoseLengthUnit === nextUnit) return s;
 
-                            const hoseLengthMeters = toMeters(s.hoseLength, s.hoseLengthUnit);
+                            const hoseLengthMeters = toMeters(Number(s.hoseLength || 0), s.hoseLengthUnit);
                             const convertedHoseLength = fromMeters(hoseLengthMeters, nextUnit);
 
                             return {
@@ -1425,7 +1415,7 @@ const ratedGpm = toGpm(safeInputs.pumpFlow, safeInputs.pumpFlowUnit);
                   <div className="rounded-xl border border-slate-200 px-4 py-4">
                     <div className="flex items-center justify-between gap-3">
                       <div className="text-sm font-semibold text-slate-900">
-                        Power analysis
+                        Power requirement
                       </div>
                       <div
                         className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${enginePowerBadge.cls}`}
@@ -1437,14 +1427,14 @@ const ratedGpm = toGpm(safeInputs.pumpFlow, safeInputs.pumpFlowUnit);
                     <div className="mt-4 grid gap-4 sm:grid-cols-2">
                       <div className="rounded-lg border border-slate-200 bg-white px-4 py-4">
                         <div className="text-xs font-medium uppercase tracking-wide text-slate-600">
-                          Required engine HP
+                          Required HP
                         </div>
                         <div className="mt-2 text-2xl font-semibold text-slate-900">
-                          {fmt(requiredEngineHp, 1)}{" "}
+                          {fmt(requiredHp, 1)}{" "}
                           <span className="text-sm font-medium text-slate-600">HP</span>
                         </div>
                         <div className="mt-1 text-xs text-slate-500">
-                          Based on rated pump pressure and rated pump flow.
+                          Based on calculated pressure and flow at the gun.
                         </div>
                       </div>
 
@@ -1459,35 +1449,6 @@ const ratedGpm = toGpm(safeInputs.pumpFlow, safeInputs.pumpFlowUnit);
                         <div className="mt-1 text-xs text-slate-500">
                           Estimated at 85% of rated engine horsepower.
                         </div>
-                      </div>
-                    </div>
-
-                    {engineHpShortfall > 0 ? (
-                      <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-                        Engine shortfall: <strong>{fmt(engineHpShortfall, 1)} HP</strong>
-                      </div>
-                    ) : usableEngineHp > 0 ? (
-                      <div className="mt-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
-                        Engine margin: <strong>{fmt(engineHpMargin, 1)} HP</strong>
-                      </div>
-                    ) : null}
-
-                    <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-4">
-                      <div className="text-xs font-medium uppercase tracking-wide text-slate-600">
-                        Effective cleaning HP
-                      </div>
-                      <div className="mt-2 text-2xl font-semibold text-slate-900">
-                        {fmt(effectiveCleaningHp, 1)}{" "}
-                        <span className="text-sm font-medium text-slate-600">HP</span>
-                      </div>
-                      <div className="mt-1 text-xs text-slate-500">
-                        Based on delivered pressure and flow at the gun after hose loss, nozzle effects, and bypass.
-                      </div>
-                      <div className="mt-3 text-sm text-slate-700">
-                        Delivered hydraulic power: <strong>{fmt(deliveredPowerPct, 0)}%</strong> of rated pump output.
-                      </div>
-                      <div className="mt-1 text-xs text-slate-500">
-                        Approx system power loss: {fmt(hydraulicPowerLossPct, 0)}%.
                       </div>
                     </div>
                   </div>

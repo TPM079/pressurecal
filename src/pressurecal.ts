@@ -18,20 +18,20 @@ export type NozzleInputMode = "tipSize" | "orificeMm";
 export type ANZSClass = "Class A" | "Class B";
 
 export interface Inputs {
-  pumpPressure: number;
+  pumpPressure: number | "";
   pumpPressureUnit: PressureUnit;
-  pumpFlow: number;
+  pumpFlow: number | "";
   pumpFlowUnit: FlowUnit;
 
   /** Unloader / maximum system pressure (usually same as rated) */
-  maxPressure: number;
+  maxPressure: number | "";
   maxPressureUnit: PressureUnit;
 
-  hoseLength: number;
+  hoseLength: number | "";
   hoseLengthUnit: LengthUnit;
-  hoseId: number;
+  hoseId: number | "";
   hoseIdUnit: DiameterUnit;
-  engineHp: number;
+  engineHp: number | "";
 
   sprayMode: "wand" | "surfaceCleaner";
   nozzleCount: number;
@@ -241,8 +241,8 @@ function anzsClassFromPQ(pq: number): ANZSClass {
 
 export function solvePressureCal(inputs: Inputs): SolveResult {
   // Rated pump point
-  const pumpPsiRated = psiFrom(inputs.pumpPressure, inputs.pumpPressureUnit);
-  const pumpGpmRated = gpmFrom(inputs.pumpFlow, inputs.pumpFlowUnit);
+  const pumpPsiRated = psiFrom(Number(inputs.pumpPressure || 0), inputs.pumpPressureUnit);
+  const pumpGpmRated = gpmFrom(Number(inputs.pumpFlow || 0), inputs.pumpFlowUnit);
 
   // --- AS/NZS 4233.01 reference classification (P × Q) ---
   // Rated/maximum output reference (nameplate values)
@@ -252,11 +252,11 @@ export function solvePressureCal(inputs: Inputs): SolveResult {
   const ratedClass = anzsClassFromPQ(ratedPQ);
 
   // Unloader / max pressure
-  const maxPumpPsi = psiFrom(inputs.maxPressure, inputs.maxPressureUnit);
+  const maxPumpPsi = psiFrom(Number(inputs.maxPressure || 0), inputs.maxPressureUnit);
 
   // Hose
-  const Lm = metersFrom(inputs.hoseLength, inputs.hoseLengthUnit);
-  const idMm = mmFrom(inputs.hoseId, inputs.hoseIdUnit);
+  const Lm = metersFrom(Number(inputs.hoseLength || 0), inputs.hoseLengthUnit);
+  const idMm = mmFrom(Number(inputs.hoseId || 0), inputs.hoseIdUnit);
 
   // Calibrated nozzle (tip) that matches rated pump point
   const nozzleCount =
