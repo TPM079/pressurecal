@@ -4,7 +4,6 @@
 import { Helmet } from "react-helmet-async";
 import {
   useEffect,
-  useMemo,
   useRef,
   useState,
   type ReactNode,
@@ -411,12 +410,12 @@ const r = solvePressureCal(safeInputs);
   const lossBar = barFromPsi(r.hoseLossPsi);
   const bypassLpm = lpmFromGpm(r.bypassFlowGpm);
 
-  const ratedPsi = toPsi(inputs.pumpPressure, inputs.pumpPressureUnit);
-  const ratedGpm = toGpm(inputs.pumpFlow, inputs.pumpFlowUnit);
+  const ratedPsi = toPsi(safeInputs.pumpPressure, safeInputs.pumpPressureUnit);
+const ratedGpm = toGpm(safeInputs.pumpFlow, safeInputs.pumpFlowUnit);
 
   const requiredEngineHp = calculateHydraulicHp(ratedPsi, ratedGpm, 0.9);
   const effectiveCleaningHp = calculateHydraulicHp(r.gunPressurePsi, r.gunFlowGpm, 0.9);
-  const usableEngineHp = calculateUsableEngineHp(inputs.engineHp, 0.85);
+  const usableEngineHp = calculateUsableEngineHp(safeInputs.engineHp, 0.85);
   const enginePowerBadge = hpStatus(requiredEngineHp, usableEngineHp);
   const engineHpShortfall = Math.max(requiredEngineHp - usableEngineHp, 0);
   const engineHpMargin = Math.max(usableEngineHp - requiredEngineHp, 0);
