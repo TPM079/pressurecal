@@ -1,3 +1,6 @@
+// App.full-clean.tsx
+// Full working version (with HP feature + conversions)
+
 import { Helmet } from "react-helmet-async";
 import {
   useEffect,
@@ -129,6 +132,71 @@ function toGpm(value: number, unit: FlowUnit) {
   return unit === "gpm" ? value : value / 3.785411784;
 }
 
+function fromPsi(value: number, unit: PressureUnit) {
+  return unit === "psi" ? value : value / 14.5037738;
+}
+
+function fromGpm(value: number, unit: FlowUnit) {
+  return unit === "gpm" ? value : value * 3.785411784;
+}
+
+function toMeters(value: number, unit: LengthUnit) {
+  return unit === "m" ? value : value / 3.28084;
+}
+
+function fromMeters(value: number, unit: LengthUnit) {
+  return unit === "m" ? value : value * 3.28084;
+}
+
+function roundForUnit(value: number, decimals: number) {
+  return Number(value.toFixed(decimals));
+}
+
+function selectAllOnFocus(e: React.FocusEvent<HTMLInputElement>) {
+  e.target.select();
+}
+
+function calculateHydraulicHp(pressurePsi: number, flowGpm: number, efficiency = 0.9) {
+  if (!Number.isFinite(pressurePsi) || !Number.isFinite(flowGpm) || efficiency <= 0) {
+    return 0;
+  }
+
+  return (pressurePsi * flowGpm) / (1714 * efficiency);
+}
+
+function calculateUsableEngineHp(ratedHp: number, factor = 0.85) {
+  if (!Number.isFinite(ratedHp) || ratedHp <= 0) return 0;
+  return ratedHp * factor;
+}
+
+function hpStatus(requiredEngineHp: number, usableHp: number) {
+  if (usableHp <= 0) {
+    return {
+      text: "Enter engine HP to evaluate engine sizing.",
+      cls: "bg-slate-50 text-slate-700 border-slate-200",
+    };
+  }
+
+  if (usableHp < requiredEngineHp) {
+    return {
+      text: "Engine undersized for rated pump output.",
+      cls: "bg-red-50 text-red-800 border-red-200",
+    };
+  }
+
+  if (usableHp < requiredEngineHp * 1.1) {
+    return {
+      text: "Operating near engine limit.",
+      cls: "bg-amber-50 text-amber-900 border-amber-200",
+    };
+  }
+
+  return {
+    text: "Engine power looks healthy.",
+      cls: "bg-green-50 text-green-800 border-green-200",
+    };
+}
+
 function PageTransition({ children }: { children: ReactNode }) {
   return (
     <motion.div
@@ -212,6 +280,10 @@ function HomePage() {
     hoseId: 9.53,
     hoseIdUnit: "mm",
 
+    engineHp: 13,
+    sprayMode: "wand",
+    nozzleCount: 2,
+
     nozzleMode: "tipSize",
     nozzleSizeText: "040",
     orificeMm: 1.2,
@@ -238,6 +310,8 @@ function HomePage() {
     const hoseLengthUnit = params.get("hoseLengthUnit");
     const hoseId = params.get("hoseId");
     const hoseIdUnit = params.get("hoseIdUnit");
+    const sprayMode = params.get("sprayMode");
+    const nozzleCount = params.get("nozzleCount");
     const nozzleSizeText = params.get("nozzleSizeText");
 
     const hasAnyParams =
@@ -297,6 +371,14 @@ function HomePage() {
         hoseIdUnit === "in" || hoseIdUnit === "mm"
           ? hoseIdUnit
           : prev.hoseIdUnit,
+      sprayMode:
+        sprayMode === "surfaceCleaner" || sprayMode === "wand"
+          ? sprayMode
+          : prev.sprayMode,
+      nozzleCount:
+        nozzleCount !== null && Number.isFinite(Number(nozzleCount))
+          ? Math.max(1, Number(nozzleCount))
+          : prev.nozzleCount,
       nozzleSizeText: nozzleSizeText ?? prev.nozzleSizeText,
     }));
 
@@ -309,7 +391,17 @@ function HomePage() {
     return () => window.clearTimeout(timer);
   }, []);
 
-  const r = useMemo(() => solvePressureCal(inputs), [inputs]);
+  const safeInputs = {
+  ...inputs,
+  pumpPressure: Number(inputs.pumpPressure || 0),
+  pumpFlow: Number(inputs.pumpFlow || 0),
+  maxPressure: Number(inputs.maxPressure || 0),
+  hoseLength: Number(inputs.hoseLength || 0),
+  hoseId: Number(inputs.hoseId || 0),
+  engineHp: Number(inputs.engineHp || 0),
+};
+
+const r = solvePressureCal(safeInputs);
 
   const gunBar = barFromPsi(r.gunPressurePsi);
   const pumpBar = barFromPsi(r.pumpPressurePsi);
@@ -320,6 +412,20 @@ function HomePage() {
   const bypassLpm = lpmFromGpm(r.bypassFlowGpm);
 
   const ratedPsi = toPsi(inputs.pumpPressure, inputs.pumpPressureUnit);
+  const ratedGpm = toGpm(inputs.pumpFlow, inputs.pumpFlowUnit);
+
+  const requiredEngineHp = calculateHydraulicHp(ratedPsi, ratedGpm, 0.9);
+  const effectiveCleaningHp = calculateHydraulicHp(r.gunPressurePsi, r.gunFlowGpm, 0.9);
+  const usableEngineHp = calculateUsableEngineHp(inputs.engineHp, 0.85);
+  const enginePowerBadge = hpStatus(requiredEngineHp, usableEngineHp);
+  const engineHpShortfall = Math.max(requiredEngineHp - usableEngineHp, 0);
+  const engineHpMargin = Math.max(usableEngineHp - requiredEngineHp, 0);
+  const deliveredPowerPct =
+    requiredEngineHp > 0 ? (effectiveCleaningHp / requiredEngineHp) * 100 : 0;
+  const hydraulicPowerLossPct =
+    requiredEngineHp > 0 ? ((requiredEngineHp - effectiveCleaningHp) / requiredEngineHp) * 100 : 0;
+
+
   const pressureVariancePct =
     ratedPsi > 0 ? ((r.gunPressurePsi - ratedPsi) / ratedPsi) * 100 : 0;
   const lossPctAbs = Math.abs(pressureVariancePct);
@@ -352,7 +458,6 @@ function HomePage() {
     : badge;
 
   const ratedBar = barFromPsi(ratedPsi);
-  const ratedGpm = toGpm(inputs.pumpFlow, inputs.pumpFlowUnit);
   const ratedLpm = lpmFromGpm(ratedGpm);
 
   const pqRated = ratedBar * ratedLpm;
@@ -369,7 +474,7 @@ function HomePage() {
     inputs.pumpPressureUnit === "psi" ? "PSI" : "BAR";
 
   const displayFlowUnitLabel =
-    inputs.pumpFlowUnit === "gpm" ? "GPM" : "L/min";
+    inputs.pumpFlowUnit === "gpm" ? "GPM" : "LPM";
 
   const displayLengthUnitLabel =
     inputs.hoseLengthUnit === "ft" ? "ft" : "m";
@@ -399,7 +504,14 @@ function HomePage() {
     },
     {
       label: "Nozzle",
-      value: inputs.nozzleSizeText || "—",
+      value:
+        inputs.sprayMode === "surfaceCleaner"
+          ? `${inputs.nozzleSizeText || "—"} × ${inputs.nozzleCount}`
+          : inputs.nozzleSizeText || "—",
+    },
+    {
+      label: "Engine",
+      value: `${fmt(inputs.engineHp, 1)} HP`,
     },
   ];
 
@@ -416,6 +528,8 @@ function HomePage() {
     params.set("hoseLengthUnit", inputs.hoseLengthUnit);
     params.set("hoseId", String(inputs.hoseId));
     params.set("hoseIdUnit", inputs.hoseIdUnit);
+    params.set("sprayMode", inputs.sprayMode);
+    params.set("nozzleCount", String(inputs.nozzleCount));
     params.set("nozzleSizeText", inputs.nozzleSizeText);
 
     const url = `${window.location.origin}${window.location.pathname}?${params.toString()}#calculator`;
@@ -808,24 +922,27 @@ function HomePage() {
                 <div className="space-y-5 px-5 py-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700">
-                      Rated pressure
+                      Rated pressure ({inputs.pumpPressureUnit.toUpperCase()})
                     </label>
                     <div className="mt-2 flex gap-3">
                       <input
                         className="w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900 outline-none focus:border-slate-400"
                         type="number"
+                        inputMode="decimal"
+                        placeholder="e.g. 4000"
                         value={inputs.pumpPressure}
+                        onFocus={selectAllOnFocus}
                         onChange={(e) => {
-                          const next = Number(e.target.value);
+                          const val = e.target.value;
 
                           setInputs((s) => {
                             const nextState: Inputs = {
                               ...s,
-                              pumpPressure: next,
+                              pumpPressure: val === "" ? "" : Number(val),
                             };
 
                             if (!maxWasManuallyEditedRef.current) {
-                              nextState.maxPressure = next;
+                              nextState.maxPressure = val === "" ? "" : Number(val);
                               nextState.maxPressureUnit = s.pumpPressureUnit;
                             }
 
@@ -838,17 +955,29 @@ function HomePage() {
                         className="rounded-lg border border-slate-200 px-3 py-2 text-slate-900 outline-none focus:border-slate-400"
                         value={inputs.pumpPressureUnit}
                         onChange={(e) => {
-                          const u = e.target.value as PressureUnit;
+                          const nextUnit = e.target.value as PressureUnit;
 
                           setInputs((s) => {
+                            if (s.pumpPressureUnit === nextUnit) return s;
+
+                            const pumpPressurePsi = toPsi(s.pumpPressure, s.pumpPressureUnit);
+                            const convertedPumpPressure = fromPsi(pumpPressurePsi, nextUnit);
+
                             const nextState: Inputs = {
                               ...s,
-                              pumpPressureUnit: u,
+                              pumpPressure: roundForUnit(
+                                convertedPumpPressure,
+                                nextUnit === "psi" ? 0 : 1
+                              ),
+                              pumpPressureUnit: nextUnit,
                             };
 
                             if (!maxWasManuallyEditedRef.current) {
-                              nextState.maxPressureUnit = u;
-                              nextState.maxPressure = s.pumpPressure;
+                              nextState.maxPressure = roundForUnit(
+                                fromPsi(pumpPressurePsi, nextUnit),
+                                nextUnit === "psi" ? 0 : 1
+                              );
+                              nextState.maxPressureUnit = nextUnit;
                             }
 
                             return nextState;
@@ -863,17 +992,20 @@ function HomePage() {
 
                   <div>
                     <label className="block text-sm font-medium text-slate-700">
-                      Rated flow
+                      Rated flow ({inputs.pumpFlowUnit === "lpm" ? "LPM" : "GPM"})
                     </label>
                     <div className="mt-2 flex gap-3">
                       <input
                         className="w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900 outline-none focus:border-slate-400"
                         type="number"
+                        inputMode="decimal"
+                        placeholder="e.g. 15"
                         value={inputs.pumpFlow}
+                        onFocus={selectAllOnFocus}
                         onChange={(e) =>
                           setInputs((s) => ({
                             ...s,
-                            pumpFlow: Number(e.target.value),
+                            pumpFlow: e.target.value === "" ? "" : Number(e.target.value),
                           }))
                         }
                       />
@@ -882,10 +1014,19 @@ function HomePage() {
                         className="rounded-lg border border-slate-200 px-3 py-2 text-slate-900 outline-none focus:border-slate-400"
                         value={inputs.pumpFlowUnit}
                         onChange={(e) =>
-                          setInputs((s) => ({
-                            ...s,
-                            pumpFlowUnit: e.target.value as FlowUnit,
-                          }))
+                          setInputs((s) => {
+                            const nextUnit = e.target.value as FlowUnit;
+                            if (s.pumpFlowUnit === nextUnit) return s;
+
+                            const flowGpm = toGpm(s.pumpFlow, s.pumpFlowUnit);
+                            const convertedFlow = fromGpm(flowGpm, nextUnit);
+
+                            return {
+                              ...s,
+                              pumpFlow: roundForUnit(convertedFlow, nextUnit === "gpm" ? 2 : 1),
+                              pumpFlowUnit: nextUnit,
+                            };
+                          })
                         }
                       >
                         <option value="lpm">L/min</option>
@@ -896,18 +1037,21 @@ function HomePage() {
 
                   <div>
                     <label className="block text-sm font-medium text-slate-700">
-                      Max pressure (unloader)
+                      Max pressure (unloader) ({inputs.maxPressureUnit.toUpperCase()})
                     </label>
                     <div className="mt-2 flex gap-3">
                       <input
                         className="w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900 outline-none focus:border-slate-400"
                         type="number"
+                        inputMode="decimal"
+                        placeholder="e.g. 4000"
                         value={inputs.maxPressure}
+                        onFocus={selectAllOnFocus}
                         onChange={(e) => {
                           maxWasManuallyEditedRef.current = true;
                           setInputs((s) => ({
                             ...s,
-                            maxPressure: Number(e.target.value),
+                            maxPressure: e.target.value === "" ? "" : Number(e.target.value),
                           }));
                         }}
                       />
@@ -917,10 +1061,23 @@ function HomePage() {
                         value={inputs.maxPressureUnit}
                         onChange={(e) => {
                           maxWasManuallyEditedRef.current = true;
-                          setInputs((s) => ({
-                            ...s,
-                            maxPressureUnit: e.target.value as PressureUnit,
-                          }));
+
+                          setInputs((s) => {
+                            const nextUnit = e.target.value as PressureUnit;
+                            if (s.maxPressureUnit === nextUnit) return s;
+
+                            const maxPressurePsi = toPsi(s.maxPressure, s.maxPressureUnit);
+                            const convertedMaxPressure = fromPsi(maxPressurePsi, nextUnit);
+
+                            return {
+                              ...s,
+                              maxPressure: roundForUnit(
+                                convertedMaxPressure,
+                                nextUnit === "psi" ? 0 : 1
+                              ),
+                              maxPressureUnit: nextUnit,
+                            };
+                          });
                         }}
                       >
                         <option value="psi">psi</option>
@@ -935,21 +1092,112 @@ function HomePage() {
                     )}
                   </div>
 
-                  <div className="h-px bg-slate-200" />
-
                   <div>
                     <label className="block text-sm font-medium text-slate-700">
-                      Hose length (installed)
+                      Engine HP
                     </label>
                     <div className="mt-2 flex gap-3">
                       <input
                         className="w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900 outline-none focus:border-slate-400"
                         type="number"
-                        value={inputs.hoseLength}
+                        inputMode="decimal"
+                        placeholder="e.g. 13"
+                        value={inputs.engineHp}
+                        onFocus={selectAllOnFocus}
                         onChange={(e) =>
                           setInputs((s) => ({
                             ...s,
-                            hoseLength: Number(e.target.value),
+                            engineHp: e.target.value === "" ? "" : Number(e.target.value),
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className="mt-2 text-xs text-slate-500">
+                      Used to estimate whether the machine can support the setup.
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700">
+                      Spray mode
+                    </label>
+
+                    <div className="mt-2 flex gap-2">
+                      {(["wand", "surfaceCleaner"] as const).map((mode) => (
+                        <button
+                          key={mode}
+                          type="button"
+                          onClick={() =>
+                            setInputs((s) => ({
+                              ...s,
+                              sprayMode: mode,
+                              nozzleCount: mode === "surfaceCleaner" ? Math.max(2, s.nozzleCount || 2) : 1,
+                            }))
+                          }
+                          className={`rounded-lg px-4 py-2 text-sm font-semibold border ${
+                            inputs.sprayMode === mode
+                              ? "bg-slate-900 text-white border-slate-900"
+                              : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                          }`}
+                        >
+                          {mode === "wand" ? "Wand" : "Surface Cleaner"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {inputs.sprayMode === "surfaceCleaner" && (
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700">
+                        Number of nozzles
+                      </label>
+
+                      <div className="mt-2 flex gap-2">
+                        {[2, 3, 4].map((n) => (
+                          <button
+                            key={n}
+                            type="button"
+                            onClick={() =>
+                              setInputs((s) => ({
+                                ...s,
+                                nozzleCount: n,
+                              }))
+                            }
+                            className={`rounded-lg px-3 py-2 text-sm font-semibold border ${
+                              inputs.nozzleCount === n
+                                ? "bg-slate-900 text-white border-slate-900"
+                                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                            }`}
+                          >
+                            {n}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="mt-2 text-xs text-slate-500">
+                        Tip size is entered and interpreted per nozzle when surface cleaner mode is enabled.
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="h-px bg-slate-200" />
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700">
+                      Hose length (installed) ({inputs.hoseLengthUnit})
+                    </label>
+                    <div className="mt-2 flex gap-3">
+                      <input
+                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900 outline-none focus:border-slate-400"
+                        type="number"
+                        inputMode="decimal"
+                        placeholder="e.g. 15"
+                        value={inputs.hoseLength}
+                        onFocus={selectAllOnFocus}
+                        onChange={(e) =>
+                          setInputs((s) => ({
+                            ...s,
+                            hoseLength: e.target.value === "" ? "" : Number(e.target.value),
                           }))
                         }
                       />
@@ -958,10 +1206,19 @@ function HomePage() {
                         className="rounded-lg border border-slate-200 px-3 py-2 text-slate-900 outline-none focus:border-slate-400"
                         value={inputs.hoseLengthUnit}
                         onChange={(e) =>
-                          setInputs((s) => ({
-                            ...s,
-                            hoseLengthUnit: e.target.value as LengthUnit,
-                          }))
+                          setInputs((s) => {
+                            const nextUnit = e.target.value as LengthUnit;
+                            if (s.hoseLengthUnit === nextUnit) return s;
+
+                            const hoseLengthMeters = toMeters(s.hoseLength, s.hoseLengthUnit);
+                            const convertedHoseLength = fromMeters(hoseLengthMeters, nextUnit);
+
+                            return {
+                              ...s,
+                              hoseLength: roundForUnit(convertedHoseLength, 1),
+                              hoseLengthUnit: nextUnit,
+                            };
+                          })
                         }
                       >
                         <option value="m">m</option>
@@ -972,17 +1229,20 @@ function HomePage() {
 
                   <div>
                     <label className="block text-sm font-medium text-slate-700">
-                      Hose internal diameter
+                      Hose internal diameter ({inputs.hoseIdUnit})
                     </label>
                     <div className="mt-2 flex gap-3">
                       <input
                         className="w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900 outline-none focus:border-slate-400"
                         type="number"
+                        inputMode="decimal"
+                        placeholder="e.g. 9.53"
                         value={inputs.hoseId}
+                        onFocus={selectAllOnFocus}
                         onChange={(e) =>
                           setInputs((s) => ({
                             ...s,
-                            hoseId: Number(e.target.value),
+                            hoseId: e.target.value === "" ? "" : Number(e.target.value),
                           }))
                         }
                       />
@@ -1032,11 +1292,13 @@ function HomePage() {
 
                   <div>
                     <label className="block text-sm font-medium text-slate-700">
-                      Selected nozzle tip
+                      {inputs.sprayMode === "surfaceCleaner" ? "Selected nozzle tip (per nozzle)" : "Selected nozzle tip"}
                     </label>
                     <input
                       className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900 outline-none focus:border-slate-400"
+                      placeholder="e.g. 040"
                       value={inputs.nozzleSizeText}
+                      onFocus={selectAllOnFocus}
                       onChange={(e) =>
                         setInputs((s) => ({
                           ...s,
@@ -1151,6 +1413,82 @@ function HomePage() {
                       </div>
                       <div className="mt-2 text-xs text-slate-500">
                         {fmt(r.hoseLossPct, 1)}% of rated pressure
+                      </div>
+                    </div>
+                  </div>
+
+                  {inputs.sprayMode === "surfaceCleaner" && (
+                    <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+                      Flow per nozzle: <strong>{fmt(r.gunFlowGpm / Math.max(1, inputs.nozzleCount), 2)} GPM</strong> ({fmt(gunLpm / Math.max(1, inputs.nozzleCount), 1)} L/min)
+                    </div>
+                  )}
+
+                  <div className="rounded-xl border border-slate-200 px-4 py-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-sm font-semibold text-slate-900">
+                        Power analysis
+                      </div>
+                      <div
+                        className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${enginePowerBadge.cls}`}
+                      >
+                        {enginePowerBadge.text}
+                      </div>
+                    </div>
+
+                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                      <div className="rounded-lg border border-slate-200 bg-white px-4 py-4">
+                        <div className="text-xs font-medium uppercase tracking-wide text-slate-600">
+                          Required engine HP
+                        </div>
+                        <div className="mt-2 text-2xl font-semibold text-slate-900">
+                          {fmt(requiredEngineHp, 1)}{" "}
+                          <span className="text-sm font-medium text-slate-600">HP</span>
+                        </div>
+                        <div className="mt-1 text-xs text-slate-500">
+                          Based on rated pump pressure and rated pump flow.
+                        </div>
+                      </div>
+
+                      <div className="rounded-lg border border-slate-200 bg-white px-4 py-4">
+                        <div className="text-xs font-medium uppercase tracking-wide text-slate-600">
+                          Usable engine HP
+                        </div>
+                        <div className="mt-2 text-2xl font-semibold text-slate-900">
+                          {fmt(usableEngineHp, 1)}{" "}
+                          <span className="text-sm font-medium text-slate-600">HP</span>
+                        </div>
+                        <div className="mt-1 text-xs text-slate-500">
+                          Estimated at 85% of rated engine horsepower.
+                        </div>
+                      </div>
+                    </div>
+
+                    {engineHpShortfall > 0 ? (
+                      <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                        Engine shortfall: <strong>{fmt(engineHpShortfall, 1)} HP</strong>
+                      </div>
+                    ) : usableEngineHp > 0 ? (
+                      <div className="mt-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+                        Engine margin: <strong>{fmt(engineHpMargin, 1)} HP</strong>
+                      </div>
+                    ) : null}
+
+                    <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-4">
+                      <div className="text-xs font-medium uppercase tracking-wide text-slate-600">
+                        Effective cleaning HP
+                      </div>
+                      <div className="mt-2 text-2xl font-semibold text-slate-900">
+                        {fmt(effectiveCleaningHp, 1)}{" "}
+                        <span className="text-sm font-medium text-slate-600">HP</span>
+                      </div>
+                      <div className="mt-1 text-xs text-slate-500">
+                        Based on delivered pressure and flow at the gun after hose loss, nozzle effects, and bypass.
+                      </div>
+                      <div className="mt-3 text-sm text-slate-700">
+                        Delivered hydraulic power: <strong>{fmt(deliveredPowerPct, 0)}%</strong> of rated pump output.
+                      </div>
+                      <div className="mt-1 text-xs text-slate-500">
+                        Approx system power loss: {fmt(hydraulicPowerLossPct, 0)}%.
                       </div>
                     </div>
                   </div>
@@ -1274,7 +1612,7 @@ function HomePage() {
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="rounded-xl border border-slate-200 px-4 py-4">
                       <div className="text-xs font-medium uppercase tracking-wide text-slate-600">
-                        Selected nozzle tip
+                        {inputs.sprayMode === "surfaceCleaner" ? "Selected nozzle tip (per nozzle)" : "Selected nozzle tip"}
                       </div>
                       <div className="mt-2 text-xl font-semibold text-slate-900">
                         {selectedDisplayTipCode}
@@ -1286,7 +1624,7 @@ function HomePage() {
 
                     <div className="rounded-xl border border-slate-200 px-4 py-4">
                       <div className="text-xs font-medium uppercase tracking-wide text-slate-600">
-                        Nozzle equivalent for rated pressure
+                        {inputs.sprayMode === "surfaceCleaner" ? "Nozzle equivalent for rated pressure (per nozzle)" : "Nozzle equivalent for rated pressure"}
                       </div>
                       <div className="mt-2 text-xl font-semibold text-slate-900">
                         {calibratedDisplayTipCode}

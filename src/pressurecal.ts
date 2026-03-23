@@ -31,6 +31,10 @@ export interface Inputs {
   hoseLengthUnit: LengthUnit;
   hoseId: number;
   hoseIdUnit: DiameterUnit;
+  engineHp: number;
+
+  sprayMode: "wand" | "surfaceCleaner";
+  nozzleCount: number;
 
   nozzleMode: NozzleInputMode;
   nozzleSizeText: string;
@@ -255,39 +259,48 @@ export function solvePressureCal(inputs: Inputs): SolveResult {
   const idMm = mmFrom(inputs.hoseId, inputs.hoseIdUnit);
 
   // Calibrated nozzle (tip) that matches rated pump point
-  const calibratedQ4000 = q4000FromFlowAtPressure(pumpGpmRated, pumpPsiRated);
+  const nozzleCount =
+    inputs.sprayMode === "surfaceCleaner"
+      ? Math.max(2, Number(inputs.nozzleCount || 2))
+      : 1;
+
+  const calibratedSystemQ4000 = q4000FromFlowAtPressure(pumpGpmRated, pumpPsiRated);
+  const calibratedQ4000 = calibratedSystemQ4000 / nozzleCount;
   const calibratedCode = q4000ToTipCode(calibratedQ4000);
 
-  // Selected nozzle -> derive Q4000 + equivalent orifice
-  let selectedQ4000: number;
+  // Selected nozzle -> derive per-nozzle Q4000 + system Q4000 + equivalent orifice
+  let selectedPerNozzleQ4000: number;
+  let selectedSystemQ4000: number;
   let selectedOrificeMm: number;
 
   if (inputs.nozzleMode === "tipSize") {
     const q = parseTipToQ4000Gpm(inputs.nozzleSizeText);
-    selectedQ4000 = q ?? calibratedQ4000;
+    selectedPerNozzleQ4000 = q ?? calibratedQ4000;
+    selectedSystemQ4000 = selectedPerNozzleQ4000 * nozzleCount;
     selectedOrificeMm = orificeMmFromQandP(
-      selectedQ4000,
+      selectedPerNozzleQ4000,
       4000,
       inputs.dischargeCoeffCd,
       inputs.waterDensity
     );
   } else {
     selectedOrificeMm = clampPos(inputs.orificeMm);
-    selectedQ4000 = qFromOrificeMmAndP(
+    selectedPerNozzleQ4000 = qFromOrificeMmAndP(
       selectedOrificeMm,
       4000,
       inputs.dischargeCoeffCd,
       inputs.waterDensity
     );
+    selectedSystemQ4000 = selectedPerNozzleQ4000 * nozzleCount;
   }
 
-  const selectedTipCode = q4000ToTipCode(selectedQ4000);
+  const selectedTipCode = q4000ToTipCode(selectedPerNozzleQ4000);
 
   // Required gun pressure to push rated pump flow through nozzle
   let requiredGunPsi = 0;
 
   if (inputs.nozzleMode === "tipSize") {
-    const q4000 = Math.max(selectedQ4000, 1e-9);
+    const q4000 = Math.max(selectedSystemQ4000, 1e-9);
     requiredGunPsi = 4000 * Math.pow(pumpGpmRated / q4000, 2);
   } else {
     const d = Math.max(selectedOrificeMm, 1e-9) / 1000;
@@ -337,7 +350,7 @@ export function solvePressureCal(inputs: Inputs): SolveResult {
     let nextGunFlowGpm = 0;
 
     if (inputs.nozzleMode === "tipSize") {
-      nextGunFlowGpm = flowAtPressureFromQ4000(selectedQ4000, gunPressurePsi);
+      nextGunFlowGpm = flowAtPressureFromQ4000(selectedSystemQ4000, gunPressurePsi);
     } else {
       nextGunFlowGpm = qFromOrificeMmAndP(
         selectedOrificeMm,
@@ -379,7 +392,7 @@ export function solvePressureCal(inputs: Inputs): SolveResult {
   const lossPct = pumpPsiRated > 0 ? (lossPsi / pumpPsiRated) * 100 : 0;
 
   // Calibration status vs calibrated nozzle size at rated point
-  const ratio = selectedQ4000 / Math.max(calibratedQ4000, 1e-9);
+  const ratio = selectedSystemQ4000 / Math.max(calibratedSystemQ4000, 1e-9);
   const tol = 0.05;
 
   let status: SolveResult["status"] = "calibrated";
@@ -418,7 +431,7 @@ export function solvePressureCal(inputs: Inputs): SolveResult {
     bypassFlowGpm: clampPos(bypassFlowGpm),
     bypassPct: clampPos(bypassPct),
 
-    selectedNozzleQ4000Gpm: clampPos(selectedQ4000),
+    selectedNozzleQ4000Gpm: clampPos(selectedPerNozzleQ4000),
     selectedTipCode,
     selectedOrificeMm: clampPos(selectedOrificeMm),
 
