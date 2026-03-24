@@ -463,9 +463,7 @@ const r = solvePressureCal(safeInputs);
   const displayPressureUnitLabel =
     inputs.pumpPressureUnit === "psi" ? "PSI" : "BAR";
 
-  const displayFlowUnitLabel =
-    inputs.pumpFlowUnit === "gpm" ? "GPM" : "LPM";
-
+  
   const flowGpm = toGpm(Number(inputs.pumpFlow || 0), inputs.pumpFlowUnit);
   const flowLpm = lpmFromGpm(flowGpm);
 
