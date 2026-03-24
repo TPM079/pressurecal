@@ -496,9 +496,9 @@ function ExamplePanel() {
               Machine Flow
             </div>
             <div className="mt-2 text-2xl font-semibold text-slate-900">
-              4 GPM
+              15.1 LPM
             </div>
-            <div className="mt-1 text-sm text-slate-500">(15.1 LPM)</div>
+            <div className="mt-1 text-sm text-slate-500">(4 GPM)</div>
           </div>
         </div>
 
@@ -757,13 +757,13 @@ function SurfaceCleanerHelper() {
                 <strong>{nearestFlow.lpm} LPM</strong> ({nearestFlow.gpm} GPM)
               </p>
               <p className="mt-2 text-sm leading-6 text-blue-900">
-                Nearest chart pressure row: <strong>{roundedPressureBar} BAR</strong>
+                Nearest chart row: <strong>{roundedPressureBar} BAR</strong> ({Math.round(pressurePsi)} PSI)
               </p>
               <p className="mt-2 text-sm leading-6 text-blue-900">
                 {pressureRoundingNote}
               </p>
               <p className="mt-2 text-sm leading-6 text-blue-900">
-                Chart lookup pair: <strong>{roundedPressureBar} BAR</strong> ×{" "}
+                Chart lookup pair: <strong>{roundedPressureBar} BAR ({Math.round(pressurePsi)} PSI)</strong> ×{" "}
                 <strong>{nearestFlow.lpm} LPM</strong> →{" "}
                 <strong>{estimatedTipCode}</strong>
               </p>
@@ -951,19 +951,19 @@ function SEOContentBlocks() {
       <section className="rounded-3xl border border-slate-300 bg-white shadow-sm">
         <div className="border-b border-slate-300 px-5 py-4 md:px-6">
           <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-            What Nozzle Size for 4 GPM at 4000 PSI?
+            What Nozzle Size for 15.1 LPM at 4000 PSI?
           </h2>
         </div>
 
         <div className="space-y-4 px-5 py-5 text-sm leading-7 text-slate-600 md:px-6">
           <p>
             A common professional pressure washer setup is{" "}
-            <strong>4 GPM at 4000 PSI</strong>. In the PressureCal chart, that
+            <strong>15.1 LPM at 4000 PSI</strong>. In the PressureCal chart, that
             corresponds to a <strong>040</strong> tip code.
           </p>
 
           <p>
-            This is why the worked example on this page uses 4000 PSI and 4 GPM.
+            This is why the worked example on this page uses 4000 PSI and 15.1 LPM.
             It is one of the most widely recognised setups in the pressure
             washing industry and makes a useful reference point for contractors
             comparing machines and nozzles.
@@ -974,7 +974,7 @@ function SEOContentBlocks() {
               to="/nozzle-size-calculator?p=276&pu=bar&f=15.1&fu=lpm"
               className="inline-flex rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
             >
-              Open 4000 PSI / 4 GPM in Calculator
+              Open 4000 PSI / 15.1 LPM in Calculator
             </Link>
           </div>
         </div>
@@ -995,9 +995,9 @@ function SEOContentBlocks() {
           </p>
 
           <p>
-            Example: if an 8 GPM machine is running a 2-nozzle surface cleaner,
-            each nozzle receives 4 GPM. The chart should therefore be read using
-            the 4 GPM column, not the full 8 GPM machine flow.
+            Example: if a 30.3 LPM machine is running a 2-nozzle surface cleaner,
+            each nozzle receives 15.1 LPM. The chart should therefore be read using
+            the 15.1 LPM column, not the full 30.3 LPM machine flow.
           </p>
 
           <p>
@@ -1082,10 +1082,10 @@ export default function NozzleSizeChartPage() {
   return (
     <>
       <Helmet>
-        <title>Pressure Washer Nozzle Size Chart (PSI & GPM) | PressureCal</title>
+        <title>Pressure Washer Nozzle Size Chart (PSI & LPM) | PressureCal</title>
         <meta
           name="description"
-          content="View a complete pressure washer nozzle size chart based on PSI and GPM. Quickly find the correct nozzle size for your setup."
+          content="View a complete pressure washer nozzle size chart based on PSI and LPM. Quickly find the correct nozzle size for your setup."
         />
         <link
           rel="canonical"
@@ -1118,7 +1118,7 @@ export default function NozzleSizeChartPage() {
 
                 <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">
                   A technical reference chart for selecting pressure washer
-                  nozzle tip codes from machine pressure and flow rate. Built
+                  nozzle tip codes from machine pressure and flow rate, with LPM shown first for Australian operators. Built
                   with the same sizing logic as the PressureCal live nozzle
                   calculator.
                 </p>
@@ -1173,7 +1173,7 @@ export default function NozzleSizeChartPage() {
             <div id="standard-chart" className="mt-8 print:mt-0">
               <ReferenceTable
                 title="Standard Pressure Washer Nozzle Reference Table"
-                subtitle="Reference chart for standard single-nozzle pressure washer setups from 70 BAR to 350 BAR in 10 BAR increments."
+                subtitle="Reference chart for standard single-nozzle pressure washer setups from 70 BAR to 350 BAR in 10 BAR increments, with flow shown as LPM (GPM)."
                 flowHeaders={flowHeaders}
                 rows={standardNozzleChart}
                 minWidthClass="min-w-[1150px]"
@@ -1192,7 +1192,7 @@ export default function NozzleSizeChartPage() {
             <div id="high-chart" className="mt-8 print:mt-6">
               <ReferenceTable
                 title="High Pressure / Industrial Nozzle Reference Table"
-                subtitle="Reference chart for higher-pressure single-nozzle setups from 360 BAR to 500 BAR in 10 BAR increments."
+                subtitle="Reference chart for higher-pressure single-nozzle setups from 360 BAR to 500 BAR in 10 BAR increments, with flow shown as LPM (GPM)."
                 flowHeaders={flowHeaders}
                 rows={highPressureNozzleChart}
                 minWidthClass="min-w-[1150px]"

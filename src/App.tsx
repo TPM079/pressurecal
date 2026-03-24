@@ -10,6 +10,7 @@ import {
 } from "react";
 import {
   Link,
+  Navigate,
   Route,
   Routes,
   useLocation,
@@ -78,11 +79,11 @@ const homepageTools = [
     span: "",
   },
   {
-    href: "/gpm-lpm-calculator",
+    href: "/lpm-gpm-calculator",
     eyebrow: "Converter",
-    title: "GPM ↔ LPM Calculator",
+    title: "LPM ↔ GPM Calculator",
     description:
-      "Convert flow rates instantly for pumps, injector sizing, nozzle charts, and hose loss calculations.",
+      "Convert flow rates instantly between LPM and GPM for pumps, injector sizing, nozzle charts, and hose loss calculations.",
     cta: "Open tool →",
     span: "",
   },
@@ -465,6 +466,9 @@ const r = solvePressureCal(safeInputs);
   const displayFlowUnitLabel =
     inputs.pumpFlowUnit === "gpm" ? "GPM" : "LPM";
 
+  const flowGpm = toGpm(Number(inputs.pumpFlow || 0), inputs.pumpFlowUnit);
+  const flowLpm = lpmFromGpm(flowGpm);
+
   const displayLengthUnitLabel =
     inputs.hoseLengthUnit === "ft" ? "ft" : "m";
 
@@ -478,7 +482,7 @@ const r = solvePressureCal(safeInputs);
     },
     {
       label: "Flow",
-      value: `${fmt(Number(inputs.pumpFlow || 0), 1)} ${displayFlowUnitLabel}`,
+      value: `${fmt(flowLpm, 1)} LPM (${fmt(flowGpm, 2)} GPM)`,
     },
     {
       label: "Hose length",
@@ -540,11 +544,11 @@ const r = solvePressureCal(safeInputs);
       <PressureCalLayout>
         <Helmet>
           <title>
-            Pressure Washer Calculator (PSI, GPM, Nozzle Size) | PressureCal
+            Pressure Washer Calculator (PSI, LPM, Nozzle Size) | PressureCal
           </title>
           <meta
             name="description"
-            content="Free pressure washer calculator for PSI, GPM, nozzle size, and hose pressure loss. Built for pressure washing professionals, equipment builders, and serious operators."
+            content="Free pressure washer calculator for PSI, LPM, nozzle size, and hose pressure loss. Built for pressure washing professionals, equipment builders, and serious operators."
           />
           <link rel="canonical" href="https://www.pressurecal.com/" />
           <script type="application/ld+json">
@@ -556,7 +560,7 @@ const r = solvePressureCal(safeInputs);
               applicationCategory: "Calculator",
               operatingSystem: "Web",
               description:
-                "Professional pressure washer calculator for PSI, GPM, nozzle size, and hose pressure loss.",
+                "Professional pressure washer calculator for PSI, LPM, nozzle size, and hose pressure loss.",
             })}
           </script>
           <script type="application/ld+json">
@@ -574,10 +578,10 @@ const r = solvePressureCal(safeInputs);
                 },
                 {
                   "@type": "Question",
-                  name: "How do you calculate PSI and GPM?",
+                  name: "How do you calculate PSI and LPM?",
                   acceptedAnswer: {
                     "@type": "Answer",
-                    text: "PSI and GPM are determined by pump output, nozzle size, and system losses such as hose pressure drop.",
+                    text: "PSI and LPM are determined by pump output, nozzle size, and system losses such as hose pressure drop.",
                   },
                 },
                 {
@@ -1377,13 +1381,13 @@ const r = solvePressureCal(safeInputs);
                         Operating flow rate
                       </div>
                       <div className="mt-2 text-xl font-semibold text-slate-900">
-                        {fmt(r.gunFlowGpm, 2)}{" "}
+                        {fmt(gunLpm, 1)}{" "}
                         <span className="text-sm font-medium text-slate-600">
-                          GPM
+                          L/min
                         </span>
                       </div>
                       <div className="mt-1 text-sm text-slate-600">
-                        ({fmt(gunLpm, 1)} L/min)
+                        ({fmt(r.gunFlowGpm, 2)} GPM)
                       </div>
                     </div>
 
@@ -1408,7 +1412,7 @@ const r = solvePressureCal(safeInputs);
 
                   {inputs.sprayMode === "surfaceCleaner" && (
                     <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
-                      Flow per nozzle: <strong>{fmt(r.gunFlowGpm / Math.max(1, inputs.nozzleCount), 2)} GPM</strong> ({fmt(gunLpm / Math.max(1, inputs.nozzleCount), 1)} L/min)
+                      Flow per nozzle: <strong>{fmt(gunLpm / Math.max(1, inputs.nozzleCount), 1)} L/min</strong> ({fmt(r.gunFlowGpm / Math.max(1, inputs.nozzleCount), 2)} GPM)
                     </div>
                   )}
 
@@ -1526,13 +1530,13 @@ const r = solvePressureCal(safeInputs);
                           Bypass flow (unloader)
                         </div>
                         <div className="mt-2 text-xl font-semibold text-slate-900">
-                          {fmt(r.bypassFlowGpm, 2)}{" "}
+                          {fmt(bypassLpm, 1)}{" "}
                           <span className="text-sm font-medium text-slate-600">
-                            GPM
+                            L/min
                           </span>
                         </div>
                         <div className="mt-1 text-sm text-slate-600">
-                          ({fmt(bypassLpm, 1)} L/min)
+                          ({fmt(r.bypassFlowGpm, 2)} GPM)
                         </div>
                       </div>
 
@@ -1590,7 +1594,7 @@ const r = solvePressureCal(safeInputs);
                         {calibratedDisplayTipCode}
                       </div>
                       <div className="mt-1 text-sm text-slate-600">
-                        ≈ {fmt(r.calibratedNozzleQ4000Gpm, 2)} GPM @ 4000
+                        ≈ {fmt(lpmFromGpm(r.calibratedNozzleQ4000Gpm), 1)} L/min ({fmt(r.calibratedNozzleQ4000Gpm, 2)} GPM @ 4000 PSI)
                       </div>
                     </div>
                   </div>
@@ -1634,7 +1638,11 @@ export default function App() {
           />
           <Route path="/admin-feedback" element={<AdminFeedbackPage />} />
           <Route path="/psi-bar-calculator" element={<PsiBarCalculatorPage />} />
-          <Route path="/gpm-lpm-calculator" element={<GpmLpmCalculatorPage />} />
+          <Route path="/lpm-gpm-calculator" element={<GpmLpmCalculatorPage />} />
+          <Route
+            path="/gpm-lpm-calculator"
+            element={<Navigate to="/lpm-gpm-calculator" replace />}
+          />
         </Routes>
       </AnimatePresence>
     </>

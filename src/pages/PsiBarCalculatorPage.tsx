@@ -347,11 +347,11 @@ export default function PsiBarCalculatorPage() {
               </h3>
               <div className="mt-3 flex flex-wrap gap-3">
                 <Link
-                  to="/gpm-lpm-calculator"
-                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 active:scale-[0.98]"
-                >
-                  GPM ↔ LPM Calculator
-                </Link>
+  to="/lpm-gpm-calculator"
+  className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 active:scale-[0.98]"
+>
+  LPM ↔ GPM Calculator
+</Link>
 
                 <Link
                   to="/nozzle-size-calculator"

@@ -14,10 +14,10 @@ function formatNumber(value: number, maxDecimals = 4) {
 export default function GpmLpmCalculatorPage() {
   const [gpmInput, setGpmInput] = useState("");
   const [lpmInput, setLpmInput] = useState("");
-  const [lastEdited, setLastEdited] = useState<"gpm" | "lpm">("gpm");
+  const [lastEdited, setLastEdited] = useState<"gpm" | "lpm">("lpm");
   const [copied, setCopied] = useState(false);
 
-  const gpmInputRef = useRef<HTMLInputElement | null>(null);
+  const lpmInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (!copied) return;
@@ -74,9 +74,9 @@ export default function GpmLpmCalculatorPage() {
   function handleClear() {
     setGpmInput("");
     setLpmInput("");
-    setLastEdited("gpm");
+    setLastEdited("lpm");
     setCopied(false);
-    gpmInputRef.current?.focus();
+    lpmInputRef.current?.focus();
   }
 
   function setGpmPreset(value: number) {
@@ -111,7 +111,7 @@ export default function GpmLpmCalculatorPage() {
 
     try {
       await navigator.clipboard.writeText(
-        `${result.gpm} GPM = ${result.lpm} LPM`
+        `${result.lpm} LPM = ${result.gpm} GPM`
       );
       setCopied(true);
     } catch {
@@ -123,10 +123,10 @@ export default function GpmLpmCalculatorPage() {
     <PressureCalLayout>
       <>
         <Helmet>
-          <title>GPM to LPM Calculator | PressureCal</title>
+          <title>LPM to GPM Calculator | PressureCal</title>
           <meta
             name="description"
-            content="Convert GPM to LPM and LPM to GPM instantly. Accurate flow rate calculator for pressure washers, pumps, and equipment sizing."
+            content="Convert LPM to GPM and GPM to LPM instantly. Accurate flow rate calculator for pressure washers, pumps, and equipment sizing."
           />
         </Helmet>
 
@@ -137,40 +137,15 @@ export default function GpmLpmCalculatorPage() {
                 Flow Conversion
               </p>
               <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
-                GPM ↔ LPM Calculator
+                LPM ↔ GPM Calculator
               </h1>
               <p className="mt-3 text-base text-slate-600">
-                Convert flow instantly between GPM and LPM for pressure washing,
+                Convert flow instantly between LPM and GPM for pressure washing,
                 pump sizing, machine specifications, and system setup.
               </p>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <label
-                  htmlFor="gpm"
-                  className="mb-2 block text-sm font-medium text-slate-700"
-                >
-                  GPM
-                </label>
-                <input
-                  ref={gpmInputRef}
-                  id="gpm"
-                  type="number"
-                  inputMode="decimal"
-                  autoFocus
-                  value={lastEdited === "gpm" ? gpmInput : result.gpm}
-                  onChange={(e) => handleGpmChange(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.currentTarget.blur();
-                    }
-                  }}
-                  placeholder="Enter GPM"
-                  className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-                />
-              </div>
-
               <div>
                 <label
                   htmlFor="lpm"
@@ -179,9 +154,11 @@ export default function GpmLpmCalculatorPage() {
                   LPM
                 </label>
                 <input
+                  ref={lpmInputRef}
                   id="lpm"
                   type="number"
                   inputMode="decimal"
+                  autoFocus
                   value={lastEdited === "lpm" ? lpmInput : result.lpm}
                   onChange={(e) => handleLpmChange(e.target.value)}
                   onKeyDown={(e) => {
@@ -190,6 +167,29 @@ export default function GpmLpmCalculatorPage() {
                     }
                   }}
                   placeholder="Enter LPM"
+                  className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="gpm"
+                  className="mb-2 block text-sm font-medium text-slate-700"
+                >
+                  GPM
+                </label>
+                <input
+                  id="gpm"
+                  type="number"
+                  inputMode="decimal"
+                  value={lastEdited === "gpm" ? gpmInput : result.gpm}
+                  onChange={(e) => handleGpmChange(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.currentTarget.blur();
+                    }
+                  }}
+                  placeholder="Enter GPM"
                   className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                 />
               </div>
@@ -229,39 +229,12 @@ export default function GpmLpmCalculatorPage() {
                   Result
                 </p>
                 <p className="mt-2 text-lg font-semibold text-slate-900">
-                  {result.gpm} GPM = {result.lpm} LPM
+                  {result.lpm} LPM = {result.gpm} GPM
                 </p>
               </div>
             )}
 
             <div className="mt-6">
-              <p className="mb-3 text-sm font-medium text-slate-700">
-                Quick GPM presets
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {[2, 4, 5.5, 8, 10].map((value) => {
-                  const isActive =
-                    lastEdited === "gpm" && gpmInput === String(value);
-
-                  return (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => setGpmPreset(value)}
-                      className={`rounded-xl border px-3 py-2 text-sm font-medium transition active:scale-[0.98] ${
-                        isActive
-                          ? "border-blue-600 bg-blue-600 text-white"
-                          : "border-slate-200 text-slate-700 hover:bg-slate-100"
-                      }`}
-                    >
-                      {value} GPM
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="mt-4">
               <p className="mb-3 text-sm font-medium text-slate-700">
                 Quick LPM presets
               </p>
@@ -282,6 +255,33 @@ export default function GpmLpmCalculatorPage() {
                       }`}
                     >
                       {value} LPM
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <p className="mb-3 text-sm font-medium text-slate-700">
+                Quick GPM presets
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {[2, 4, 5.5, 8, 10].map((value) => {
+                  const isActive =
+                    lastEdited === "gpm" && gpmInput === String(value);
+
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setGpmPreset(value)}
+                      className={`rounded-xl border px-3 py-2 text-sm font-medium transition active:scale-[0.98] ${
+                        isActive
+                          ? "border-blue-600 bg-blue-600 text-white"
+                          : "border-slate-200 text-slate-700 hover:bg-slate-100"
+                      }`}
+                    >
+                      {value} GPM
                     </button>
                   );
                 })}
@@ -322,13 +322,13 @@ export default function GpmLpmCalculatorPage() {
 
           <div className="mt-10 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
             <h2 className="text-lg font-semibold text-slate-900">
-              GPM to LPM Conversion
+              LPM to GPM Conversion
             </h2>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              GPM and LPM are common flow rate units used in pressure washing
+              LPM and GPM are common flow rate units used in pressure washing
               systems, pumps, nozzles, and equipment specifications. This
               calculator helps operators and equipment builders quickly convert
-              between GPM and LPM for setup, troubleshooting, and accurate
+              between LPM and GPM for setup, troubleshooting, and accurate
               machine matching.
             </p>
 

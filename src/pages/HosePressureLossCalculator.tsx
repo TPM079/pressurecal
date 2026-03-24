@@ -17,8 +17,8 @@ const MM_PER_IN = 25.4;
 const DEFAULTS = {
   pressure: 4000,
   pressureUnit: "psi" as PressureUnit,
-  flow: 4,
-  flowUnit: "gpm" as FlowUnit,
+  flow: 15,
+  flowUnit: "lpm" as FlowUnit,
   hoseLength: 30,
   hoseLengthUnit: "m" as LengthUnit,
   hoseId: 9.53,
@@ -141,7 +141,7 @@ export default function HosePressureLossCalculator() {
     const duRaw = params.get("du");
 
     const nextPressureUnit: PressureUnit = puRaw === "bar" ? "bar" : "psi";
-    const nextFlowUnit: FlowUnit = fuRaw === "lpm" ? "lpm" : "gpm";
+    const nextFlowUnit: FlowUnit = fuRaw === "gpm" ? "gpm" : "lpm";
     const nextLengthUnit: LengthUnit = luRaw === "ft" ? "ft" : "m";
     const nextDiameterUnit: DiameterUnit = duRaw === "in" ? "in" : "mm";
 
@@ -384,8 +384,8 @@ export default function HosePressureLossCalculator() {
                       value={flowUnit}
                       onChange={(e) => setFlowUnit(e.target.value as FlowUnit)}
                     >
-                      <option value="gpm">GPM</option>
                       <option value="lpm">L/min</option>
+                      <option value="gpm">GPM</option>
                     </select>
                   </div>
                 </div>

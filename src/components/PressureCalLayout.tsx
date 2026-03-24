@@ -8,7 +8,7 @@ type PressureCalLayoutProps = {
 
 const navLinks = [
   { to: "/psi-bar-calculator", label: "PSI ↔ BAR" },
-  { to: "/gpm-lpm-calculator", label: "GPM ↔ LPM" },
+ { to: "/lpm-gpm-calculator", label: "LPM ↔ GPM" },
   { to: "/nozzle-size-calculator", label: "Nozzle Size" },
   { to: "/hose-pressure-loss-calculator", label: "Hose Loss" },
   { to: "/nozzle-size-chart", label: "Nozzle Chart" },
@@ -19,8 +19,10 @@ export default function PressureCalLayout({
 }: PressureCalLayoutProps) {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
+      {/* HEADER */}
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
+          {/* LOGO */}
           <Link
             to="/"
             className="inline-flex items-center"
@@ -38,6 +40,7 @@ export default function PressureCalLayout({
             />
           </Link>
 
+          {/* DESKTOP NAV */}
           <nav className="hidden items-center gap-5 md:flex">
             <a
               href="/#calculator"
@@ -72,6 +75,7 @@ export default function PressureCalLayout({
           </nav>
         </div>
 
+        {/* MOBILE NAV */}
         <div className="border-t border-slate-100 bg-white md:hidden">
           <div className="mx-auto flex max-w-6xl gap-3 overflow-x-auto px-4 py-3">
             {navLinks.map((link) => (
@@ -94,8 +98,10 @@ export default function PressureCalLayout({
         </div>
       </header>
 
+      {/* MAIN */}
       <main className="px-4 py-8 sm:py-10">{children}</main>
 
+      {/* FOOTER */}
       <footer className="border-t border-slate-200 bg-white">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-6 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} PressureCal</p>
@@ -122,6 +128,7 @@ export default function PressureCalLayout({
         </div>
       </footer>
 
+      {/* FEEDBACK */}
       <FeedbackWidget />
     </div>
   );
