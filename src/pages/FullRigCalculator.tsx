@@ -108,8 +108,7 @@ export default function FullRigCalculatorPage() {
   };
   const r = solvePressureCal(safeInputs);
   const gunBar = barFromPsi(r.gunPressurePsi);
-  const pumpBar = barFromPsi(r.pumpPressurePsi);
-  const reqPumpBar = barFromPsi(r.requiredPumpPsi);
+  
   const gunLpm = lpmFromGpm(r.gunFlowGpm);
   const lossBar = barFromPsi(r.hoseLossPsi);
   const requiredHp = calculateRequiredHp(r.gunPressurePsi, r.gunFlowGpm, 0.9);

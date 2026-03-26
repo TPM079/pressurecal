@@ -102,23 +102,8 @@ const workflowSteps = [
   },
 ];
 
-const trustPillars = [
-  {
-    title: "Built for real operators",
-    description:
-      "Made for pressure washing professionals, equipment builders, and serious owner-operators.",
-  },
-  {
-    title: "Australian-first defaults",
-    description:
-      "Defaults in PSI and LPM to match how many Australian operators actually describe machine setups.",
-  },
-  {
-    title: "Real-world logic",
-    description:
-      "PressureCal is designed around pump output, nozzle size, hose loss, and actual system behaviour.",
-  },
-];
+
+
 
 const trustBarItems = [
   "Real system modelling",
