@@ -11,7 +11,7 @@ import {
   useNavigationType,
 } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-
+import PressureCalProPage from "./pages/PressureCalProPage";
 import HomePage from "./pages/HomePage";
 import FullRigCalculatorPage from "./pages/FullRigCalculator";
 import AdminFeedbackPage from "./pages/AdminFeedbackPage";
@@ -20,7 +20,6 @@ import NozzleSizeChartPage from "./pages/NozzleSizeChartPage";
 import HosePressureLossCalculator from "./pages/HosePressureLossCalculator";
 import PsiBarCalculatorPage from "./pages/PsiBarCalculatorPage";
 import GpmLpmCalculatorPage from "./pages/GpmLpmCalculatorPage";
-
 function PageTransition({ children }: { children: ReactNode }) {
   return (
     <motion.div
@@ -45,7 +44,6 @@ function ScrollManager() {
       window.scrollTo(0, 0);
       return;
     }
-
     if (navigationType !== "POP") {
       window.scrollTo(0, 0);
     }
@@ -89,7 +87,14 @@ export default function App() {
               </PageTransition>
             }
           />
-
+<Route
+  path="/pricing"
+  element={
+    <PageTransition>
+      <PressureCalProPage />
+    </PageTransition>
+  }
+/>
           <Route path="/nozzle-size-calculator" element={<NozzleCalculator />} />
           <Route path="/nozzle-size-chart" element={<NozzleSizeChartPage />} />
           <Route
