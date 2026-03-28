@@ -344,6 +344,19 @@ export default function HomePage() {
     },
   ];
 
+  function scrollToCalculator() {
+    const el = document.getElementById("calculator");
+    if (!el) return;
+
+    trackEvent("calculator_section_viewed", {
+      page: "home",
+      location: "hero_button",
+    });
+
+    window.history.replaceState({}, "", `${window.location.pathname}#calculator`);
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   async function copySetupLink() {
     trackEvent("copy_setup_link_clicked", {
       page: "home",
@@ -393,12 +406,13 @@ export default function HomePage() {
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link
-                to="/#calculator"
+              <button
+                type="button"
+                onClick={scrollToCalculator}
                 className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
               >
                 Start your setup
-              </Link>
+              </button>
 
               <Link
                 to={fullRigHref}
