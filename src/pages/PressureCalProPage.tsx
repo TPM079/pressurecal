@@ -6,8 +6,6 @@ import BackToTopButton from "../components/BackToTopButton";
 import { trackEvent } from "../lib/analytics";
 
 const FREE_CALCULATOR_HREF = "/calculator";
-const PRO_MONTHLY_HREF = "/pricing?plan=monthly";
-const PRO_YEARLY_HREF = "/pricing?plan=yearly";
 
 const freeFeatures = [
   "Full system modelling",
@@ -80,6 +78,39 @@ export default function PressureCalProPage() {
   useEffect(() => {
     trackEvent("pricing_page_viewed", { page: "pricing" });
   }, []);
+
+  async function startCheckout(plan: "monthly" | "yearly", location: string) {
+    trackEvent(
+      plan === "monthly"
+        ? "pricing_choose_monthly_clicked"
+        : "pricing_choose_yearly_clicked",
+      {
+        page: "pricing",
+        location,
+      }
+    );
+
+    try {
+      const response = await fetch("/api/create-checkout-session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ plan }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.url) {
+        throw new Error(data.error || "Unable to start checkout");
+      }
+
+      window.location.href = data.url;
+    } catch (error) {
+      console.error(error);
+      window.alert("Sorry, checkout could not be started right now.");
+    }
+  }
 
   return (
     <PressureCalLayout>
@@ -214,30 +245,20 @@ export default function PressureCalProPage() {
               </ul>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Link
-                  to={PRO_MONTHLY_HREF}
-                  onClick={() =>
-                    trackEvent("pricing_choose_monthly_clicked", {
-                      page: "pricing",
-                      location: "plans",
-                    })
-                  }
+                <button
+                  type="button"
+                  onClick={() => startCheckout("monthly", "plans")}
                   className="inline-flex items-center justify-center rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-200"
                 >
                   Choose monthly
-                </Link>
-                <Link
-                  to={PRO_YEARLY_HREF}
-                  onClick={() =>
-                    trackEvent("pricing_choose_yearly_clicked", {
-                      page: "pricing",
-                      location: "plans",
-                    })
-                  }
+                </button>
+                <button
+                  type="button"
+                  onClick={() => startCheckout("yearly", "plans")}
                   className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
                 >
                   Choose yearly
-                </Link>
+                </button>
               </div>
             </div>
           </div>
@@ -397,18 +418,13 @@ export default function PressureCalProPage() {
               Use the free calculator
             </Link>
 
-            <Link
-              to={PRO_MONTHLY_HREF}
-              onClick={() =>
-                trackEvent("pricing_choose_monthly_clicked", {
-                  page: "pricing",
-                  location: "footer",
-                })
-              }
+            <button
+              type="button"
+              onClick={() => startCheckout("monthly", "footer")}
               className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
             >
               Start with PressureCal Pro
-            </Link>
+            </button>
           </div>
         </div>
       </section>
