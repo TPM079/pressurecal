@@ -1,5 +1,5 @@
 import { Helmet } from "react-helmet-async";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import PressureCalLayout from "../components/PressureCalLayout";
 import BackToTopButton from "../components/BackToTopButton";
@@ -75,75 +75,9 @@ const faqItems = [
 ];
 
 export default function PressureCalProPage() {
-  const [checkoutState, setCheckoutState] = useState<"success" | "cancelled" | null>(null);
-
   useEffect(() => {
     trackEvent("pricing_page_viewed", { page: "pricing" });
   }, []);
-
-  async function startCheckout(plan: "monthly" | "yearly", location: string) {
-    trackEvent(
-      plan === "monthly"
-        ? "pricing_choose_monthly_clicked"
-        : "pricing_choose_yearly_clicked",
-      {
-        page: "pricing",
-        location,
-      }
-    );
-
-    try {
-      const response = await fetch("/api/create-checkout-session", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ plan }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || !data.url) {
-        throw new Error(data.error || "Unable to start checkout");
-      }
-
-      window.location.href = data.url;
-    } catch (error) {
-      console.error(error);
-      window.alert("Sorry, checkout could not be started right now.");
-    }
-  }
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const checkout = params.get("checkout");
-
-    if (checkout === "success" || checkout === "cancelled") {
-      setCheckoutState(checkout);
-    } else {
-      setCheckoutState(null);
-    }
-  }, []);
-
-  const checkoutBanner = useMemo(() => {
-    if (checkoutState === "success") {
-      return {
-        cls: "border-green-200 bg-green-50 text-green-900",
-        title: "Subscription confirmed",
-        body: "Your subscription was created successfully. You can now move on to the next Pro setup steps.",
-      };
-    }
-
-    if (checkoutState === "cancelled") {
-      return {
-        cls: "border-slate-200 bg-slate-50 text-slate-700",
-        title: "Checkout cancelled",
-        body: "No problem — your checkout was cancelled and you can try again any time.",
-      };
-    }
-
-    return null;
-  }, [checkoutState]);
 
   return (
     <PressureCalLayout>
@@ -155,18 +89,7 @@ export default function PressureCalProPage() {
         />
       </Helmet>
 
-      {checkoutBanner ? (
-        <section className="-mx-4 border-b border-slate-200 bg-white px-4">
-          <div className="mx-auto max-w-6xl py-4">
-            <div className={`rounded-2xl border px-4 py-4 sm:px-5 ${checkoutBanner.cls}`}>
-              <p className="text-sm font-semibold">{checkoutBanner.title}</p>
-              <p className="mt-1 text-sm leading-6">{checkoutBanner.body}</p>
-            </div>
-          </div>
-        </section>
-      ) : null}
-
-      <section className="-mx-4 -mt-8 border-b border-slate-200 bg-slate-950 px-4 text-white sm:-mt-10">
+      <section className="-mx-4 border-b border-slate-200 bg-slate-950 px-4 text-white">
         <div className="mx-auto max-w-6xl py-16 sm:py-20">
           <div className="max-w-3xl">
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
