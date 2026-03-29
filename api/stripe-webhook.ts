@@ -40,11 +40,10 @@ async function upsertSubscription(input: {
   cancel_at_period_end?: boolean;
   metadata?: Record<string, any>;
 }) {
-  const payload = {
+  const payload: Record<string, any> = {
     stripe_customer_id: input.stripe_customer_id ?? null,
     stripe_subscription_id: input.stripe_subscription_id ?? null,
     stripe_checkout_session_id: input.stripe_checkout_session_id ?? null,
-    email: input.email ?? null,
     status: input.status,
     price_id: input.price_id ?? null,
     plan_interval: input.plan_interval ?? null,
@@ -52,6 +51,12 @@ async function upsertSubscription(input: {
     cancel_at_period_end: input.cancel_at_period_end ?? false,
     metadata: input.metadata ?? {},
   };
+
+  // Only set email when we actually have one.
+  // This prevents later subscription webhooks from overwriting it with null.
+  if (input.email) {
+    payload.email = input.email;
+  }
 
   const { error } = await supabase
     .from("subscriptions")
@@ -94,7 +99,9 @@ export default async function handler(req: any, res: any) {
               : session.subscription?.id;
 
           if (subscriptionId) {
-            const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+            const subscription = await stripe.subscriptions.retrieve(
+              subscriptionId
+            );
 
             await upsertSubscription({
               stripe_customer_id:
@@ -103,7 +110,10 @@ export default async function handler(req: any, res: any) {
                   : subscription.customer?.id,
               stripe_subscription_id: subscription.id,
               stripe_checkout_session_id: session.id,
-              email: session.customer_details?.email || session.customer_email || null,
+              email:
+                session.customer_details?.email ||
+                session.customer_email ||
+                null,
               status: subscription.status,
               price_id: subscription.items.data[0]?.price?.id ?? null,
               plan_interval:
@@ -135,7 +145,6 @@ export default async function handler(req: any, res: any) {
               ? subscription.customer
               : subscription.customer?.id,
           stripe_subscription_id: subscription.id,
-          email: null,
           status: subscription.status,
           price_id: subscription.items.data[0]?.price?.id ?? null,
           plan_interval:
