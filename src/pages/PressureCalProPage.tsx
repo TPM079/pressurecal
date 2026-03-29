@@ -4,8 +4,12 @@ import { Link } from "react-router-dom";
 import PressureCalLayout from "../components/PressureCalLayout";
 import BackToTopButton from "../components/BackToTopButton";
 import { trackEvent } from "../lib/analytics";
+import { supabase } from "../lib/supabase-browser";
 
 const FREE_CALCULATOR_HREF = "/calculator";
+
+type CheckoutState = "success" | "cancelled" | null;
+type CheckoutPlan = "monthly" | "yearly";
 
 const freeFeatures = [
   "Full system modelling",
@@ -24,7 +28,8 @@ const proFeatures = [
 ];
 
 export default function PressureCalProPage() {
-  const [checkoutState, setCheckoutState] = useState<"success" | "cancelled" | null>(null);
+  const [checkoutState, setCheckoutState] = useState<CheckoutState>(null);
+  const [checkoutLoading, setCheckoutLoading] = useState<CheckoutPlan | null>(null);
 
   useEffect(() => {
     trackEvent("pricing_page_viewed", { page: "pricing" });
@@ -41,7 +46,11 @@ export default function PressureCalProPage() {
     }
   }, []);
 
-  async function startCheckout(plan: "monthly" | "yearly", location: string) {
+  async function startCheckout(plan: CheckoutPlan, location: string) {
+    if (checkoutLoading) {
+      return;
+    }
+
     trackEvent(
       plan === "monthly"
         ? "pricing_choose_monthly_clicked"
@@ -52,13 +61,33 @@ export default function PressureCalProPage() {
       }
     );
 
+    setCheckoutLoading(plan);
+
     try {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError) {
+        throw new Error(userError.message || "Unable to verify your account");
+      }
+
+      if (!user) {
+        window.alert("Please sign in before starting PressureCal Pro checkout.");
+        return;
+      }
+
       const response = await fetch("/api/create-checkout-session", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({
+          plan,
+          userId: user.id,
+          email: user.email ?? null,
+        }),
       });
 
       const data = await response.json();
@@ -71,6 +100,8 @@ export default function PressureCalProPage() {
     } catch (error) {
       console.error(error);
       window.alert("Sorry, checkout could not be started right now.");
+    } finally {
+      setCheckoutLoading(null);
     }
   }
 
@@ -93,6 +124,10 @@ export default function PressureCalProPage() {
 
     return null;
   }, [checkoutState]);
+
+  const monthlyLoading = checkoutLoading === "monthly";
+  const yearlyLoading = checkoutLoading === "yearly";
+  const anyCheckoutLoading = checkoutLoading !== null;
 
   return (
     <PressureCalLayout>
@@ -158,6 +193,10 @@ export default function PressureCalProPage() {
             <p className="mt-4 text-sm text-slate-400">
               The core calculator stays free. Pro adds saved workflow,
               organisation, and repeat use.
+            </p>
+            <p className="mt-2 text-sm text-slate-400">
+              Sign in before starting checkout so your Pro access can be linked
+              to your account.
             </p>
           </div>
         </div>
@@ -227,17 +266,19 @@ export default function PressureCalProPage() {
                 <button
                   type="button"
                   onClick={() => startCheckout("monthly", "plans")}
-                  className="inline-flex items-center justify-center rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-200"
+                  disabled={anyCheckoutLoading}
+                  className="inline-flex items-center justify-center rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  Choose monthly
+                  {monthlyLoading ? "Starting monthly..." : "Choose monthly"}
                 </button>
 
                 <button
                   type="button"
                   onClick={() => startCheckout("yearly", "plans")}
-                  className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+                  disabled={anyCheckoutLoading}
+                  className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  Choose yearly
+                  {yearlyLoading ? "Starting yearly..." : "Choose yearly"}
                 </button>
               </div>
             </div>
@@ -269,9 +310,10 @@ export default function PressureCalProPage() {
             <button
               type="button"
               onClick={() => startCheckout("monthly", "footer")}
-              className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+              disabled={anyCheckoutLoading}
+              className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-70"
             >
-              Start with PressureCal Pro
+              {monthlyLoading ? "Starting monthly..." : "Start with PressureCal Pro"}
             </button>
           </div>
         </div>
