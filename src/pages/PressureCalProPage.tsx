@@ -1,11 +1,13 @@
 import { Helmet } from "react-helmet-async";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import PressureCalLayout from "../components/PressureCalLayout";
 import BackToTopButton from "../components/BackToTopButton";
 import { trackEvent } from "../lib/analytics";
 
 const FREE_CALCULATOR_HREF = "/calculator";
+const PRO_MONTHLY_HREF = "/pricing?plan=monthly";
+const PRO_YEARLY_HREF = "/pricing?plan=yearly";
 
 const freeFeatures = [
   "Full system modelling",
@@ -75,42 +77,42 @@ const faqItems = [
 ];
 
 export default function PressureCalProPage() {
+  const [checkoutState, setCheckoutState] = useState<"success" | "cancelled" | null>(null);
+
   useEffect(() => {
     trackEvent("pricing_page_viewed", { page: "pricing" });
   }, []);
 
-  async function startCheckout(plan: "monthly" | "yearly", location: string) {
-    trackEvent(
-      plan === "monthly"
-        ? "pricing_choose_monthly_clicked"
-        : "pricing_choose_yearly_clicked",
-      {
-        page: "pricing",
-        location,
-      }
-    );
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const checkout = params.get("checkout");
 
-    try {
-      const response = await fetch("/api/create-checkout-session", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ plan }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || !data.url) {
-        throw new Error(data.error || "Unable to start checkout");
-      }
-
-      window.location.href = data.url;
-    } catch (error) {
-      console.error(error);
-      window.alert("Sorry, checkout could not be started right now.");
+    if (checkout === "success" || checkout === "cancelled") {
+      setCheckoutState(checkout);
+    } else {
+      setCheckoutState(null);
     }
-  }
+  }, []);
+
+  const checkoutBanner = useMemo(() => {
+    if (checkoutState === "success") {
+      return {
+        cls: "border-green-200 bg-green-50 text-green-900",
+        title: "Subscription confirmed",
+        body: "Your subscription was created successfully. You can now move on to the next Pro setup steps.",
+      };
+    }
+
+    if (checkoutState === "cancelled") {
+      return {
+        cls: "border-slate-200 bg-slate-50 text-slate-700",
+        title: "Checkout cancelled",
+        body: "No problem — your checkout was cancelled and you can try again any time.",
+      };
+    }
+
+    return null;
+  }, [checkoutState]);
 
   return (
     <PressureCalLayout>
@@ -121,6 +123,17 @@ export default function PressureCalProPage() {
           content="PressureCal Pro helps you save setups, compare results, build your setup library, and keep your most-used configurations organised."
         />
       </Helmet>
+
+      {checkoutBanner ? (
+        <section className="-mx-4 border-b border-slate-200 bg-white px-4">
+          <div className="mx-auto max-w-6xl py-4">
+            <div className={`rounded-2xl border px-4 py-4 sm:px-5 ${checkoutBanner.cls}`}>
+              <p className="text-sm font-semibold">{checkoutBanner.title}</p>
+              <p className="mt-1 text-sm leading-6">{checkoutBanner.body}</p>
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <section className="-mx-4 -mt-8 border-b border-slate-200 bg-slate-950 px-4 text-white sm:-mt-10">
         <div className="mx-auto max-w-6xl py-16 sm:py-20">
@@ -245,20 +258,30 @@ export default function PressureCalProPage() {
               </ul>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <button
-                  type="button"
-                  onClick={() => startCheckout("monthly", "plans")}
+                <Link
+                  to={PRO_MONTHLY_HREF}
+                  onClick={() =>
+                    trackEvent("pricing_choose_monthly_clicked", {
+                      page: "pricing",
+                      location: "plans",
+                    })
+                  }
                   className="inline-flex items-center justify-center rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-200"
                 >
                   Choose monthly
-                </button>
-                <button
-                  type="button"
-                  onClick={() => startCheckout("yearly", "plans")}
+                </Link>
+                <Link
+                  to={PRO_YEARLY_HREF}
+                  onClick={() =>
+                    trackEvent("pricing_choose_yearly_clicked", {
+                      page: "pricing",
+                      location: "plans",
+                    })
+                  }
                   className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
                 >
                   Choose yearly
-                </button>
+                </Link>
               </div>
             </div>
           </div>
@@ -418,13 +441,18 @@ export default function PressureCalProPage() {
               Use the free calculator
             </Link>
 
-            <button
-              type="button"
-              onClick={() => startCheckout("monthly", "footer")}
+            <Link
+              to={PRO_MONTHLY_HREF}
+              onClick={() =>
+                trackEvent("pricing_choose_monthly_clicked", {
+                  page: "pricing",
+                  location: "footer",
+                })
+              }
               className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
             >
               Start with PressureCal Pro
-            </button>
+            </Link>
           </div>
         </div>
       </section>
