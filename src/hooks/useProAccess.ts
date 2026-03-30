@@ -49,6 +49,25 @@ function pickBestSubscription(rows: SubscriptionRow[]): SubscriptionRow | null {
   })[0];
 }
 
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = window.setTimeout(() => {
+      reject(new Error(`${label} timed out. Please refresh and try again.`));
+    }, timeoutMs);
+
+    promise.then(
+      (value) => {
+        window.clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        window.clearTimeout(timer);
+        reject(error);
+      }
+    );
+  });
+}
+
 export function useProAccess(): ProAccessState {
   const [state, setState] = useState<ProAccessState>({
     loading: true,
@@ -64,82 +83,99 @@ export function useProAccess(): ProAccessState {
     let isMounted = true;
 
     async function load() {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
+      try {
+        const sessionResponse = await withTimeout(
+          supabase.auth.getSession(),
+          4000,
+          "Checking your sign-in session"
+        );
 
-      if (!isMounted) {
-        return;
-      }
+        if (!isMounted) {
+          return;
+        }
 
-      if (userError) {
-        setState({
-          loading: false,
-          isAuthenticated: false,
-          isPro: false,
-          userId: null,
-          email: null,
-          subscription: null,
-          error: userError.message,
-        });
-        return;
-      }
+        const session = sessionResponse.data.session;
 
-      if (!user) {
-        setState({
-          loading: false,
-          isAuthenticated: false,
-          isPro: false,
-          userId: null,
-          email: null,
-          subscription: null,
-          error: null,
-        });
-        return;
-      }
+        if (!session?.user) {
+          setState({
+            loading: false,
+            isAuthenticated: false,
+            isPro: false,
+            userId: null,
+            email: null,
+            subscription: null,
+            error: null,
+          });
+          return;
+        }
 
-      const { data, error } = await supabase
-        .from("subscriptions")
-        .select("status, price_id, plan_interval, current_period_end, cancel_at_period_end")
-        .eq("user_id", user.id);
+        const user = session.user;
 
-      if (!isMounted) {
-        return;
-      }
+        const { data, error } = await withTimeout(
+          supabase
+            .from("subscriptions")
+            .select("status, price_id, plan_interval, current_period_end, cancel_at_period_end")
+            .eq("user_id", user.id),
+          5000,
+          "Checking your subscription"
+        );
 
-      if (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        if (error) {
+          setState({
+            loading: false,
+            isAuthenticated: true,
+            isPro: false,
+            userId: user.id,
+            email: user.email ?? null,
+            subscription: null,
+            error: error.message,
+          });
+          return;
+        }
+
+        const bestSubscription = pickBestSubscription((data ?? []) as SubscriptionRow[]);
+
         setState({
           loading: false,
           isAuthenticated: true,
-          isPro: false,
+          isPro: bestSubscription?.status === "active",
           userId: user.id,
           email: user.email ?? null,
-          subscription: null,
-          error: error.message,
+          subscription: bestSubscription,
+          error: null,
         });
-        return;
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Unable to check your subscription right now.";
+
+        setState({
+          loading: false,
+          isAuthenticated: false,
+          isPro: false,
+          userId: null,
+          email: null,
+          subscription: null,
+          error: message,
+        });
       }
-
-      const bestSubscription = pickBestSubscription((data ?? []) as SubscriptionRow[]);
-
-      setState({
-        loading: false,
-        isAuthenticated: true,
-        isPro: bestSubscription?.status === "active",
-        userId: user.id,
-        email: user.email ?? null,
-        subscription: bestSubscription,
-        error: null,
-      });
     }
 
-    load();
+    void load();
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(() => {
-      load();
+      void load();
     });
 
     return () => {

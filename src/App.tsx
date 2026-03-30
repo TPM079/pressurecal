@@ -12,6 +12,8 @@ import {
 } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import PressureCalProPage from "./pages/PressureCalProPage";
+import SavedSetupsPage from "./pages/SavedSetupsPage";
+import AccountPage from "./pages/AccountPage";
 import HomePage from "./pages/HomePage";
 import FullRigCalculatorPage from "./pages/FullRigCalculator";
 import AdminFeedbackPage from "./pages/AdminFeedbackPage";
@@ -20,6 +22,7 @@ import NozzleSizeChartPage from "./pages/NozzleSizeChartPage";
 import HosePressureLossCalculator from "./pages/HosePressureLossCalculator";
 import PsiBarCalculatorPage from "./pages/PsiBarCalculatorPage";
 import GpmLpmCalculatorPage from "./pages/GpmLpmCalculatorPage";
+
 function PageTransition({ children }: { children: ReactNode }) {
   return (
     <motion.div
@@ -44,6 +47,7 @@ function ScrollManager() {
       window.scrollTo(0, 0);
       return;
     }
+
     if (navigationType !== "POP") {
       window.scrollTo(0, 0);
     }
@@ -87,22 +91,83 @@ export default function App() {
               </PageTransition>
             }
           />
-<Route
-  path="/pricing"
-  element={
-    <PageTransition>
-      <PressureCalProPage />
-    </PageTransition>
-  }
-/>
-          <Route path="/nozzle-size-calculator" element={<NozzleCalculator />} />
-          <Route path="/nozzle-size-chart" element={<NozzleSizeChartPage />} />
+
+          <Route
+            path="/pricing"
+            element={
+              <PageTransition>
+                <PressureCalProPage />
+              </PageTransition>
+            }
+          />
+
+          <Route
+            path="/pro"
+            element={<Navigate to="/pricing" replace />}
+          />
+
+          <Route
+            path="/account"
+            element={
+              <PageTransition>
+                <AccountPage />
+              </PageTransition>
+            }
+          />
+
+          <Route
+            path="/saved-setups"
+            element={
+              <PageTransition>
+                <SavedSetupsPage />
+              </PageTransition>
+            }
+          />
+
+          <Route
+            path="/nozzle-size-calculator"
+            element={
+              <PageTransition>
+                <NozzleCalculator />
+              </PageTransition>
+            }
+          />
+
+          <Route
+            path="/nozzle-size-chart"
+            element={
+              <PageTransition>
+                <NozzleSizeChartPage />
+              </PageTransition>
+            }
+          />
+
           <Route
             path="/hose-pressure-loss-calculator"
-            element={<HosePressureLossCalculator />}
+            element={
+              <PageTransition>
+                <HosePressureLossCalculator />
+              </PageTransition>
+            }
           />
-          <Route path="/psi-bar-calculator" element={<PsiBarCalculatorPage />} />
-          <Route path="/lpm-gpm-calculator" element={<GpmLpmCalculatorPage />} />
+
+          <Route
+            path="/psi-bar-calculator"
+            element={
+              <PageTransition>
+                <PsiBarCalculatorPage />
+              </PageTransition>
+            }
+          />
+
+          <Route
+            path="/lpm-gpm-calculator"
+            element={
+              <PageTransition>
+                <GpmLpmCalculatorPage />
+              </PageTransition>
+            }
+          />
 
           <Route
             path="/gpm-lpm-calculator"

@@ -1,15 +1,12 @@
 import { Helmet } from "react-helmet-async";
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import PressureCalLayout from "../components/PressureCalLayout";
 import BackToTopButton from "../components/BackToTopButton";
 import { trackEvent } from "../lib/analytics";
 import { supabase } from "../lib/supabase-browser";
 
 const FREE_CALCULATOR_HREF = "/calculator";
-
-type CheckoutState = "success" | "cancelled" | null;
-type CheckoutPlan = "monthly" | "yearly";
 
 const freeFeatures = [
   "Full system modelling",
@@ -28,8 +25,11 @@ const proFeatures = [
 ];
 
 export default function PressureCalProPage() {
-  const [checkoutState, setCheckoutState] = useState<CheckoutState>(null);
-  const [checkoutLoading, setCheckoutLoading] = useState<CheckoutPlan | null>(null);
+  const navigate = useNavigate();
+  const [checkoutState, setCheckoutState] = useState<"success" | "cancelled" | null>(null);
+  const [authState, setAuthState] = useState<"loading" | "signed_out" | "signed_in">("loading");
+  const [currentEmail, setCurrentEmail] = useState<string | null>(null);
+  const [busyPlan, setBusyPlan] = useState<"monthly" | "yearly" | null>(null);
 
   useEffect(() => {
     trackEvent("pricing_page_viewed", { page: "pricing" });
@@ -46,11 +46,52 @@ export default function PressureCalProPage() {
     }
   }, []);
 
-  async function startCheckout(plan: CheckoutPlan, location: string) {
-    if (checkoutLoading) {
-      return;
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadUser() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!mounted) {
+        return;
+      }
+
+      if (user?.email) {
+        setCurrentEmail(user.email);
+        setAuthState("signed_in");
+      } else {
+        setCurrentEmail(null);
+        setAuthState("signed_out");
+      }
     }
 
+    loadUser();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user?.email) {
+        setCurrentEmail(user.email);
+        setAuthState("signed_in");
+      } else {
+        setCurrentEmail(null);
+        setAuthState("signed_out");
+      }
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  async function startCheckout(plan: "monthly" | "yearly", location: string) {
     trackEvent(
       plan === "monthly"
         ? "pricing_choose_monthly_clicked"
@@ -61,20 +102,15 @@ export default function PressureCalProPage() {
       }
     );
 
-    setCheckoutLoading(plan);
+    setBusyPlan(plan);
 
     try {
       const {
         data: { user },
-        error: userError,
       } = await supabase.auth.getUser();
 
-      if (userError) {
-        throw new Error(userError.message || "Unable to verify your account");
-      }
-
-      if (!user) {
-        window.alert("Please sign in before starting PressureCal Pro checkout.");
+      if (!user?.id || !user?.email) {
+        navigate("/account");
         return;
       }
 
@@ -86,7 +122,7 @@ export default function PressureCalProPage() {
         body: JSON.stringify({
           plan,
           userId: user.id,
-          email: user.email ?? null,
+          email: user.email,
         }),
       });
 
@@ -101,7 +137,7 @@ export default function PressureCalProPage() {
       console.error(error);
       window.alert("Sorry, checkout could not be started right now.");
     } finally {
-      setCheckoutLoading(null);
+      setBusyPlan(null);
     }
   }
 
@@ -125,9 +161,29 @@ export default function PressureCalProPage() {
     return null;
   }, [checkoutState]);
 
-  const monthlyLoading = checkoutLoading === "monthly";
-  const yearlyLoading = checkoutLoading === "yearly";
-  const anyCheckoutLoading = checkoutLoading !== null;
+  const authBanner = useMemo(() => {
+    if (authState === "loading") {
+      return {
+        cls: "border-slate-200 bg-slate-50 text-slate-700",
+        title: "Checking sign-in status",
+        body: "Just a moment…",
+      };
+    }
+
+    if (authState === "signed_in" && currentEmail) {
+      return {
+        cls: "border-green-200 bg-green-50 text-green-900",
+        title: "Signed in",
+        body: `Signed in as ${currentEmail}. You can start checkout now.`,
+      };
+    }
+
+    return {
+      cls: "border-amber-200 bg-amber-50 text-amber-900",
+      title: "Sign in before checkout",
+      body: "Use the sign-in button below so your Pro subscription can be linked to your account.",
+    };
+  }, [authState, currentEmail]);
 
   return (
     <PressureCalLayout>
@@ -162,6 +218,12 @@ export default function PressureCalProPage() {
               setup library, and keep your most-used configurations organised.
             </p>
 
+
+            <div className={`mt-6 rounded-2xl border px-4 py-4 sm:px-5 ${authBanner.cls}`}>
+              <p className="text-sm font-semibold">{authBanner.title}</p>
+              <p className="mt-1 text-sm leading-6">{authBanner.body}</p>
+            </div>
+
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <a
                 href="#plans"
@@ -188,15 +250,18 @@ export default function PressureCalProPage() {
               >
                 Use the free calculator
               </Link>
+
+              <Link
+                to="/account"
+                className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+              >
+                {authState === "signed_in" ? "Manage account" : "Sign in"}
+              </Link>
             </div>
 
             <p className="mt-4 text-sm text-slate-400">
               The core calculator stays free. Pro adds saved workflow,
               organisation, and repeat use.
-            </p>
-            <p className="mt-2 text-sm text-slate-400">
-              Sign in before starting checkout so your Pro access can be linked
-              to your account.
             </p>
           </div>
         </div>
@@ -266,21 +331,35 @@ export default function PressureCalProPage() {
                 <button
                   type="button"
                   onClick={() => startCheckout("monthly", "plans")}
-                  disabled={anyCheckoutLoading}
-                  className="inline-flex items-center justify-center rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-70"
+                  disabled={busyPlan !== null}
+                  className="inline-flex items-center justify-center rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {monthlyLoading ? "Starting monthly..." : "Choose monthly"}
+                  {busyPlan === "monthly" ? "Starting…" : "Choose monthly"}
                 </button>
 
                 <button
                   type="button"
                   onClick={() => startCheckout("yearly", "plans")}
-                  disabled={anyCheckoutLoading}
-                  className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-70"
+                  disabled={busyPlan !== null}
+                  className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {yearlyLoading ? "Starting yearly..." : "Choose yearly"}
+                  {busyPlan === "yearly" ? "Starting…" : "Choose yearly"}
                 </button>
               </div>
+
+              {authState !== "signed_in" ? (
+                <div className="mt-4 rounded-2xl border border-white/15 bg-white/5 px-4 py-4 text-sm text-slate-200">
+                  You need to sign in before starting checkout.
+                  <div className="mt-3">
+                    <Link
+                      to="/account"
+                      className="inline-flex items-center justify-center rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-slate-200"
+                    >
+                      Sign in now
+                    </Link>
+                  </div>
+                </div>
+              ) : null}
             </div>
           </div>
         </div>
@@ -307,14 +386,23 @@ export default function PressureCalProPage() {
               Use the free calculator
             </Link>
 
-            <button
-              type="button"
-              onClick={() => startCheckout("monthly", "footer")}
-              disabled={anyCheckoutLoading}
-              className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              {monthlyLoading ? "Starting monthly..." : "Start with PressureCal Pro"}
-            </button>
+            {authState === "signed_in" ? (
+              <button
+                type="button"
+                onClick={() => startCheckout("monthly", "footer")}
+                disabled={busyPlan !== null}
+                className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {busyPlan === "monthly" ? "Starting…" : "Start with PressureCal Pro"}
+              </button>
+            ) : (
+              <Link
+                to="/account"
+                className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+              >
+                Sign in for PressureCal Pro
+              </Link>
+            )}
           </div>
         </div>
       </section>
