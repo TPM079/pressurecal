@@ -49,13 +49,17 @@ function pickBestSubscription(rows: SubscriptionRow[]): SubscriptionRow | null {
   })[0];
 }
 
-function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+function withTimeout<T>(
+  operation: PromiseLike<T> | T,
+  timeoutMs: number,
+  label: string
+): Promise<T> {
   return new Promise((resolve, reject) => {
     const timer = window.setTimeout(() => {
       reject(new Error(`${label} timed out. Please refresh and try again.`));
     }, timeoutMs);
 
-    promise.then(
+    Promise.resolve(operation).then(
       (value) => {
         window.clearTimeout(timer);
         resolve(value);
