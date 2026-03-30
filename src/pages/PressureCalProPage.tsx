@@ -32,6 +32,7 @@ const proFeatures = [
 
 type AuthState = "loading" | "signed_out" | "signed_in";
 type SubscriptionState = "loading" | "none" | "active" | "non_active";
+
 type SubscriptionSummary = {
   status: string | null;
   price_id: string | null;
@@ -40,13 +41,18 @@ type SubscriptionSummary = {
   cancel_at_period_end: boolean | null;
 };
 
-function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+type SubscriptionQueryResult = {
+  data: SubscriptionSummary[] | null;
+  error: { message?: string } | null;
+};
+
+function withTimeout<T>(promise: PromiseLike<T>, timeoutMs: number, label: string): Promise<T> {
   return new Promise((resolve, reject) => {
     const timer = window.setTimeout(() => {
       reject(new Error(`${label} timed out. Please refresh and try again.`));
     }, timeoutMs);
 
-    promise.then(
+    Promise.resolve(promise).then(
       (value) => {
         window.clearTimeout(timer);
         resolve(value);
@@ -164,11 +170,14 @@ export default function PressureCalProPage() {
         setAuthState("signed_in");
         setSubscriptionState("loading");
 
+        const subscriptionRequest = supabase
+          .from("subscriptions")
+          .select("status, price_id, plan_interval, current_period_end, cancel_at_period_end")
+          .eq("user_id", user.id)
+          .then((result) => result as SubscriptionQueryResult);
+
         const { data, error } = await withTimeout(
-          supabase
-            .from("subscriptions")
-            .select("status, price_id, plan_interval, current_period_end, cancel_at_period_end")
-            .eq("user_id", user.id),
+          subscriptionRequest,
           5000,
           "Checking subscription status"
         );
@@ -184,7 +193,7 @@ export default function PressureCalProPage() {
           return;
         }
 
-        const best = pickBestSubscription((data ?? []) as SubscriptionSummary[]);
+        const best = pickBestSubscription(data ?? []);
         setSubscription(best);
 
         if (!best) {
