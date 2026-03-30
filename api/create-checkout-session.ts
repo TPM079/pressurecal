@@ -55,10 +55,12 @@ function getRequestOrigin(req: any): string {
     }
   }
 
-  return "https://www.pressurecal.com";
+  return "https://pressurecal.com";
 }
 
-async function findExistingStripeCustomerId(userId?: string | null): Promise<string | null> {
+async function findLatestStoredStripeCustomerId(
+  userId?: string | null
+): Promise<string | null> {
   if (!supabaseAdmin || !userId) {
     return null;
   }
@@ -80,6 +82,69 @@ async function findExistingStripeCustomerId(userId?: string | null): Promise<str
   return data?.stripe_customer_id ?? null;
 }
 
+async function clearStaleStripeCustomerId(
+  userId: string,
+  staleCustomerId: string
+): Promise<void> {
+  if (!supabaseAdmin) {
+    return;
+  }
+
+  const { error } = await supabaseAdmin
+    .from("subscriptions")
+    .update({
+      stripe_customer_id: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("user_id", userId)
+    .eq("stripe_customer_id", staleCustomerId);
+
+  if (error) {
+    console.error("Failed to clear stale Stripe customer id:", error);
+  }
+}
+
+async function getReusableStripeCustomerId(
+  userId?: string | null
+): Promise<string | null> {
+  const storedCustomerId = await findLatestStoredStripeCustomerId(userId);
+
+  if (!storedCustomerId) {
+    return null;
+  }
+
+  try {
+    const customer = await stripe.customers.retrieve(storedCustomerId);
+
+    if ("deleted" in customer && customer.deleted) {
+      if (userId) {
+        await clearStaleStripeCustomerId(userId, storedCustomerId);
+      }
+      return null;
+    }
+
+    return customer.id;
+  } catch (error: any) {
+    const isMissingCustomer =
+      error?.type === "StripeInvalidRequestError" &&
+      error?.code === "resource_missing";
+
+    if (isMissingCustomer) {
+      console.warn(
+        `Stored Stripe customer ${storedCustomerId} was not found for user ${userId}. Falling back to customer_email.`
+      );
+
+      if (userId) {
+        await clearStaleStripeCustomerId(userId, storedCustomerId);
+      }
+
+      return null;
+    }
+
+    throw error;
+  }
+}
+
 export default async function handler(req: any, res: any) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -99,7 +164,7 @@ export default async function handler(req: any, res: any) {
     }
 
     const origin = getRequestOrigin(req);
-    const existingCustomerId = await findExistingStripeCustomerId(userId);
+    const reusableCustomerId = await getReusableStripeCustomerId(userId);
 
     const metadata = {
       source: "pressurecal_checkout",
@@ -118,8 +183,8 @@ export default async function handler(req: any, res: any) {
       ],
       allow_promotion_codes: true,
       client_reference_id: userId || undefined,
-      ...(existingCustomerId
-        ? { customer: existingCustomerId }
+      ...(reusableCustomerId
+        ? { customer: reusableCustomerId }
         : email
           ? { customer_email: email }
           : {}),
