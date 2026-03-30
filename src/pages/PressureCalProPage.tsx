@@ -31,6 +31,14 @@ const proFeatures = [
 ];
 
 type AuthState = "loading" | "signed_out" | "signed_in";
+type SubscriptionState = "loading" | "none" | "active" | "non_active";
+type SubscriptionSummary = {
+  status: string | null;
+  price_id: string | null;
+  plan_interval: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean | null;
+};
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -51,15 +59,59 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): 
   });
 }
 
+function rankStatus(status?: string | null) {
+  switch (status) {
+    case "active":
+      return 0;
+    case "trialing":
+      return 1;
+    case "past_due":
+      return 2;
+    case "unpaid":
+      return 3;
+    case "canceled":
+      return 4;
+    case "incomplete":
+      return 5;
+    case "incomplete_expired":
+      return 6;
+    default:
+      return 99;
+  }
+}
+
+function pickBestSubscription(rows: SubscriptionSummary[]): SubscriptionSummary | null {
+  if (rows.length === 0) {
+    return null;
+  }
+
+  return [...rows].sort((a, b) => {
+    const rankDiff = rankStatus(a.status) - rankStatus(b.status);
+
+    if (rankDiff !== 0) {
+      return rankDiff;
+    }
+
+    const endA = a.current_period_end ? new Date(a.current_period_end).getTime() : 0;
+    const endB = b.current_period_end ? new Date(b.current_period_end).getTime() : 0;
+
+    return endB - endA;
+  })[0];
+}
+
 export default function PressureCalProPage() {
   const [checkoutState, setCheckoutState] = useState<"success" | "cancelled" | null>(null);
   const [authState, setAuthState] = useState<AuthState>("loading");
+  const [subscriptionState, setSubscriptionState] = useState<SubscriptionState>("loading");
+  const [subscription, setSubscription] = useState<SubscriptionSummary | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentEmail, setCurrentEmail] = useState<string | null>(null);
   const [busyPlan, setBusyPlan] = useState<CheckoutPlan | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<CheckoutPlan | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<string>("plans");
   const [signInEmail, setSignInEmail] = useState("");
   const [signInBusy, setSignInBusy] = useState(false);
+  const [portalBusy, setPortalBusy] = useState(false);
   const [signInMessage, setSignInMessage] = useState<string | null>(null);
   const [signInError, setSignInError] = useState<string | null>(null);
   const [transitionMessage, setTransitionMessage] = useState<string | null>(null);
@@ -84,7 +136,7 @@ export default function PressureCalProPage() {
   useEffect(() => {
     let mounted = true;
 
-    async function loadSession() {
+    async function loadSessionAndSubscription() {
       try {
         const sessionResponse = await withTimeout(
           supabase.auth.getSession(),
@@ -98,39 +150,70 @@ export default function PressureCalProPage() {
 
         const user = sessionResponse.data.session?.user;
 
-        if (user?.email) {
-          setCurrentEmail(user.email);
-          setAuthState("signed_in");
-        } else {
+        if (!user?.id || !user?.email) {
+          setCurrentUserId(null);
           setCurrentEmail(null);
+          setSubscription(null);
           setAuthState("signed_out");
+          setSubscriptionState("none");
+          return;
         }
-      } catch {
+
+        setCurrentUserId(user.id);
+        setCurrentEmail(user.email);
+        setAuthState("signed_in");
+        setSubscriptionState("loading");
+
+        const { data, error } = await withTimeout(
+          supabase
+            .from("subscriptions")
+            .select("status, price_id, plan_interval, current_period_end, cancel_at_period_end")
+            .eq("user_id", user.id),
+          5000,
+          "Checking subscription status"
+        );
+
         if (!mounted) {
           return;
         }
 
+        if (error) {
+          console.error(error);
+          setSubscription(null);
+          setSubscriptionState("none");
+          return;
+        }
+
+        const best = pickBestSubscription((data ?? []) as SubscriptionSummary[]);
+        setSubscription(best);
+
+        if (!best) {
+          setSubscriptionState("none");
+          return;
+        }
+
+        setSubscriptionState(best.status === "active" ? "active" : "non_active");
+      } catch (error) {
+        console.error(error);
+
+        if (!mounted) {
+          return;
+        }
+
+        setCurrentUserId(null);
         setCurrentEmail(null);
+        setSubscription(null);
         setAuthState("signed_out");
+        setSubscriptionState("none");
       }
     }
 
-    void loadSession();
+    void loadSessionAndSubscription();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!mounted) {
-        return;
-      }
-
-      if (session?.user?.email) {
-        setCurrentEmail(session.user.email);
-        setAuthState("signed_in");
-      } else {
-        setCurrentEmail(null);
-        setAuthState("signed_out");
-      }
+    } = supabase.auth.onAuthStateChange(() => {
+      void loadSessionAndSubscription();
     });
 
     return () => {
@@ -148,12 +231,31 @@ export default function PressureCalProPage() {
         return;
       }
 
+      if (subscriptionState === "active") {
+        autoResumeHandledRef.current = true;
+        clearPendingCheckout();
+        params.delete("resumeCheckout");
+        const nextSearch = params.toString();
+        window.history.replaceState({}, "", nextSearch ? `/pricing?${nextSearch}` : "/pricing");
+        return;
+      }
+
       const pending = getPendingCheckout();
 
       if (!pending) {
         params.delete("resumeCheckout");
         const nextSearch = params.toString();
         window.history.replaceState({}, "", nextSearch ? `/pricing?${nextSearch}` : "/pricing");
+        return;
+      }
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      const user = session?.user;
+
+      if (!user?.id || !user?.email) {
         return;
       }
 
@@ -165,18 +267,6 @@ export default function PressureCalProPage() {
       setSignInError(null);
       setTransitionMessage("Taking you to secure checkout…");
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      const user = session?.user;
-
-      if (!user?.id || !user?.email) {
-        setTransitionMessage(null);
-        setSignInError("You are signed in, but your account details could not be read. Please try again.");
-        return;
-      }
-
       const paramsAfter = new URLSearchParams(window.location.search);
       paramsAfter.delete("resumeCheckout");
       const nextSearch = paramsAfter.toString();
@@ -186,7 +276,7 @@ export default function PressureCalProPage() {
     }
 
     void maybeResumeCheckout();
-  }, [authState]);
+  }, [authState, subscriptionState]);
 
   async function createCheckoutSession(
     plan: CheckoutPlan,
@@ -233,6 +323,45 @@ export default function PressureCalProPage() {
     }
   }
 
+  async function openCustomerPortal() {
+    if (!currentUserId) {
+      setSignInError("Please sign in first.");
+      return;
+    }
+
+    setPortalBusy(true);
+    setSignInError(null);
+    setTransitionMessage("Opening your subscription settings…");
+
+    try {
+      const response = await fetch("/api/create-customer-portal-session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: currentUserId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.url) {
+        throw new Error(data.error || "Unable to open customer portal");
+      }
+
+      window.location.href = data.url;
+    } catch (error) {
+      console.error(error);
+      const text =
+        error instanceof Error ? error.message : "Unable to open subscription settings right now.";
+      setSignInError(text);
+      setTransitionMessage(null);
+    } finally {
+      setPortalBusy(false);
+    }
+  }
+
   function promptInlineSignIn(plan: CheckoutPlan, location: string) {
     setSelectedPlan(plan);
     setSelectedLocation(location);
@@ -265,6 +394,11 @@ export default function PressureCalProPage() {
 
     if (!user?.id || !user?.email) {
       promptInlineSignIn(plan, location);
+      return;
+    }
+
+    if (subscriptionState === "active") {
+      setSignInMessage("You already have PressureCal Pro.");
       return;
     }
 
@@ -351,6 +485,14 @@ export default function PressureCalProPage() {
       };
     }
 
+    if (subscriptionState === "active" && currentEmail) {
+      return {
+        cls: "border-green-200 bg-green-50 text-green-900",
+        title: "You already have PressureCal Pro",
+        body: `Signed in as ${currentEmail}. You can open your Pro tools or manage billing below.`,
+      };
+    }
+
     if (authState === "signed_in" && currentEmail) {
       return {
         cls: "border-green-200 bg-green-50 text-green-900",
@@ -372,9 +514,10 @@ export default function PressureCalProPage() {
       title: "Choose a plan",
       body: "If you are not signed in yet, we will ask for your email and continue to checkout automatically after sign-in.",
     };
-  }, [authState, currentEmail, selectedPlan]);
+  }, [authState, subscriptionState, currentEmail, selectedPlan]);
 
   const showCheckoutOverlay = Boolean(transitionMessage);
+  const alreadyPro = subscriptionState === "active";
 
   return (
     <PressureCalLayout>
@@ -390,7 +533,9 @@ export default function PressureCalProPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 px-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-3xl border border-white/10 bg-slate-950 px-6 py-6 text-center text-white shadow-2xl">
             <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-white/25 border-t-white" />
-            <p className="mt-4 text-lg font-semibold">Taking you to secure checkout</p>
+            <p className="mt-4 text-lg font-semibold">
+              {portalBusy ? "Opening subscription settings" : "Taking you to secure checkout"}
+            </p>
             <p className="mt-2 text-sm leading-6 text-slate-300">{transitionMessage}</p>
           </div>
         </div>
@@ -451,12 +596,23 @@ export default function PressureCalProPage() {
                 Use the free calculator
               </Link>
 
-              <Link
-                to="/account"
-                className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
-              >
-                {authState === "signed_in" ? "Manage account" : "Account"}
-              </Link>
+              {alreadyPro ? (
+                <button
+                  type="button"
+                  onClick={openCustomerPortal}
+                  disabled={portalBusy}
+                  className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {portalBusy ? "Opening billing…" : "Manage subscription"}
+                </button>
+              ) : (
+                <Link
+                  to="/account"
+                  className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+                >
+                  {authState === "signed_in" ? "Manage account" : "Account"}
+                </Link>
+              )}
             </div>
 
             <p className="mt-4 text-sm text-slate-400">
@@ -509,97 +665,147 @@ export default function PressureCalProPage() {
             </div>
 
             <div className="rounded-3xl border border-slate-950 bg-slate-950 p-8 text-white shadow-sm">
-              <h3 className="text-2xl font-semibold">PressureCal Pro</h3>
-              <p className="mt-2 text-sm font-medium text-slate-300">
-                For saved workflow and repeat use
-              </p>
-
-              <div className="mt-6 flex flex-wrap items-end gap-3">
-                <p className="text-4xl font-bold tracking-tight">$9.95</p>
-                <p className="pb-1 text-sm text-slate-300">/ month</p>
-              </div>
-
-              <p className="mt-2 text-sm text-slate-300">or $99 / year</p>
-
-              <ul className="mt-8 space-y-3 text-base leading-7 text-slate-100">
-                {proFeatures.map((feature) => (
-                  <li key={feature}>• {feature}</li>
-                ))}
-              </ul>
-
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <button
-                  type="button"
-                  onClick={() => startCheckout("monthly", "plans")}
-                  disabled={busyPlan !== null || signInBusy}
-                  className="inline-flex items-center justify-center rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {busyPlan === "monthly" ? "Starting…" : "Choose monthly"}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => startCheckout("yearly", "plans")}
-                  disabled={busyPlan !== null || signInBusy}
-                  className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {busyPlan === "yearly" ? "Starting…" : "Choose yearly"}
-                </button>
-              </div>
-
-              {authState !== "signed_in" ? (
-                <div
-                  ref={signInCardRef}
-                  className="mt-6 rounded-2xl border border-white/15 bg-white/5 px-4 py-5 text-sm text-slate-200"
-                >
-                  <p className="font-semibold text-white">
-                    {selectedPlan
-                      ? `Continue with ${selectedPlan === "monthly" ? "Monthly" : "Yearly"} Pro`
-                      : "Choose a plan to continue"}
-                  </p>
-                  <p className="mt-2 text-slate-300">
-                    Enter your email and we will send you a magic link. After you sign in, checkout will continue automatically.
+              {alreadyPro ? (
+                <>
+                  <h3 className="text-2xl font-semibold">You already have PressureCal Pro</h3>
+                  <p className="mt-2 text-sm font-medium text-slate-300">
+                    Your Pro tools are ready to use
                   </p>
 
-                  <form onSubmit={sendMagicLink} className="mt-4">
-                    <label className="block text-sm font-medium text-slate-200" htmlFor="pricing-signin-email">
-                      Email address
-                    </label>
-                    <input
-                      id="pricing-signin-email"
-                      type="email"
-                      autoComplete="email"
-                      value={signInEmail}
-                      onChange={(event) => setSignInEmail(event.target.value)}
-                      placeholder="you@example.com"
-                      className="mt-2 w-full rounded-2xl border border-white/15 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-white"
-                    />
+                  <div className="mt-6 rounded-2xl border border-white/15 bg-white/5 px-4 py-4 text-sm text-slate-200">
+                    <p className="font-semibold text-white">Current access</p>
+                    <p className="mt-2">
+                      Status: <span className="font-medium uppercase">{subscription?.status ?? "unknown"}</span>
+                    </p>
+                    {subscription?.plan_interval ? (
+                      <p className="mt-1">
+                        Billing interval:{" "}
+                        <span className="font-medium capitalize">{subscription.plan_interval}</span>
+                      </p>
+                    ) : null}
+                    {subscription?.current_period_end ? (
+                      <p className="mt-1">
+                        Current period end:{" "}
+                        <span className="font-medium">
+                          {new Date(subscription.current_period_end).toLocaleDateString()}
+                        </span>
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                    <Link
+                      to="/saved-setups"
+                      className="inline-flex items-center justify-center rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-200"
+                    >
+                      Open Saved Setups
+                    </Link>
 
                     <button
-                      type="submit"
-                      disabled={signInBusy || !selectedPlan || busyPlan !== null}
-                      className="mt-4 inline-flex items-center justify-center rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
+                      type="button"
+                      onClick={openCustomerPortal}
+                      disabled={portalBusy}
+                      className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      {signInBusy ? "Sending magic link…" : "Continue with email"}
+                      {portalBusy ? "Opening billing…" : "Manage Subscription"}
                     </button>
-                  </form>
-
-                  {signInMessage ? (
-                    <div className="mt-4 rounded-2xl border border-green-200 bg-green-50 px-4 py-4 text-sm text-green-900">
-                      {signInMessage}
-                    </div>
-                  ) : null}
-
-                  {signInError ? (
-                    <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
-                      {signInError}
-                    </div>
-                  ) : null}
-                </div>
+                  </div>
+                </>
               ) : (
-                <div className="mt-4 rounded-2xl border border-white/15 bg-white/5 px-4 py-4 text-sm text-slate-200">
-                  You are signed in, so choosing a plan now will take you straight to secure checkout.
-                </div>
+                <>
+                  <h3 className="text-2xl font-semibold">PressureCal Pro</h3>
+                  <p className="mt-2 text-sm font-medium text-slate-300">
+                    For saved workflow and repeat use
+                  </p>
+
+                  <div className="mt-6 flex flex-wrap items-end gap-3">
+                    <p className="text-4xl font-bold tracking-tight">$9.95</p>
+                    <p className="pb-1 text-sm text-slate-300">/ month</p>
+                  </div>
+
+                  <p className="mt-2 text-sm text-slate-300">or $99 / year</p>
+
+                  <ul className="mt-8 space-y-3 text-base leading-7 text-slate-100">
+                    {proFeatures.map((feature) => (
+                      <li key={feature}>• {feature}</li>
+                    ))}
+                  </ul>
+
+                  <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                    <button
+                      type="button"
+                      onClick={() => startCheckout("monthly", "plans")}
+                      disabled={busyPlan !== null || signInBusy || portalBusy}
+                      className="inline-flex items-center justify-center rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {busyPlan === "monthly" ? "Starting…" : "Choose monthly"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => startCheckout("yearly", "plans")}
+                      disabled={busyPlan !== null || signInBusy || portalBusy}
+                      className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {busyPlan === "yearly" ? "Starting…" : "Choose yearly"}
+                    </button>
+                  </div>
+
+                  {authState !== "signed_in" ? (
+                    <div
+                      ref={signInCardRef}
+                      className="mt-6 rounded-2xl border border-white/15 bg-white/5 px-4 py-5 text-sm text-slate-200"
+                    >
+                      <p className="font-semibold text-white">
+                        {selectedPlan
+                          ? `Continue with ${selectedPlan === "monthly" ? "Monthly" : "Yearly"} Pro`
+                          : "Choose a plan to continue"}
+                      </p>
+                      <p className="mt-2 text-slate-300">
+                        Enter your email and we will send you a magic link. After you sign in, checkout will continue automatically.
+                      </p>
+
+                      <form onSubmit={sendMagicLink} className="mt-4">
+                        <label className="block text-sm font-medium text-slate-200" htmlFor="pricing-signin-email">
+                          Email address
+                        </label>
+                        <input
+                          id="pricing-signin-email"
+                          type="email"
+                          autoComplete="email"
+                          value={signInEmail}
+                          onChange={(event) => setSignInEmail(event.target.value)}
+                          placeholder="you@example.com"
+                          className="mt-2 w-full rounded-2xl border border-white/15 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-white"
+                        />
+
+                        <button
+                          type="submit"
+                          disabled={signInBusy || !selectedPlan || busyPlan !== null || portalBusy}
+                          className="mt-4 inline-flex items-center justify-center rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {signInBusy ? "Sending magic link…" : "Continue with email"}
+                        </button>
+                      </form>
+
+                      {signInMessage ? (
+                        <div className="mt-4 rounded-2xl border border-green-200 bg-green-50 px-4 py-4 text-sm text-green-900">
+                          {signInMessage}
+                        </div>
+                      ) : null}
+
+                      {signInError ? (
+                        <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
+                          {signInError}
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <div className="mt-4 rounded-2xl border border-white/15 bg-white/5 px-4 py-4 text-sm text-slate-200">
+                      You are signed in, so choosing a plan now will take you straight to secure checkout.
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -627,14 +833,25 @@ export default function PressureCalProPage() {
               Use the free calculator
             </Link>
 
-            <button
-              type="button"
-              onClick={() => startCheckout("monthly", "footer")}
-              disabled={busyPlan !== null || signInBusy}
-              className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {busyPlan === "monthly" ? "Starting…" : "Start with PressureCal Pro"}
-            </button>
+            {alreadyPro ? (
+              <button
+                type="button"
+                onClick={openCustomerPortal}
+                disabled={portalBusy}
+                className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {portalBusy ? "Opening billing…" : "Manage Subscription"}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => startCheckout("monthly", "footer")}
+                disabled={busyPlan !== null || signInBusy || portalBusy}
+                className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {busyPlan === "monthly" ? "Starting…" : "Start with PressureCal Pro"}
+              </button>
+            )}
           </div>
         </div>
       </section>
