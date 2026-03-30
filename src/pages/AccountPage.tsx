@@ -4,6 +4,12 @@ import { Link } from "react-router-dom";
 import PressureCalLayout from "../components/PressureCalLayout";
 import BackToTopButton from "../components/BackToTopButton";
 import { supabase } from "../lib/supabase-browser";
+import {
+  clearPendingCheckout,
+  getPendingCheckout,
+  savePendingCheckout,
+  type CheckoutPlan,
+} from "../lib/pendingCheckout";
 
 type ViewState = "loading" | "signed_out" | "signed_in";
 
@@ -26,6 +32,18 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): 
   });
 }
 
+function getRequestedPlanFromUrl(): CheckoutPlan | null {
+  const params = new URLSearchParams(window.location.search);
+  const plan = params.get("plan");
+
+  return plan === "monthly" || plan === "yearly" ? plan : null;
+}
+
+function getRequestedNextPathFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("next");
+}
+
 export default function AccountPage() {
   const [email, setEmail] = useState("");
   const [viewState, setViewState] = useState<ViewState>("loading");
@@ -33,8 +51,30 @@ export default function AccountPage() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [pendingPlan, setPendingPlan] = useState<CheckoutPlan | null>(null);
+  const [pendingResumePath, setPendingResumePath] = useState<string | null>(null);
 
-  const redirectTo = useMemo(() => `${window.location.origin}/account`, []);
+  useEffect(() => {
+    const requestedPlan = getRequestedPlanFromUrl();
+    const requestedNext = getRequestedNextPathFromUrl();
+
+    if (requestedPlan) {
+      const resumePath = requestedNext || "/pricing?resumeCheckout=1";
+      savePendingCheckout(requestedPlan, "account", resumePath);
+    }
+
+    const pending = getPendingCheckout();
+    setPendingPlan(pending?.plan ?? requestedPlan ?? null);
+    setPendingResumePath(pending?.resumePath ?? requestedNext ?? null);
+  }, []);
+
+  const redirectTo = useMemo(() => {
+    if (pendingResumePath) {
+      return `${window.location.origin}${pendingResumePath}`;
+    }
+
+    return `${window.location.origin}/account`;
+  }, [pendingResumePath]);
 
   useEffect(() => {
     let mounted = true;
@@ -81,7 +121,7 @@ export default function AccountPage() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) {
         return;
       }
@@ -130,7 +170,13 @@ export default function AccountPage() {
         throw error;
       }
 
-      setMessage("Magic link sent. Check your email, then come back here after you click it.");
+      if (pendingPlan) {
+        setMessage(
+          `Magic link sent. Check your email and click the link — your ${pendingPlan} checkout will continue automatically when you come back.`
+        );
+      } else {
+        setMessage("Magic link sent. Check your email, then come back here after you click it.");
+      }
     } catch (error) {
       const text =
         error instanceof Error ? error.message : "Unable to send the sign-in link right now.";
@@ -166,6 +212,14 @@ export default function AccountPage() {
     } finally {
       setBusy(false);
     }
+  }
+
+  function cancelPendingCheckout() {
+    clearPendingCheckout();
+    setPendingPlan(null);
+    setPendingResumePath(null);
+    setMessage("Pending checkout cleared.");
+    setErrorMessage(null);
   }
 
   const showHelpBox = viewState === "signed_out" || Boolean(errorMessage);
@@ -212,6 +266,26 @@ export default function AccountPage() {
       <section className="bg-slate-50/70">
         <div className="mx-auto max-w-4xl px-4 py-16">
           <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+            {pendingPlan ? (
+              <div className="mb-6 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4 text-sm text-blue-900">
+                <p className="font-semibold">
+                  {`Pending ${pendingPlan === "monthly" ? "Monthly" : "Yearly"} Pro checkout`}
+                </p>
+                <p className="mt-1">
+                  Sign in here and PressureCal will continue your checkout automatically afterward.
+                </p>
+                {viewState === "signed_out" ? (
+                  <button
+                    type="button"
+                    onClick={cancelPendingCheckout}
+                    className="mt-3 inline-flex items-center justify-center rounded-2xl border border-blue-300 bg-white px-4 py-2 text-sm font-semibold text-blue-900 transition hover:bg-blue-100"
+                  >
+                    Cancel pending checkout
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+
             {viewState === "loading" ? (
               <div>
                 <h2 className="text-2xl font-semibold text-slate-950">Checking your session</h2>
@@ -265,10 +339,10 @@ export default function AccountPage() {
 
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                   <Link
-                    to="/pricing"
+                    to={pendingResumePath || "/pricing"}
                     className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
                   >
-                    Go to pricing
+                    {pendingPlan ? "Continue to checkout" : "Go to pricing"}
                   </Link>
 
                   <Link
