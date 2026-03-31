@@ -1,142 +1,159 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  createSavedSetup,
+  deleteSavedSetup as deleteSavedSetupRequest,
+  duplicateSavedSetup as duplicateSavedSetupRequest,
+  listSavedSetups,
+  updateSavedSetup,
+  type SaveSavedSetupInput,
+  type SavedSetupRecord,
+} from "../lib/savedSetups";
 
-export type SavedSetup = {
-  id: string;
-  userId: string;
-  name: string;
-  notes: string | null;
-  machinePsi: number | null;
-  machineLpm: number | null;
-  hoseLengthM: number | null;
-  hoseIdMm: number | null;
-  nozzleSize: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
-
-type SaveSetupInput = {
+type SaveSetupInput = SaveSavedSetupInput & {
   id?: string;
-  name: string;
-  notes?: string | null;
-  machinePsi?: number | null;
-  machineLpm?: number | null;
-  hoseLengthM?: number | null;
-  hoseIdMm?: number | null;
-  nozzleSize?: string | null;
 };
 
-function buildStorageKey(userId: string) {
-  return `pressurecal:saved-setups:${userId}`;
-}
+type UseSavedSetupsResult = {
+  setups: SavedSetupRecord[];
+  isLoading: boolean;
+  isReady: boolean;
+  isMutating: boolean;
+  error: string | null;
+  refresh: () => Promise<void>;
+  saveSetup: (input: SaveSetupInput) => Promise<SavedSetupRecord>;
+  deleteSetup: (setupId: string) => Promise<void>;
+  duplicateSetup: (setupId: string) => Promise<SavedSetupRecord>;
+  getSetupById: (setupId: string) => SavedSetupRecord | null;
+};
 
-function makeId() {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
+function toErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error && error.message) {
+    return error.message;
   }
 
-  return `setup_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+  return fallback;
 }
 
-export function useSavedSetups(userId: string | null) {
-  const [setups, setSetups] = useState<SavedSetup[]>([]);
-  const [isReady, setIsReady] = useState(false);
+export function useSavedSetups(userId: string | null): UseSavedSetupsResult {
+  const [setups, setSetups] = useState<SavedSetupRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isMutating, setIsMutating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const refresh = useCallback(async () => {
     if (!userId) {
       setSetups([]);
-      setIsReady(true);
+      setError(null);
+      setIsLoading(false);
       return;
     }
 
-    const storageKey = buildStorageKey(userId);
+    setIsLoading(true);
+    setError(null);
 
     try {
-      const raw = window.localStorage.getItem(storageKey);
-      const parsed = raw ? (JSON.parse(raw) as SavedSetup[]) : [];
-      setSetups(Array.isArray(parsed) ? parsed : []);
-    } catch (error) {
-      console.error(error);
+      const next = await listSavedSetups(userId);
+      setSetups(next);
+    } catch (loadError) {
+      setError(toErrorMessage(loadError, "Unable to load your saved setups."));
       setSetups([]);
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsReady(true);
   }, [userId]);
 
-  const persist = useCallback(
-    (nextSetups: SavedSetup[]) => {
-      setSetups(nextSetups);
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
+  const saveSetup = useCallback(
+    async (input: SaveSetupInput) => {
       if (!userId) {
-        return;
+        throw new Error("Please sign in before saving setups.");
       }
 
-      window.localStorage.setItem(buildStorageKey(userId), JSON.stringify(nextSetups));
+      setIsMutating(true);
+      setError(null);
+
+      try {
+        const saved = input.id
+          ? await updateSavedSetup(input.id, {
+              userId,
+              name: input.name,
+              notes: input.notes,
+              machineLabel: input.machineLabel,
+              rigInputs: input.rigInputs,
+            })
+          : await createSavedSetup({
+              userId,
+              name: input.name,
+              notes: input.notes,
+              machineLabel: input.machineLabel,
+              rigInputs: input.rigInputs,
+            });
+
+        setSetups((current) => {
+          const withoutCurrent = current.filter((setup) => setup.id !== saved.id);
+          return [saved, ...withoutCurrent];
+        });
+
+        return saved;
+      } catch (saveError) {
+        const message = toErrorMessage(saveError, "Unable to save this setup.");
+        setError(message);
+        throw new Error(message);
+      } finally {
+        setIsMutating(false);
+      }
     },
     [userId]
   );
 
-  const saveSetup = useCallback(
-    (input: SaveSetupInput) => {
+  const deleteSetup = useCallback(
+    async (setupId: string) => {
       if (!userId) {
-        throw new Error("Cannot save setup without a signed-in user.");
+        throw new Error("Please sign in before deleting setups.");
       }
 
-      const timestamp = new Date().toISOString();
+      setIsMutating(true);
+      setError(null);
 
-      const existing = input.id ? setups.find((setup) => setup.id === input.id) : null;
-
-      const nextSetup: SavedSetup = {
-        id: existing?.id ?? makeId(),
-        userId,
-        name: input.name,
-        notes: input.notes ?? null,
-        machinePsi: input.machinePsi ?? null,
-        machineLpm: input.machineLpm ?? null,
-        hoseLengthM: input.hoseLengthM ?? null,
-        hoseIdMm: input.hoseIdMm ?? null,
-        nozzleSize: input.nozzleSize ?? null,
-        createdAt: existing?.createdAt ?? timestamp,
-        updatedAt: timestamp,
-      };
-
-      const nextSetups = existing
-        ? setups.map((setup) => (setup.id === existing.id ? nextSetup : setup))
-        : [nextSetup, ...setups];
-
-      persist(nextSetups);
-      return nextSetup;
+      try {
+        await deleteSavedSetupRequest(setupId, userId);
+        setSetups((current) => current.filter((setup) => setup.id !== setupId));
+      } catch (deleteError) {
+        const message = toErrorMessage(deleteError, "Unable to delete this setup.");
+        setError(message);
+        throw new Error(message);
+      } finally {
+        setIsMutating(false);
+      }
     },
-    [persist, setups, userId]
-  );
-
-  const deleteSetup = useCallback(
-    (setupId: string) => {
-      persist(setups.filter((setup) => setup.id !== setupId));
-    },
-    [persist, setups]
+    [userId]
   );
 
   const duplicateSetup = useCallback(
-    (setupId: string) => {
-      const source = setups.find((setup) => setup.id === setupId);
-
-      if (!source || !userId) {
-        return null;
+    async (setupId: string) => {
+      if (!userId) {
+        throw new Error("Please sign in before duplicating setups.");
       }
 
-      const timestamp = new Date().toISOString();
-      const copy: SavedSetup = {
-        ...source,
-        id: makeId(),
-        name: `${source.name} (copy)`,
-        createdAt: timestamp,
-        updatedAt: timestamp,
-      };
+      setIsMutating(true);
+      setError(null);
 
-      persist([copy, ...setups]);
-      return copy;
+      try {
+        const duplicate = await duplicateSavedSetupRequest(setupId, userId);
+        setSetups((current) => [duplicate, ...current]);
+        return duplicate;
+      } catch (duplicateError) {
+        const message = toErrorMessage(duplicateError, "Unable to duplicate this setup.");
+        setError(message);
+        throw new Error(message);
+      } finally {
+        setIsMutating(false);
+      }
     },
-    [persist, setups, userId]
+    [userId]
   );
 
   const getSetupById = useCallback(
@@ -147,12 +164,16 @@ export function useSavedSetups(userId: string | null) {
   return useMemo(
     () => ({
       setups,
-      isReady,
+      isLoading,
+      isReady: !isLoading,
+      isMutating,
+      error,
+      refresh,
       saveSetup,
       deleteSetup,
       duplicateSetup,
       getSetupById,
     }),
-    [deleteSetup, duplicateSetup, getSetupById, isReady, saveSetup, setups]
+    [deleteSetup, duplicateSetup, error, getSetupById, isLoading, isMutating, refresh, saveSetup, setups]
   );
 }

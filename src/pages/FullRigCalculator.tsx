@@ -1,10 +1,13 @@
 import { Helmet } from "react-helmet-async";
 import { useEffect, useRef, useState, type FocusEvent } from "react";
+import { useLocation } from "react-router-dom";
 import BackToTopButton from "../components/BackToTopButton";
 import PressureCalLayout from "../components/PressureCalLayout";
+import SaveCurrentSetupCard from "../components/SaveCurrentSetupCard";
 import { buildFullRigSearchParams, parseRigSearchParams } from "../lib/rigUrlState";
 import { solvePressureCal, barFromPsi, lpmFromGpm, roundTipCodeToFive } from "../pressurecal";
 import type { Inputs, PressureUnit, FlowUnit, LengthUnit, DiameterUnit } from "../pressurecal";
+import { getSavedSetupById, type SavedSetupRecord } from "../lib/savedSetups";
 
 const hosePresets = [
   { label: '1/4" (6.35 mm)', valueMm: 6.35 },
@@ -65,6 +68,7 @@ function statusBadge(status: string) {
 }
 
 export default function FullRigCalculatorPage() {
+  const location = useLocation();
   const [inputs, setInputs] = useState<Inputs>(() => ({
     ...defaultInputs,
     ...parseRigSearchParams(window.location.search),
@@ -72,6 +76,9 @@ export default function FullRigCalculatorPage() {
   const [copyMessage, setCopyMessage] = useState("");
   const [highlightSetup, setHighlightSetup] = useState(false);
   const [loadedFromLink, setLoadedFromLink] = useState(false);
+  const [activeSavedSetup, setActiveSavedSetup] = useState<SavedSetupRecord | null>(null);
+  const [savedSetupLoadError, setSavedSetupLoadError] = useState<string | null>(null);
+  const handledSavedSetupIdRef = useRef<string | null>(null);
   const maxWasManuallyEditedRef = useRef(false);
 
   useEffect(() => {
@@ -89,6 +96,68 @@ export default function FullRigCalculatorPage() {
       };
     }
   }, []);
+
+
+
+  useEffect(() => {
+    let isMounted = true;
+    const params = new URLSearchParams(location.search);
+    const savedSetupId = params.get("savedSetup");
+
+    if (!savedSetupId || handledSavedSetupIdRef.current === savedSetupId) {
+      return;
+    }
+
+    const nextSavedSetupId = savedSetupId;
+
+    handledSavedSetupIdRef.current = nextSavedSetupId;
+    setSavedSetupLoadError(null);
+
+    async function loadSavedSetup() {
+      try {
+        const savedSetup = await getSavedSetupById(nextSavedSetupId);
+
+        if (!isMounted) {
+          return;
+        }
+
+        if (!savedSetup) {
+          setSavedSetupLoadError("This saved setup could not be loaded. It may have been deleted or you may no longer have Pro access.");
+          return;
+        }
+
+        setActiveSavedSetup(savedSetup);
+        setInputs({
+          ...defaultInputs,
+          ...savedSetup.rigInputs,
+        });
+        setHighlightSetup(true);
+        setLoadedFromLink(true);
+
+        const timer1 = window.setTimeout(() => setHighlightSetup(false), 1600);
+        const timer2 = window.setTimeout(() => setLoadedFromLink(false), 2600);
+
+        return () => {
+          window.clearTimeout(timer1);
+          window.clearTimeout(timer2);
+        };
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        setSavedSetupLoadError(
+          error instanceof Error ? error.message : "Unable to load the saved setup right now."
+        );
+      }
+    }
+
+    void loadSavedSetup();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [location.search]);
 
   useEffect(() => {
     const params = buildFullRigSearchParams(inputs);
@@ -178,7 +247,7 @@ export default function FullRigCalculatorPage() {
 
                 {loadedFromLink ? (
                   <div className="mt-3 inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                    Shared setup loaded
+                    {activeSavedSetup ? "Saved setup loaded" : "Shared setup loaded"}
                   </div>
                 ) : null}
               </div>
@@ -195,6 +264,22 @@ export default function FullRigCalculatorPage() {
               </div>
             </div>
           </div>
+
+          {savedSetupLoadError ? (
+            <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
+              {savedSetupLoadError}
+            </div>
+          ) : null}
+
+          <SaveCurrentSetupCard
+            inputs={inputs}
+            result={r}
+            currentSavedSetup={activeSavedSetup}
+            onSaveSuccess={(savedSetup) => {
+              setActiveSavedSetup(savedSetup);
+              handledSavedSetupIdRef.current = savedSetup.id;
+            }}
+          />
 
           <main className="grid gap-6 lg:grid-cols-2">
             <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">

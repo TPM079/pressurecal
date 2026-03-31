@@ -1,145 +1,173 @@
 import { Helmet } from "react-helmet-async";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import PressureCalLayout from "../components/PressureCalLayout";
 import BackToTopButton from "../components/BackToTopButton";
+import PressureCalLayout from "../components/PressureCalLayout";
 import RequirePro from "../components/RequirePro";
-import { supabase } from "../lib/supabase-browser";
+import { useProAccess } from "../hooks/useProAccess";
 import { useSavedSetups } from "../hooks/useSavedSetups";
+import { buildSavedSetupHref } from "../lib/savedSetups";
 
-type SetupFormState = {
+type MetadataFormState = {
   name: string;
+  machineLabel: string;
   notes: string;
-  machinePsi: string;
-  machineLpm: string;
-  hoseLengthM: string;
-  hoseIdMm: string;
-  nozzleSize: string;
 };
 
-const EMPTY_FORM: SetupFormState = {
+const EMPTY_FORM: MetadataFormState = {
   name: "",
+  machineLabel: "",
   notes: "",
-  machinePsi: "",
-  machineLpm: "",
-  hoseLengthM: "",
-  hoseIdMm: "",
-  nozzleSize: "",
 };
+
+function statusBadgeClass(status: string, isPressureLimited: boolean) {
+  if (isPressureLimited) {
+    return "border-red-200 bg-red-50 text-red-800";
+  }
+
+  if (status === "calibrated") {
+    return "border-green-200 bg-green-50 text-green-800";
+  }
+
+  if (status === "under-calibrated") {
+    return "border-amber-200 bg-amber-50 text-amber-900";
+  }
+
+  return "border-red-200 bg-red-50 text-red-800";
+}
+
+function statusBadgeText(status: string, isPressureLimited: boolean) {
+  if (isPressureLimited) {
+    return "Bypass active";
+  }
+
+  if (status === "calibrated") {
+    return "Calibrated";
+  }
+
+  if (status === "under-calibrated") {
+    return "Under-calibrated";
+  }
+
+  return "Over-calibrated";
+}
 
 export default function SavedSetupsPage() {
-  const [authUserId, setAuthUserId] = useState<string | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
-  const [selectedSetupId, setSelectedSetupId] = useState<string | null>(null);
-  const [form, setForm] = useState<SetupFormState>(EMPTY_FORM);
-
-  useEffect(() => {
-    let mounted = true;
-
-    async function loadUser() {
-      const { data, error } = await supabase.auth.getUser();
-
-      if (!mounted) {
-        return;
-      }
-
-      if (error) {
-        console.error(error);
-        setAuthUserId(null);
-      } else {
-        setAuthUserId(data.user?.id ?? null);
-      }
-
-      setAuthLoading(false);
-    }
-
-    void loadUser();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
+  const { userId } = useProAccess();
   const {
     setups,
-    isReady,
+    isLoading,
+    isMutating,
+    error,
+    refresh,
     saveSetup,
     deleteSetup,
     duplicateSetup,
     getSetupById,
-  } = useSavedSetups(authUserId);
+  } = useSavedSetups(userId);
+  const [selectedSetupId, setSelectedSetupId] = useState<string | null>(null);
+  const [form, setForm] = useState<MetadataFormState>(EMPTY_FORM);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [formMessage, setFormMessage] = useState<string | null>(null);
 
-  const editingSetup = useMemo(() => {
+  const selectedSetup = useMemo(() => {
     return selectedSetupId ? getSetupById(selectedSetupId) : null;
   }, [getSetupById, selectedSetupId]);
 
   useEffect(() => {
-    if (!editingSetup) {
+    if (setups.length === 0) {
+      setSelectedSetupId(null);
+      return;
+    }
+
+    if (!selectedSetupId || !getSetupById(selectedSetupId)) {
+      setSelectedSetupId(setups[0].id);
+    }
+  }, [getSetupById, selectedSetupId, setups]);
+
+  useEffect(() => {
+    if (!selectedSetup) {
       setForm(EMPTY_FORM);
       return;
     }
 
     setForm({
-      name: editingSetup.name,
-      notes: editingSetup.notes ?? "",
-      machinePsi: editingSetup.machinePsi ? String(editingSetup.machinePsi) : "",
-      machineLpm: editingSetup.machineLpm ? String(editingSetup.machineLpm) : "",
-      hoseLengthM: editingSetup.hoseLengthM ? String(editingSetup.hoseLengthM) : "",
-      hoseIdMm: editingSetup.hoseIdMm ? String(editingSetup.hoseIdMm) : "",
-      nozzleSize: editingSetup.nozzleSize ?? "",
+      name: selectedSetup.name,
+      machineLabel: selectedSetup.machineLabel ?? "",
+      notes: selectedSetup.notes ?? "",
     });
-  }, [editingSetup]);
+    setFormError(null);
+    setFormMessage(null);
+  }, [selectedSetup?.id]);
 
-  function updateField<K extends keyof SetupFormState>(field: K, value: SetupFormState[K]) {
+  function updateField<K extends keyof MetadataFormState>(field: K, value: MetadataFormState[K]) {
     setForm((current) => ({ ...current, [field]: value }));
   }
 
-  function resetForm() {
-    setSelectedSetupId(null);
-    setForm(EMPTY_FORM);
-  }
-
-  function toNumberOrNull(value: string) {
-    const trimmed = value.trim();
-
-    if (!trimmed) {
-      return null;
-    }
-
-    const parsed = Number(trimmed);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-
-  function handleSave() {
-    if (!authUserId) {
-      window.alert("Please sign in before saving setups.");
+  async function handleMetadataSave() {
+    if (!selectedSetup) {
       return;
     }
 
-    const name = form.name.trim();
+    const nextName = form.name.trim();
 
-    if (!name) {
-      window.alert("Please enter a setup name.");
+    if (!nextName) {
+      setFormError("Please enter a setup name.");
+      setFormMessage(null);
       return;
     }
 
-    const saved = saveSetup({
-      id: selectedSetupId ?? undefined,
-      name,
-      notes: form.notes.trim() || null,
-      machinePsi: toNumberOrNull(form.machinePsi),
-      machineLpm: toNumberOrNull(form.machineLpm),
-      hoseLengthM: toNumberOrNull(form.hoseLengthM),
-      hoseIdMm: toNumberOrNull(form.hoseIdMm),
-      nozzleSize: form.nozzleSize.trim() || null,
-    });
+    setFormError(null);
+    setFormMessage(null);
 
-    setSelectedSetupId(saved.id);
+    try {
+      await saveSetup({
+        id: selectedSetup.id,
+        name: nextName,
+        machineLabel: form.machineLabel.trim() || null,
+        notes: form.notes.trim() || null,
+        rigInputs: selectedSetup.rigInputs,
+      });
+      setFormMessage("Saved setup details updated.");
+    } catch (saveError) {
+      setFormError(saveError instanceof Error ? saveError.message : "Unable to update this setup.");
+    }
   }
 
-  function handleEdit(setupId: string) {
-    setSelectedSetupId(setupId);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  async function handleDuplicate(setupId: string) {
+    try {
+      const duplicate = await duplicateSetup(setupId);
+      setSelectedSetupId(duplicate.id);
+    } catch (duplicateError) {
+      setFormError(
+        duplicateError instanceof Error
+          ? duplicateError.message
+          : "Unable to duplicate this setup."
+      );
+    }
+  }
+
+  async function handleDelete(setupId: string) {
+    const setup = getSetupById(setupId);
+
+    if (!setup) {
+      return;
+    }
+
+    const confirmed = window.confirm(`Delete "${setup.name}"?`);
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await deleteSetup(setupId);
+      if (selectedSetupId === setupId) {
+        setSelectedSetupId(null);
+      }
+    } catch (deleteError) {
+      setFormError(deleteError instanceof Error ? deleteError.message : "Unable to delete this setup.");
+    }
   }
 
   return (
@@ -148,7 +176,7 @@ export default function SavedSetupsPage() {
         <title>Saved Setups | PressureCal Pro</title>
         <meta
           name="description"
-          content="Save, organise, and reuse your common machine and nozzle setups with PressureCal Pro."
+          content="Manage your PressureCal Pro saved setups, reopen full rigs, and keep your favourite configurations synced across devices."
         />
       </Helmet>
 
@@ -162,8 +190,7 @@ export default function SavedSetupsPage() {
               Saved Setups
             </h1>
             <p className="mt-5 text-lg leading-8 text-slate-300">
-              Save your common machine and hose setups so you can come back to them
-              quickly instead of rebuilding them from scratch every time.
+              Build your rig in the calculator, then manage your saved library here. Each saved setup now stores the full rig inputs so it can be reopened properly across devices.
             </p>
           </div>
         </div>
@@ -180,7 +207,7 @@ export default function SavedSetupsPage() {
                 </p>
                 <div className="mt-6">
                   <Link
-                    to="/pro"
+                    to="/pricing"
                     className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
                   >
                     Back to PressureCal Pro
@@ -196,15 +223,20 @@ export default function SavedSetupsPage() {
               <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
                 <h2 className="text-2xl font-bold text-slate-950">Saved Setups is a Pro feature</h2>
                 <p className="mt-3 text-base leading-7 text-slate-600">
-                  Your billing foundation is ready, and this page is the first real Pro-only area.
-                  Upgrade to PressureCal Pro to unlock saved setups.
+                  Upgrade to PressureCal Pro to save full rigs to the cloud, reopen them later, and build a real setup library.
                 </p>
-                <div className="mt-6">
+                <div className="mt-6 flex flex-wrap gap-3">
                   <Link
-                    to="/pro"
+                    to="/pricing"
                     className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
                   >
                     View PressureCal Pro plans
+                  </Link>
+                  <Link
+                    to="/calculator"
+                    className="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                  >
+                    Use the free calculator
                   </Link>
                 </div>
               </div>
@@ -214,130 +246,139 @@ export default function SavedSetupsPage() {
       >
         <section className="bg-slate-50">
           <div className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
+            {error ? (
+              <div className="mb-6 rounded-3xl border border-amber-200 bg-amber-50 px-5 py-5 text-sm text-amber-900">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="font-semibold">We could not load your saved setups</p>
+                    <p className="mt-1 leading-6">{error}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void refresh()}
+                    className="inline-flex items-center justify-center rounded-2xl border border-amber-300 bg-white px-5 py-3 text-sm font-semibold text-amber-900 transition hover:bg-amber-100"
+                  >
+                    Retry
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
             <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
               <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-                <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <h2 className="text-2xl font-bold text-slate-950">
-                      {selectedSetupId ? "Edit setup" : "Create a saved setup"}
+                      {selectedSetup ? "Setup details" : "Build and save from the calculator"}
                     </h2>
                     <p className="mt-2 text-sm leading-6 text-slate-600">
-                      This starter version stores setups per signed-in user in the browser so you can prove the Pro flow before wiring in cloud sync.
+                      {selectedSetup
+                        ? "Edit the saved setup name, machine label, and notes here. To change the rig itself, open it in the calculator and update it there."
+                        : "Saved Setups now works as a real Pro library. Create new entries from the full rig calculator so the whole model is preserved."}
                     </p>
                   </div>
 
-                  {selectedSetupId ? (
-                    <button
-                      type="button"
-                      onClick={resetForm}
-                      className="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                    >
-                      New setup
-                    </button>
-                  ) : null}
-                </div>
-
-                <div className="mt-8 grid gap-5 sm:grid-cols-2">
-                  <label className="block sm:col-span-2">
-                    <span className="text-sm font-semibold text-slate-800">Setup name</span>
-                    <input
-                      type="text"
-                      value={form.name}
-                      onChange={(event) => updateField("name", event.target.value)}
-                      placeholder="Example: 21 LPM trailer rig"
-                      className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
-                    />
-                  </label>
-
-                  <label className="block">
-                    <span className="text-sm font-semibold text-slate-800">Machine PSI</span>
-                    <input
-                      type="number"
-                      inputMode="decimal"
-                      value={form.machinePsi}
-                      onChange={(event) => updateField("machinePsi", event.target.value)}
-                      placeholder="4000"
-                      className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
-                    />
-                  </label>
-
-                  <label className="block">
-                    <span className="text-sm font-semibold text-slate-800">Machine LPM</span>
-                    <input
-                      type="number"
-                      inputMode="decimal"
-                      value={form.machineLpm}
-                      onChange={(event) => updateField("machineLpm", event.target.value)}
-                      placeholder="15"
-                      className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
-                    />
-                  </label>
-
-                  <label className="block">
-                    <span className="text-sm font-semibold text-slate-800">Hose length (m)</span>
-                    <input
-                      type="number"
-                      inputMode="decimal"
-                      value={form.hoseLengthM}
-                      onChange={(event) => updateField("hoseLengthM", event.target.value)}
-                      placeholder="30"
-                      className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
-                    />
-                  </label>
-
-                  <label className="block">
-                    <span className="text-sm font-semibold text-slate-800">Hose ID (mm)</span>
-                    <input
-                      type="number"
-                      inputMode="decimal"
-                      value={form.hoseIdMm}
-                      onChange={(event) => updateField("hoseIdMm", event.target.value)}
-                      placeholder="8"
-                      className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
-                    />
-                  </label>
-
-                  <label className="block sm:col-span-2">
-                    <span className="text-sm font-semibold text-slate-800">Nozzle size</span>
-                    <input
-                      type="text"
-                      value={form.nozzleSize}
-                      onChange={(event) => updateField("nozzleSize", event.target.value)}
-                      placeholder="Example: 045"
-                      className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
-                    />
-                  </label>
-
-                  <label className="block sm:col-span-2">
-                    <span className="text-sm font-semibold text-slate-800">Notes</span>
-                    <textarea
-                      value={form.notes}
-                      onChange={(event) => updateField("notes", event.target.value)}
-                      placeholder="Pump, reel, gun, use case, favourite combo, or anything else you want to remember."
-                      rows={4}
-                      className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
-                    />
-                  </label>
-                </div>
-
-                <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                  <button
-                    type="button"
-                    onClick={handleSave}
-                    disabled={authLoading || !isReady}
-                    className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  <Link
+                    to="/calculator"
+                    className="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
                   >
-                    {selectedSetupId ? "Update saved setup" : "Save setup"}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={resetForm}
-                    className="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                  >
-                    Clear form
-                  </button>
+                    Open calculator
+                  </Link>
                 </div>
+
+                {!selectedSetup ? (
+                  <div className="mt-8 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-6">
+                    <p className="text-sm font-semibold text-slate-900">No saved setup selected</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                      Use the full rig calculator to save a complete setup, then come back here to organise your library.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="mt-8 grid gap-5 sm:grid-cols-2">
+                      <label className="block sm:col-span-2">
+                        <span className="text-sm font-semibold text-slate-800">Setup name</span>
+                        <input
+                          type="text"
+                          value={form.name}
+                          onChange={(event) => updateField("name", event.target.value)}
+                          className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                        />
+                      </label>
+
+                      <label className="block sm:col-span-2">
+                        <span className="text-sm font-semibold text-slate-800">Machine label</span>
+                        <input
+                          type="text"
+                          value={form.machineLabel}
+                          onChange={(event) => updateField("machineLabel", event.target.value)}
+                          placeholder="Optional: trailer rig, GX390 skid, van unit, favourite reel setup"
+                          className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                        />
+                      </label>
+
+                      <label className="block sm:col-span-2">
+                        <span className="text-sm font-semibold text-slate-800">Notes</span>
+                        <textarea
+                          value={form.notes}
+                          onChange={(event) => updateField("notes", event.target.value)}
+                          rows={5}
+                          placeholder="Use notes for gun choice, reel notes, favourite nozzle combo, job type, operator reminders, or anything else worth remembering."
+                          className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                        />
+                      </label>
+                    </div>
+
+                    <div className="mt-6 flex flex-wrap gap-3">
+                      <Link
+                        to={buildSavedSetupHref(selectedSetup.id)}
+                        className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                      >
+                        Open in calculator
+                      </Link>
+
+                      <button
+                        type="button"
+                        onClick={() => void handleMetadataSave()}
+                        disabled={isMutating}
+                        className="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {isMutating ? "Saving…" : "Save details"}
+                      </button>
+                    </div>
+
+                    {formError ? (
+                      <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
+                        {formError}
+                      </div>
+                    ) : null}
+
+                    {formMessage ? (
+                      <div className="mt-5 rounded-2xl border border-green-200 bg-green-50 px-4 py-4 text-sm text-green-900">
+                        {formMessage}
+                      </div>
+                    ) : null}
+
+                    <div className="mt-8 grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
+                      <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                        <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">Pressure</dt>
+                        <dd className="mt-1 font-medium text-slate-900">{selectedSetup.summary.pressureText}</dd>
+                      </div>
+                      <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                        <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">Flow</dt>
+                        <dd className="mt-1 font-medium text-slate-900">{selectedSetup.summary.flowText}</dd>
+                      </div>
+                      <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                        <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">Hose</dt>
+                        <dd className="mt-1 font-medium text-slate-900">{selectedSetup.summary.hoseText}</dd>
+                      </div>
+                      <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                        <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">Nozzle</dt>
+                        <dd className="mt-1 font-medium text-slate-900">{selectedSetup.summary.nozzleText}</dd>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
@@ -350,7 +391,7 @@ export default function SavedSetupsPage() {
                   </div>
                 </div>
 
-                {!isReady ? (
+                {isLoading ? (
                   <div className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">
                     Loading saved setups...
                   </div>
@@ -358,74 +399,110 @@ export default function SavedSetupsPage() {
                   <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6">
                     <p className="text-sm font-semibold text-slate-900">No saved setups yet</p>
                     <p className="mt-2 text-sm leading-6 text-slate-600">
-                      Create your first setup on the left to start building your Pro library.
+                      Open the full rig calculator, model a machine, and save your first setup to start building your Pro library.
                     </p>
+                    <Link
+                      to="/calculator"
+                      className="mt-5 inline-flex items-center justify-center rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                    >
+                      Open full rig calculator
+                    </Link>
                   </div>
                 ) : (
                   <div className="mt-8 space-y-4">
-                    {setups.map((setup) => (
-                      <article key={setup.id} className="rounded-2xl border border-slate-200 p-5">
-                        <div className="flex flex-wrap items-start justify-between gap-3">
-                          <div>
-                            <h3 className="text-lg font-semibold text-slate-950">{setup.name}</h3>
-                            <p className="mt-1 text-xs uppercase tracking-[0.15em] text-slate-400">
-                              Updated {new Date(setup.updatedAt).toLocaleString()}
-                            </p>
+                    {setups.map((setup) => {
+                      const isSelected = selectedSetupId === setup.id;
+
+                      return (
+                        <article
+                          key={setup.id}
+                          className={`rounded-2xl border p-5 transition ${
+                            isSelected
+                              ? "border-slate-950 bg-slate-50 shadow-sm"
+                              : "border-slate-200 bg-white hover:border-slate-300"
+                          }`}
+                        >
+                          <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <h3 className="text-lg font-semibold text-slate-950">{setup.name}</h3>
+                                <span
+                                  className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${statusBadgeClass(
+                                    setup.summary.status,
+                                    setup.summary.isPressureLimited
+                                  )}`}
+                                >
+                                  {statusBadgeText(setup.summary.status, setup.summary.isPressureLimited)}
+                                </span>
+                              </div>
+                              <p className="mt-1 text-xs uppercase tracking-[0.15em] text-slate-400">
+                                Updated {new Date(setup.updatedAt).toLocaleString()}
+                              </p>
+                              {setup.machineLabel ? (
+                                <p className="mt-2 text-sm font-medium text-slate-700">{setup.machineLabel}</p>
+                              ) : null}
+                            </div>
+
+                            <div className="flex flex-wrap gap-2">
+                              <Link
+                                to={buildSavedSetupHref(setup.id)}
+                                className="rounded-xl bg-slate-950 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-800"
+                              >
+                                Open
+                              </Link>
+                              <button
+                                type="button"
+                                onClick={() => setSelectedSetupId(setup.id)}
+                                className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                              >
+                                Details
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => void handleDuplicate(setup.id)}
+                                className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                              >
+                                Duplicate
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => void handleDelete(setup.id)}
+                                className="rounded-xl border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-50"
+                              >
+                                Delete
+                              </button>
+                            </div>
                           </div>
 
-                          <div className="flex flex-wrap gap-2">
-                            <button
-                              type="button"
-                              onClick={() => handleEdit(setup.id)}
-                              className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => duplicateSetup(setup.id)}
-                              className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
-                            >
-                              Duplicate
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const confirmed = window.confirm(`Delete \"${setup.name}\"?`);
-                                if (confirmed) {
-                                  deleteSetup(setup.id);
-                                  if (selectedSetupId === setup.id) {
-                                    resetForm();
-                                  }
-                                }
-                              }}
-                              className="rounded-xl border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-50"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </div>
+                          <dl className="mt-4 grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
+                            <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                              <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">Machine</dt>
+                              <dd className="mt-1 font-medium text-slate-900">
+                                {setup.summary.pressureText} · {setup.summary.flowText}
+                              </dd>
+                            </div>
+                            <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                              <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">Hose</dt>
+                              <dd className="mt-1 font-medium text-slate-900">{setup.summary.hoseText}</dd>
+                            </div>
+                            <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                              <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">Nozzle</dt>
+                              <dd className="mt-1 font-medium text-slate-900">{setup.summary.nozzleText}</dd>
+                            </div>
+                            <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                              <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">At gun</dt>
+                              <dd className="mt-1 font-medium text-slate-900">
+                                {Math.round(setup.summary.gunPressurePsi)} PSI · {setup.summary.gunFlowGpm.toFixed(2)} GPM
+                              </dd>
+                            </div>
+                          </dl>
 
-                        <dl className="mt-4 grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
-                          <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                            <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">Machine</dt>
-                            <dd className="mt-1">{setup.machinePsi ?? "—"} PSI · {setup.machineLpm ?? "—"} LPM</dd>
-                          </div>
-                          <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                            <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">Hose</dt>
-                            <dd className="mt-1">{setup.hoseLengthM ?? "—"} m · {setup.hoseIdMm ?? "—"} mm</dd>
-                          </div>
-                          <div className="rounded-2xl bg-slate-50 px-4 py-3 sm:col-span-2">
-                            <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">Nozzle</dt>
-                            <dd className="mt-1">{setup.nozzleSize ?? "—"}</dd>
-                          </div>
-                        </dl>
-
-                        {setup.notes ? (
-                          <p className="mt-4 text-sm leading-6 text-slate-600">{setup.notes}</p>
-                        ) : null}
-                      </article>
-                    ))}
+                          {setup.notes ? (
+                            <p className="mt-4 text-sm leading-6 text-slate-600">{setup.notes}</p>
+                          ) : null}
+                        </article>
+                      );
+                    })}
                   </div>
                 )}
               </div>
