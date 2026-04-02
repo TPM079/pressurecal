@@ -4,6 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+    <!--
+      Global fallback metadata only.
+      Route-specific title, description, canonical, og:url, and page schema
+      should be injected by your React SEO/page components.
+    -->
+
     <title>PressureCal – Pressure Washer Calculator</title>
 
     <meta
@@ -11,7 +17,7 @@
       content="PressureCal is a professional pressure washer calculator for nozzle sizing, hose pressure loss, at-gun pressure, and unloader bypass behaviour."
     />
 
-    <link rel="canonical" href="https://pressurecal.com/" />
+    <meta name="theme-color" content="#183170" />
 
     <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -19,71 +25,36 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
 
-    <meta name="theme-color" content="#183170" />
-
-    <!-- Open Graph -->
+    <!-- Open Graph fallback -->
     <meta property="og:title" content="PressureCal – Pressure Washer Calculator" />
     <meta
       property="og:description"
       content="Calculate nozzle size, hose pressure loss, at-gun pressure, and bypass behaviour with PressureCal."
     />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://pressurecal.com/" />
-    <meta property="og:image" content="https://pressurecal.com/social-preview.png" />
+    <meta property="og:image" content="https://www.pressurecal.com/social-preview.png" />
 
-    <!-- Twitter -->
+    <!-- Twitter fallback -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="PressureCal – Pressure Washer Calculator" />
     <meta
       name="twitter:description"
       content="Calculate nozzle size, hose pressure loss, at-gun pressure, and bypass behaviour with PressureCal."
     />
-    <meta name="twitter:image" content="https://pressurecal.com/social-preview.png" />
+    <meta name="twitter:image" content="https://www.pressurecal.com/social-preview.png" />
 
-    <!-- Software Application Schema -->
+    <!-- Site-level structured data only -->
     <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "PressureCal",
-      "url": "https://www.pressurecal.com/",
-      "applicationCategory": "EngineeringApplication",
-      "operatingSystem": "Web",
-      "description": "PressureCal is a professional pressure washer calculator for nozzle sizing, hose pressure loss, at-gun pressure, and unloader bypass behaviour.",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD"
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "PressureCal",
+        "url": "https://www.pressurecal.com/",
+        "applicationCategory": "EngineeringApplication",
+        "operatingSystem": "Web",
+        "description": "PressureCal is a professional pressure washer calculator for nozzle sizing, hose pressure loss, at-gun pressure, and unloader bypass behaviour."
       }
-    }
     </script>
-
-    <!-- Nozzle Calculator Schema -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "Pressure Washer Nozzle Size Calculator",
-      "url": "https://www.pressurecal.com/nozzle-size-calculator",
-      "applicationCategory": "Calculator",
-      "operatingSystem": "Web",
-      "description": "Calculate the correct pressure washer nozzle size based on pump pressure and flow rate."
-    }
-    </script>
-
-    <!-- Hose Loss Calculator Schema -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "Pressure Washer Hose Pressure Loss Calculator",
-      "url": "https://www.pressurecal.com/hose-pressure-loss-calculator",
-      "applicationCategory": "Calculator",
-      "operatingSystem": "Web",
-      "description": "Estimate pressure loss in pressure washer hoses based on hose length, diameter, pressure and flow."
-    }
-    </script>
-
   </head>
 
   <body>
