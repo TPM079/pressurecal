@@ -34,17 +34,30 @@ export default function PrivacyPolicyPage() {
 
       <h2>3. What information we may collect</h2>
       <p>Depending on how you use the site, we may collect information such as:</p>
-      <ul>
-        <li>name, business name, and contact details you provide to us;</li>
-        <li>email address and account login details;</li>
-        <li>information submitted through contact forms or support requests;</li>
-        <li>saved setups, preferences, calculator inputs, and related usage data;</li>
-        <li>subscription status, plan type, billing events, and transaction references;</li>
-        <li>
+      <ul
+        className="my-5 ml-6 space-y-2 text-slate-300"
+        style={{ listStyleType: "disc" }}
+      >
+        <li className="pl-1" style={{ display: "list-item" }}>
+          name, business name, and contact details you provide to us;
+        </li>
+        <li className="pl-1" style={{ display: "list-item" }}>
+          email address and account login details;
+        </li>
+        <li className="pl-1" style={{ display: "list-item" }}>
+          information submitted through contact forms or support requests;
+        </li>
+        <li className="pl-1" style={{ display: "list-item" }}>
+          saved setups, preferences, calculator inputs, and related usage data;
+        </li>
+        <li className="pl-1" style={{ display: "list-item" }}>
+          subscription status, plan type, billing events, and transaction references;
+        </li>
+        <li className="pl-1" style={{ display: "list-item" }}>
           technical and usage information such as device type, browser type, pages
           viewed, approximate location, referral source, and site interactions;
         </li>
-        <li>
+        <li className="pl-1" style={{ display: "list-item" }}>
           cookies and similar technologies used for analytics, authentication, or site
           performance.
         </li>
@@ -62,27 +75,61 @@ export default function PrivacyPolicyPage() {
 
       <h2>5. How we collect information</h2>
       <p>We may collect information when you:</p>
-      <ul>
-        <li>visit or browse the website;</li>
-        <li>use calculator or modelling features;</li>
-        <li>create an account or sign in;</li>
-        <li>save setups or preferences;</li>
-        <li>join a waitlist, newsletter, or promotional list;</li>
-        <li>contact us for support or business enquiries;</li>
-        <li>start, manage, upgrade, downgrade, renew, or cancel a subscription.</li>
+      <ul
+        className="my-5 ml-6 space-y-2 text-slate-300"
+        style={{ listStyleType: "disc" }}
+      >
+        <li className="pl-1" style={{ display: "list-item" }}>
+          visit or browse the website;
+        </li>
+        <li className="pl-1" style={{ display: "list-item" }}>
+          use calculator or modelling features;
+        </li>
+        <li className="pl-1" style={{ display: "list-item" }}>
+          create an account or sign in;
+        </li>
+        <li className="pl-1" style={{ display: "list-item" }}>
+          save setups or preferences;
+        </li>
+        <li className="pl-1" style={{ display: "list-item" }}>
+          join a waitlist, newsletter, or promotional list;
+        </li>
+        <li className="pl-1" style={{ display: "list-item" }}>
+          contact us for support or business enquiries;
+        </li>
+        <li className="pl-1" style={{ display: "list-item" }}>
+          start, manage, upgrade, downgrade, renew, or cancel a subscription.
+        </li>
       </ul>
 
       <h2>6. Why we collect and use information</h2>
       <p>We may use personal information to:</p>
-      <ul>
-        <li>operate, maintain, and improve the site and its features;</li>
-        <li>provide calculator outputs, saved setups, user accounts, and subscription access;</li>
-        <li>respond to support requests and general enquiries;</li>
-        <li>monitor performance, diagnose issues, and improve user experience;</li>
-        <li>understand how users engage with the platform through analytics;</li>
-        <li>administer billing, renewals, cancellations, and account changes;</li>
-        <li>send service-related notices, legal notices, and important account communications;</li>
-        <li>
+      <ul
+        className="my-5 ml-6 space-y-2 text-slate-300"
+        style={{ listStyleType: "disc" }}
+      >
+        <li className="pl-1" style={{ display: "list-item" }}>
+          operate, maintain, and improve the site and its features;
+        </li>
+        <li className="pl-1" style={{ display: "list-item" }}>
+          provide calculator outputs, saved setups, user accounts, and subscription access;
+        </li>
+        <li className="pl-1" style={{ display: "list-item" }}>
+          respond to support requests and general enquiries;
+        </li>
+        <li className="pl-1" style={{ display: "list-item" }}>
+          monitor performance, diagnose issues, and improve user experience;
+        </li>
+        <li className="pl-1" style={{ display: "list-item" }}>
+          understand how users engage with the platform through analytics;
+        </li>
+        <li className="pl-1" style={{ display: "list-item" }}>
+          administer billing, renewals, cancellations, and account changes;
+        </li>
+        <li className="pl-1" style={{ display: "list-item" }}>
+          send service-related notices, legal notices, and important account communications;
+        </li>
+        <li className="pl-1" style={{ display: "list-item" }}>
           send marketing communications where permitted by law or where you have
           consented, and allow you to opt out where required.
         </li>
@@ -103,10 +150,17 @@ export default function PrivacyPolicyPage() {
         database providers, email delivery providers, customer support tools, and payment
         processors. We may also disclose information:
       </p>
-      <ul>
-        <li>where reasonably necessary to enforce our terms or protect our rights;</li>
-        <li>where required or authorised by law;</li>
-        <li>
+      <ul
+        className="my-5 ml-6 space-y-2 text-slate-300"
+        style={{ listStyleType: "disc" }}
+      >
+        <li className="pl-1" style={{ display: "list-item" }}>
+          where reasonably necessary to enforce our terms or protect our rights;
+        </li>
+        <li className="pl-1" style={{ display: "list-item" }}>
+          where required or authorised by law;
+        </li>
+        <li className="pl-1" style={{ display: "list-item" }}>
           as part of a business restructure, sale, merger, or asset transfer, subject to
           appropriate safeguards where practical.
         </li>
