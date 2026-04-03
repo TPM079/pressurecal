@@ -55,7 +55,17 @@ export default function LegalPageLayout({
       <section>
         <div className="mx-auto max-w-5xl px-6 py-12 md:px-8 md:py-16">
           <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 shadow-2xl shadow-black/20 backdrop-blur md:p-10">
-            <div className="prose prose-invert prose-slate max-w-none prose-headings:scroll-mt-24 prose-headings:font-semibold prose-p:text-slate-300 prose-li:text-slate-300 prose-strong:text-white prose-a:text-sky-300 hover:prose-a:text-sky-200">
+            <div
+              className="
+                prose prose-invert prose-slate max-w-none
+                prose-headings:scroll-mt-24 prose-headings:font-semibold
+                prose-p:text-slate-300 prose-strong:text-white prose-a:text-sky-300 hover:prose-a:text-sky-200
+                prose-ul:my-5 prose-ul:list-disc prose-ul:pl-6
+                prose-ol:my-5 prose-ol:list-decimal prose-ol:pl-6
+                prose-li:my-2 prose-li:pl-1 prose-li:text-slate-300
+                marker:text-slate-400
+              "
+            >
               {children}
             </div>
           </div>
