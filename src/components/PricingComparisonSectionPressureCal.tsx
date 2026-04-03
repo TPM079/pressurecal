@@ -51,11 +51,11 @@ function MinusIcon({ className = "h-4 w-4" }: { className?: string }) {
 
 function buildFeatureRows(freeSaveSetupsLabel: string): FeatureRow[] {
   return [
-    { feature: "Full system modelling", free: "Included", pro: "Included" },
+    { feature: "Full setup modelling", free: "Included", pro: "Included" },
     { feature: "Core calculators and conversions", free: "Included", pro: "Included" },
     { feature: "Real at-gun performance outputs", free: "Included", pro: "Included" },
     { feature: "Save setups", free: freeSaveSetupsLabel, pro: "Included" },
-    { feature: "Compare setups", free: "—", pro: "Included" },
+    { feature: "Compare saved setups", free: "—", pro: "Included" },
     { feature: "Share saved setups", free: "—", pro: "Included" },
     { feature: "Saved setup library", free: "—", pro: "Included" },
     { feature: "Repeat-use workflow tools", free: "—", pro: "Included" },
@@ -191,13 +191,13 @@ export default function PricingComparisonSectionPressureCal({
           </div>
 
           <h2 className="mt-5 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
-            Start free. Upgrade when you want saved workflow.
+            Start free. Upgrade when it becomes part of your workflow.
           </h2>
 
           <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
             PressureCal gives working pressure washing operators fast, practical
             setup modelling. PressureCal Pro adds the workflow tools that help
-            you save setups, compare options, and work faster over time.
+            you save proven setups, compare options, and work faster over time.
           </p>
         </div>
 

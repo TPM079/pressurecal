@@ -25,7 +25,7 @@ const freeFeatures = [
 ];
 
 const proFeatures = [
-  "Save setups",
+  "Save proven setups",
   "Compare saved setups",
   "Build your setup library",
   "Export and share saved setups",
