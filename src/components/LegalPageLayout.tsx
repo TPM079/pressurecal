@@ -22,12 +22,15 @@ export default function LegalPageLayout({
             <p className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-sky-300">
               {eyebrow}
             </p>
+
             <h1 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">
               {title}
             </h1>
+
             <p className="mt-5 text-base leading-7 text-slate-300 md:text-lg">
               {intro}
             </p>
+
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
                 to="/"
@@ -35,12 +38,14 @@ export default function LegalPageLayout({
               >
                 Back to home
               </Link>
+
               <Link
                 to="/terms"
                 className="inline-flex items-center rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-slate-300 transition hover:border-white/20 hover:bg-white/5 hover:text-white"
               >
                 Terms
               </Link>
+
               <Link
                 to="/privacy"
                 className="inline-flex items-center rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-slate-300 transition hover:border-white/20 hover:bg-white/5 hover:text-white"
@@ -59,11 +64,15 @@ export default function LegalPageLayout({
               className="
                 prose prose-invert prose-slate max-w-none
                 prose-headings:scroll-mt-24 prose-headings:font-semibold
-                prose-p:text-slate-300 prose-strong:text-white prose-a:text-sky-300 hover:prose-a:text-sky-200
-                prose-ul:my-5 prose-ul:list-disc prose-ul:pl-6
-                prose-ol:my-5 prose-ol:list-decimal prose-ol:pl-6
-                prose-li:my-2 prose-li:pl-1 prose-li:text-slate-300
-                marker:text-slate-400
+                prose-p:text-slate-300
+                prose-strong:text-white
+                prose-a:text-sky-300 hover:prose-a:text-sky-200
+                prose-ul:my-5 prose-ul:ml-6 prose-ul:list-disc
+                prose-ol:my-5 prose-ol:ml-6 prose-ol:list-decimal
+                prose-li:my-2 prose-li:text-slate-300
+                prose-li:[display:list-item]
+                prose-ul:[list-style-type:disc]
+                prose-ol:[list-style-type:decimal]
               "
             >
               {children}
