@@ -4,9 +4,21 @@
     <loc>https://www.pressurecal.com/</loc>
   </url>
   <url>
+    <loc>https://www.pressurecal.com/calculator</loc>
+  </url>
+  <url>
     <loc>https://www.pressurecal.com/nozzle-size-calculator</loc>
   </url>
   <url>
     <loc>https://www.pressurecal.com/hose-pressure-loss-calculator</loc>
+  </url>
+  <url>
+    <loc>https://www.pressurecal.com/psi-bar-calculator</loc>
+  </url>
+  <url>
+    <loc>https://www.pressurecal.com/lpm-gpm-calculator</loc>
+  </url>
+  <url>
+    <loc>https://www.pressurecal.com/nozzle-size-chart</loc>
   </url>
 </urlset>

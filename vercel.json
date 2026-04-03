@@ -1,4 +1,17 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "redirects": [
+    {
+      "source": "/pro",
+      "destination": "/pricing",
+      "permanent": true
+    },
+    {
+      "source": "/gpm-lpm-calculator",
+      "destination": "/lpm-gpm-calculator",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/(.*)",
