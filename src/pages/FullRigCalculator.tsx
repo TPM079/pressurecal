@@ -108,7 +108,7 @@ export default function FullRigCalculatorPage() {
   };
   const r = solvePressureCal(safeInputs);
   const gunBar = barFromPsi(r.gunPressurePsi);
-  
+
   const gunLpm = lpmFromGpm(r.gunFlowGpm);
   const lossBar = barFromPsi(r.hoseLossPsi);
   const requiredHp = calculateRequiredHp(r.gunPressurePsi, r.gunFlowGpm, 0.9);
@@ -157,24 +157,24 @@ export default function FullRigCalculatorPage() {
   return (
     <PressureCalLayout>
       <Helmet>
-        <title>Full Rig Calculator | PressureCal</title>
-        <meta name="description" content="Full rig calculator for pressure washer setup, including hose loss, nozzle calibration, operating pressure, and power requirement." />
+        <title>Full Setup Calculator | PressureCal</title>
+        <meta name="description" content="Model a real pressure washer setup, including hose loss, nozzle calibration, at-gun pressure, flow, and power requirement." />
         <link rel="canonical" href="https://www.pressurecal.com/calculator" />
       </Helmet>
 
       <section className="-mx-4 bg-slate-100 px-4 pb-8 pt-12 sm:pb-10">
         <div className="mx-auto max-w-6xl">
           <div className="mb-8 max-w-3xl">
-            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Full rig calculator</div>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">Model your pressure washer setup</h1>
-            <p className="mt-3 text-sm leading-6 text-slate-600">Engineering-based modelling for hose loss, nozzle calibration, and unloader-limited systems.</p>
+            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Full setup calculator</div>
+            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">Model your real pressure washer setup</h1>
+            <p className="mt-3 text-sm leading-6 text-slate-600">See how hose length, hose ID, nozzle size, and machine specs affect real-world performance.</p>
           </div>
 
           <div className={`mb-6 rounded-2xl border px-5 py-4 shadow-sm transition-all duration-700 ${highlightSetup ? "border-blue-300 bg-blue-50 shadow-lg" : "border-slate-200 bg-white"}`}>
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Your setup</div>
-                <div className="mt-1 text-sm text-slate-600">Live summary of the inputs currently being modelled.</div>
+                <div className="mt-1 text-sm text-slate-600">Live summary of what PressureCal is modelling right now.</div>
 
                 {loadedFromLink ? (
                   <div className="mt-3 inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
@@ -190,7 +190,7 @@ export default function FullRigCalculatorPage() {
                 ))}
               </div>
               <div className="flex flex-col items-start gap-2 lg:items-end">
-                <button type="button" onClick={copySetupLink} className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-slate-800 hover:shadow-lg">{copyMessage ? "Copied ✓" : "Copy Setup Link"}</button>
+                <button type="button" onClick={copySetupLink} className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-slate-800 hover:shadow-lg">{copyMessage ? "Copied ✓" : "Copy setup link"}</button>
                 <div className="text-xs text-slate-500">{copyMessage || "Share this exact rig setup."}</div>
               </div>
             </div>
@@ -198,7 +198,7 @@ export default function FullRigCalculatorPage() {
 
           <main className="grid gap-6 lg:grid-cols-2">
             <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <div className="border-b border-slate-200 px-5 py-4"><h2 className="text-xs font-semibold uppercase tracking-wider text-slate-900">System Configuration</h2></div>
+              <div className="border-b border-slate-200 px-5 py-4"><h2 className="text-xs font-semibold uppercase tracking-wider text-slate-900">Setup inputs</h2></div>
 
               <div className="space-y-5 px-5 py-4">
                 <div>
@@ -267,13 +267,13 @@ export default function FullRigCalculatorPage() {
                       <option value="psi">psi</option><option value="bar">bar</option>
                     </select>
                   </div>
-                  {!maxWasManuallyEditedRef.current && <div className="mt-2 text-xs text-slate-500">Synced to rated pressure. Edit to override.</div>}
+                  {!maxWasManuallyEditedRef.current && <div className="mt-2 text-xs text-slate-500">Synced to rated pressure. Edit this only if the unloader is intentionally set differently.</div>}
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700">Engine HP</label>
                   <input className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900 outline-none focus:border-slate-400" type="number" inputMode="decimal" value={inputs.engineHp} onFocus={selectAllOnFocus} onChange={(e) => setInputs((s) => ({ ...s, engineHp: e.target.value === "" ? "" : Number(e.target.value) }))} />
-                  <div className="mt-2 text-xs text-slate-500">Used to estimate whether the machine can support the setup.</div>
+                  <div className="mt-2 text-xs text-slate-500">Used to estimate whether the machine can realistically support the setup.</div>
                 </div>
 
                 <div>
@@ -346,19 +346,19 @@ export default function FullRigCalculatorPage() {
             <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
               <div className="border-b border-slate-200 px-5 py-4">
                 <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-900">Calculated Performance</h2>
+                  <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-900">Calculated performance</h2>
                   <div className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${systemBadge.cls}`}>{systemBadge.text}</div>
                 </div>
               </div>
               <div className="space-y-5 px-5 py-4">
                 <div className="rounded-2xl border border-slate-300 bg-slate-100 px-5 py-5">
-                  <div className="text-xs font-medium uppercase tracking-wide text-slate-600">Estimated operating pressure (at gun)</div>
+                  <div className="text-xs font-medium uppercase tracking-wide text-slate-600">Estimated at-gun pressure</div>
                   <div className="mt-2 text-5xl font-semibold tracking-tight text-slate-900">{fmt(r.gunPressurePsi, 0)} <span className="ml-1 text-sm font-medium text-slate-500">PSI</span></div>
                   <div className="mt-1 text-sm text-slate-600">({fmt(gunBar, 1)} bar)</div>
                 </div>
 
                 <div className={`text-xs font-medium ${Math.abs(pressureVariancePct) > 10 ? "text-red-600" : Math.abs(pressureVariancePct) > 5 ? "text-amber-600" : "text-slate-500"}`}>Δ from rated pressure: {fmt(pressureVariancePct, 1)}%</div>
-                <div className="text-sm text-slate-700">Efficiency tier: <strong>{efficiencyTier}</strong> — {efficiencyNote}</div>
+                <div className="text-sm text-slate-700">Pressure loss guide: <strong>{efficiencyTier}</strong> — {efficiencyNote}</div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="rounded-xl border border-slate-200 px-4 py-4">
@@ -375,7 +375,7 @@ export default function FullRigCalculatorPage() {
 
                 <div className="rounded-xl border border-slate-200 px-4 py-4">
                   <div className="flex items-center justify-between gap-3">
-                    <div className="text-sm font-semibold text-slate-900">Power requirement</div>
+                    <div className="text-sm font-semibold text-slate-900">Engine power check</div>
                     <div className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${enginePowerBadge.cls}`}>{enginePowerBadge.text}</div>
                   </div>
                   <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -407,7 +407,7 @@ export default function FullRigCalculatorPage() {
                     <div className="rounded-lg border border-slate-200 bg-white px-4 py-4">
                       <div className="text-xs font-medium uppercase tracking-wide text-slate-600">At gun (indicative)</div>
                       <div className="mt-2 text-2xl font-semibold text-slate-900">{fmt(pqAtGun, 0)} <span className="text-sm font-medium text-slate-600">bar·L/min</span></div>
-                      <div className="mt-1 text-xs text-slate-500">Based on calculated operating point.</div>
+                      <div className="mt-1 text-xs text-slate-500">Based on the calculated operating point.</div>
                     </div>
                   </div>
                 </div>

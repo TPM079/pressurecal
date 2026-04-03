@@ -1,73 +1,69 @@
-# React + TypeScript + Vite
-
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+PressureCal
+PressureCal is a practical setup calculator for pressure washing operators.
+It helps users stop guessing and model how a real setup performs, from pump to gun. Instead of relying on simple charts or one-off conversions, PressureCal brings nozzle sizing, hose pressure loss, at-gun pressure, flow, and setup behaviour together in one place.
+What PressureCal is for
+PressureCal is built for working pressure washing operators who want fast, trustworthy answers for real-world setup decisions.
+Typical use cases include:
+choosing the right nozzle
+estimating hose pressure loss
+checking real at-gun pressure
+comparing setup changes before spending money
+troubleshooting weak performance
+matching pumps, hoses, and accessories more confidently
+Core product positioning
+PressureCal helps professional pressure washing operators model real-world setup performance so they can make better nozzle, hose, and machine decisions with less guesswork.
+Current feature set
+full setup modelling
+nozzle sizing
+hose pressure loss calculation
+PSI ↔ BAR conversion
+LPM ↔ GPM conversion
+nozzle size chart
+shareable setup links
+PressureCal Pro saved workflow
+PressureCal Pro
+PressureCal Pro is positioned as workflow value rather than a hard paywall on the core calculator.
+Free should feel genuinely useful on its own.
+Pro should help serious operators:
+save setups
+compare setups
+build a setup library
+reuse trusted configurations faster
+Primary customer avatar
+The primary PressureCal customer is:
+An owner-operator pressure washing professional who wants fast, trustworthy setup answers without guesswork.
+That user is practical, gear-aware, and busy. They want a tool that is useful in the field, not bloated, overly technical, or built for hobby use.
+Brand direction
+PressureCal should feel:
+professional
+practical
+trustworthy
+clear
+built for real-world use
+Suggested homepage message
+Stop guessing your pressure washer setup.
+Model nozzle size, hose loss, and real at-gun pressure in one place so you can see how your machine actually performs.
+Tech stack
+React
+TypeScript
+Vite
+Tailwind CSS
+React Router
+Supabase
+Stripe
+Vercel
+Local development
+Install dependencies:
+```bash
+npm install
 ```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Run the dev server:
+```bash
+npm run dev
 ```
+Create a production build:
+```bash
+npm run build
+```
+Notes
+This README replaces the default Vite template copy and gives the repo a product-facing identity that matches the app itself.

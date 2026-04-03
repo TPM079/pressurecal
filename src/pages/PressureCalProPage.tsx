@@ -16,7 +16,7 @@ import {
 const FREE_CALCULATOR_HREF = "/calculator";
 
 const freeFeatures = [
-  "Full system modelling",
+  "Full setup modelling",
   "Nozzle sizing",
   "Hose pressure loss",
   "PSI ↔ BAR conversion",
@@ -26,7 +26,7 @@ const freeFeatures = [
 
 const proFeatures = [
   "Save setups",
-  "Compare setups",
+  "Compare saved setups",
   "Build your setup library",
   "Export and share saved setups",
 ];
@@ -532,10 +532,10 @@ export default function PressureCalProPage() {
   return (
     <PressureCalLayout>
       <Helmet>
-        <title>PressureCal Pro | Saved workflow for serious operators</title>
+        <title>PressureCal Pro | Save the setups you trust</title>
         <meta
           name="description"
-          content="PressureCal Pro helps you save setups, compare results, build your setup library, and keep your most-used configurations organised."
+          content="PressureCal Pro helps serious operators save, compare, and reuse real-world setups so repeat decisions are faster and easier."
         />
       </Helmet>
 
@@ -566,12 +566,11 @@ export default function PressureCalProPage() {
         <div className="mx-auto max-w-6xl py-16 sm:py-20">
           <div className="max-w-3xl">
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-              Go beyond one-off calculations
+              Save the setups you trust
             </h1>
 
             <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-300 sm:text-xl">
-              PressureCal Pro helps you save setups, compare results, build your
-              setup library, and keep your most-used configurations organised.
+              PressureCal Pro helps serious operators save, compare, and reuse real-world setups so repeat decisions are faster, cleaner, and easier.
             </p>
 
             <div className={`mt-6 rounded-2xl border px-4 py-4 sm:px-5 ${authBanner.cls}`}>
@@ -626,8 +625,7 @@ export default function PressureCalProPage() {
             </div>
 
             <p className="mt-4 text-sm text-slate-400">
-              The core calculator stays free. Pro adds saved workflow,
-              organisation, and repeat use.
+              The core calculator stays free. Pro adds saved workflow, organisation, and repeat use.
             </p>
           </div>
         </div>
@@ -647,9 +645,7 @@ export default function PressureCalProPage() {
               What stays free, and what Pro adds
             </h2>
             <p className="mt-4 text-lg leading-8 text-slate-600">
-              PressureCal keeps the core calculator useful on its own. Pro adds
-              the features that make repeated use faster, easier, and more
-              organised.
+              PressureCal keeps the core calculator useful on its own. Pro adds the features that make repeated use faster, easier, and more organised.
             </p>
           </div>
 
@@ -659,7 +655,7 @@ export default function PressureCalProPage() {
                 PressureCal Free
               </h3>
               <p className="mt-2 text-sm font-medium text-slate-500">
-                For core calculations and setup modelling
+                For one-off calculations and real-world setup checks
               </p>
               <p className="mt-6 text-4xl font-bold tracking-tight text-slate-950">
                 Free
@@ -732,7 +728,7 @@ export default function PressureCalProPage() {
                 <>
                   <h3 className="text-2xl font-semibold">PressureCal Pro</h3>
                   <p className="mt-2 text-sm font-medium text-slate-300">
-                    For saved workflow and repeat use
+                    For repeat use and saved workflow
                   </p>
 
                   <div className="mt-6 flex flex-wrap items-end gap-3">
@@ -833,12 +829,10 @@ export default function PressureCalProPage() {
         <div className="mx-auto max-w-6xl px-4 py-16">
           <div className="max-w-3xl">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Start free. Upgrade when you’re ready.
+              Start free. Upgrade when it becomes part of your workflow.
             </h2>
             <p className="mt-4 text-lg leading-8 text-slate-300">
-              Use PressureCal’s core calculator for free, then move to Pro when
-              you want to save setups, compare results, and build your setup
-              library.
+              Use PressureCal’s core calculator for free, then move to Pro when you want to save setups, compare results, and build your setup library.
             </p>
           </div>
 

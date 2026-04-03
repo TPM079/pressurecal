@@ -27,9 +27,9 @@ type ToolCard = {
 };
 
 const trustBarItems = [
-  "Full system modelling",
+  "Real-world setup modelling",
   "Australian-first defaults (PSI + LPM)",
-  "Built for real-world use",
+  "Built for working operators",
 ];
 
 const toolCards: ToolCard[] = [
@@ -44,7 +44,7 @@ const toolCards: ToolCard[] = [
     href: "/hose-pressure-loss-calculator",
     title: "Hose Pressure Loss Calculator",
     description:
-      "Estimate real pressure drop from hose length, hose ID, and flow instead of relying on rules of thumb.",
+      "Estimate real pressure drop from hose length, hose ID, and flow instead of relying on rough rules of thumb.",
     cta: "Open tool →",
   },
   {
@@ -58,7 +58,7 @@ const toolCards: ToolCard[] = [
     href: "/lpm-gpm-calculator",
     title: "LPM ↔ GPM Calculator",
     description:
-      "Convert flow rates instantly for pumps, injectors, nozzles, and hose loss calculations.",
+      "Convert flow rates instantly for pumps, injectors, nozzles, and hose loss checks.",
     cta: "Open tool →",
   },
   {
@@ -72,7 +72,7 @@ const toolCards: ToolCard[] = [
 ];
 
 const featureBadges = [
-  "Full system modelling",
+  "Full setup modelling",
   "Nozzle sizing",
   "Hose pressure loss",
   "PSI ↔ BAR conversion",
@@ -82,7 +82,7 @@ const featureBadges = [
 
 const proFeatures = [
   "Save setups",
-  "Compare setups",
+  "Compare saved setups",
   "Build your setup library",
   "Export and share saved setups",
 ];
@@ -382,10 +382,10 @@ export default function HomePage() {
   return (
     <PressureCalLayout>
       <Helmet>
-        <title>Pressure Washer Calculator (PSI, LPM, Nozzle Size) | PressureCal</title>
+        <title>Pressure Washer Setup Calculator | PressureCal</title>
         <meta
           name="description"
-          content="Model your pressure washer setup from pump to gun. Calculate nozzle size, hose pressure loss, operating pressure, flow, and bypass behaviour in one place."
+          content="Stop guessing your pressure washer setup. Model nozzle size, hose pressure loss, operating pressure, flow, and bypass behaviour in one place."
         />
       </Helmet>
 
@@ -393,11 +393,11 @@ export default function HomePage() {
         <div className="mx-auto grid max-w-6xl items-center gap-10 py-14 sm:py-16 lg:grid-cols-[1.08fr_0.92fr]">
           <div>
             <h1 className="max-w-3xl text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
-              Model your pressure washer setup — from pump to gun.
+              Stop guessing your pressure washer setup.
             </h1>
 
             <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600 sm:text-xl">
-              Nozzle size, hose loss, and real at-gun pressure — calculated together so you
+              Model nozzle size, hose loss, and real at-gun pressure in one place so you
               can see how your machine actually performs.
             </p>
 
@@ -425,7 +425,7 @@ export default function HomePage() {
             </div>
 
             <p className="mt-4 text-sm text-slate-500">
-              Built for pressure washing professionals who want practical answers.
+              Built for working pressure washing operators.
             </p>
 
             <div className="mt-8 grid gap-4 sm:grid-cols-3">
@@ -436,7 +436,7 @@ export default function HomePage() {
                     "Quantify pressure drop from hose length and hose ID instead of guessing what the line is costing you.",
                 },
                 {
-                  title: "Nozzle calibration",
+                  title: "Nozzle match",
                   description:
                     "See whether the selected tip is aligned, restrictive, or oversized for the machine.",
                 },
@@ -550,7 +550,7 @@ export default function HomePage() {
         <div className="mx-auto max-w-6xl py-10 lg:py-12">
           <div className="max-w-3xl">
             <h2 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-              Start simple. Get real answers fast.
+              Start simple. Get setup answers fast.
             </h2>
             <p className="mt-4 text-lg leading-8 text-slate-600">
               Enter your pressure, flow, and hose length to instantly see your recommended
@@ -815,7 +815,7 @@ export default function HomePage() {
                 </div>
 
                 <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm font-semibold text-slate-900">Efficiency note</p>
+                  <p className="text-sm font-semibold text-slate-900">Pressure loss guide</p>
                   <p className="mt-2 text-sm leading-6 text-slate-600">{efficiencyNote}</p>
                 </div>
               </div>
@@ -887,7 +887,7 @@ export default function HomePage() {
           <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
             <div className="max-w-2xl">
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                Go beyond one-off calculations
+                Save the setups you trust
               </h2>
               <p className="mt-4 text-base leading-7 text-slate-300 sm:text-lg">
                 The core calculator is free and useful on its own. PressureCal Pro adds saved workflow so you can come back to setups, compare results, and keep your most-used configurations organised.
@@ -939,26 +939,26 @@ export default function HomePage() {
         <div className="mx-auto grid max-w-6xl gap-10 px-4 py-16 lg:grid-cols-2">
           <div>
             <h2 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-              Most tools don’t show what actually matters.
+              Most tools stop at charts and conversions.
             </h2>
             <p className="mt-4 text-lg leading-8 text-slate-600">
-              Pressure washer calculators usually stop at simple conversions. They can swap
-              PSI for BAR or GPM for LPM, but they don’t answer the real questions.
+              Pressure washer calculators often stop at simple conversions. They can swap
+              PSI for BAR or GPM for LPM, but they do not answer the real setup questions.
             </p>
             <ul className="mt-6 space-y-3 text-base leading-7 text-slate-700">
               <li>• What pressure am I actually getting at the gun?</li>
-              <li>• Is my nozzle correctly sized?</li>
+              <li>• Is my nozzle correctly matched?</li>
               <li>• How much is my hose reducing performance?</li>
               <li>• What changes when I alter flow, hose length, or nozzle size?</li>
             </ul>
             <p className="mt-6 text-lg font-semibold text-slate-950">
-              Because your system isn’t just numbers — it’s connected.
+              Because your setup is not just numbers — it is connected.
             </p>
           </div>
 
           <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm">
             <h2 className="text-3xl font-bold tracking-tight text-slate-950">
-              PressureCal models the full system.
+              PressureCal models the whole setup.
             </h2>
 
             <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-6">
@@ -985,7 +985,7 @@ export default function HomePage() {
             </div>
 
             <div className="mt-8 space-y-4 text-base leading-7 text-slate-600">
-              <p>PressureCal shows how each part of the system affects the others:</p>
+              <p>PressureCal shows how each part of the setup affects the others:</p>
               <ul className="space-y-3 text-slate-700">
                 <li>• Pump sets available flow</li>
                 <li>• Nozzle determines operating pressure</li>
@@ -995,7 +995,7 @@ export default function HomePage() {
             </div>
 
             <p className="mt-6 text-lg font-semibold text-slate-950">
-              See what your machine is actually doing — not just what it’s rated for.
+              See what your machine is actually doing — not just what it is rated for.
             </p>
           </div>
         </div>
@@ -1045,7 +1045,7 @@ export default function HomePage() {
         <div className="mx-auto grid max-w-6xl gap-8 px-4 py-16 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="max-w-3xl">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Start modelling your setup
+              Model your setup with confidence
             </h2>
             <p className="mt-4 text-base leading-7 text-slate-300">
               Use PressureCal free and see how your setup really performs.

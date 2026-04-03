@@ -56,9 +56,9 @@ function buildFeatureRows(freeSaveSetupsLabel: string): FeatureRow[] {
     { feature: "Real at-gun performance outputs", free: "Included", pro: "Included" },
     { feature: "Save setups", free: freeSaveSetupsLabel, pro: "Included" },
     { feature: "Compare setups", free: "—", pro: "Included" },
-    { feature: "Share setups", free: "—", pro: "Included" },
+    { feature: "Share saved setups", free: "—", pro: "Included" },
     { feature: "Saved setup library", free: "—", pro: "Included" },
-    { feature: "Future advanced Pro tools", free: "—", pro: "Included" },
+    { feature: "Repeat-use workflow tools", free: "—", pro: "Included" },
   ];
 }
 
@@ -191,13 +191,13 @@ export default function PricingComparisonSectionPressureCal({
           </div>
 
           <h2 className="mt-5 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
-            Start free. Upgrade when you need more power.
+            Start free. Upgrade when you want saved workflow.
           </h2>
 
           <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
-            PressureCal gives every operator access to practical, real-world
-            pressure washer modelling. PressureCal Pro adds the workflow tools
-            that help you save setups, compare options, and work faster.
+            PressureCal gives working pressure washing operators fast, practical
+            setup modelling. PressureCal Pro adds the workflow tools that help
+            you save setups, compare options, and work faster over time.
           </p>
         </div>
 
@@ -209,11 +209,11 @@ export default function PricingComparisonSectionPressureCal({
                   PressureCal
                 </p>
                 <h3 className="mt-2 text-2xl font-bold text-slate-900">
-                  Free core tools
+                  Free core modelling
                 </h3>
                 <p className="mt-3 text-sm leading-6 text-slate-600">
-                  Ideal for operators who want accurate modelling, setup checks,
-                  and quick field calculations.
+                  Ideal for operators who want accurate setup checks and quick,
+                  real-world calculations in the field.
                 </p>
               </div>
 
@@ -230,11 +230,11 @@ export default function PricingComparisonSectionPressureCal({
               </li>
               <li className="flex items-start gap-3 text-sm text-slate-700">
                 <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#1C408C]" />
-                Full system modelling included
+                Model real-world setup performance from pump to gun
               </li>
               <li className="flex items-start gap-3 text-sm text-slate-700">
                 <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#1C408C]" />
-                Best for one-off jobs, testing, and quick checks
+                Best for quick checks, testing, and one-off jobs
               </li>
             </ul>
 
@@ -251,18 +251,18 @@ export default function PricingComparisonSectionPressureCal({
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <span className="inline-flex rounded-full bg-[#1C408C] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-white">
-                    Best for Regular Operators
+                    Best for Regular Use
                   </span>
 
                   <p className="mt-4 text-sm font-semibold uppercase tracking-[0.14em] text-[#1C408C]">
                     PressureCal Pro
                   </p>
                   <h3 className="mt-2 text-2xl font-bold text-slate-900">
-                    Faster workflow. Better organisation.
+                    Saved workflow for serious operators
                   </h3>
                   <p className="mt-3 text-sm leading-6 text-slate-600">
-                    Built for operators who want saved setups, repeatable
-                    workflows, and more efficient planning.
+                    Built for operators who want to save setups, compare options,
+                    and build a reusable setup library.
                   </p>
                 </div>
 
@@ -275,11 +275,11 @@ export default function PricingComparisonSectionPressureCal({
               <ul className="mt-8 space-y-3">
                 <li className="flex items-start gap-3 text-sm text-slate-700">
                   <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#1C408C]" />
-                  Save setups for repeat jobs and standard rigs
+                  Save proven setups for repeat jobs and standard machines
                 </li>
                 <li className="flex items-start gap-3 text-sm text-slate-700">
                   <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#1C408C]" />
-                  Compare setups and share results more easily
+                  Compare setups and share saved results more easily
                 </li>
                 <li className="flex items-start gap-3 text-sm text-slate-700">
                   <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#1C408C]" />
