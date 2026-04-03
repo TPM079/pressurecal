@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import PressureCalLayout from "../components/PressureCalLayout";
 import BackToTopButton from "../components/BackToTopButton";
+import PricingComparisonSectionPressureCal from "../components/PricingComparisonSectionPressureCal";
 import { trackEvent } from "../lib/analytics";
 import { supabase } from "../lib/supabase-browser";
 import {
@@ -631,6 +632,13 @@ export default function PressureCalProPage() {
           </div>
         </div>
       </section>
+
+      <PricingComparisonSectionPressureCal
+        alreadyPro={alreadyPro}
+        freeCalculatorHref={FREE_CALCULATOR_HREF}
+        proHref={alreadyPro ? "/saved-setups" : "#plans"}
+        freeSaveSetupsLabel="—"
+      />
 
       <section id="plans" className="border-b border-slate-200 bg-slate-50/70">
         <div className="mx-auto max-w-6xl px-4 py-16">

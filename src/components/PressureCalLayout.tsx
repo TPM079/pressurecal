@@ -1,5 +1,5 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useEffect, type MouseEvent, type ReactNode } from "react";
+import { Link } from "react-router-dom";
+import { type ReactNode } from "react";
 import FeedbackWidget from "./FeedbackWidget";
 
 type PressureCalLayoutProps = {
@@ -15,45 +15,13 @@ const navLinks = [
   { to: "/nozzle-size-chart", label: "Nozzle Chart" },
 ];
 
+const legalLinks = [
+  { to: "/about", label: "About" },
+  { to: "/privacy", label: "Privacy" },
+  { to: "/terms", label: "Terms" },
+];
+
 export default function PressureCalLayout({ children }: PressureCalLayoutProps) {
-  const location = useLocation();
-  const navigate = useNavigate();
-
-  function scrollToAnchor(anchorId: string) {
-    const el = document.getElementById(anchorId);
-    if (!el) return false;
-
-    el.scrollIntoView({ behavior: "smooth", block: "start" });
-    return true;
-  }
-
-  function handleAnchorNavigation(event: MouseEvent<HTMLAnchorElement>, anchorId: string) {
-    event.preventDefault();
-
-    if (location.pathname === "/") {
-      window.history.replaceState({}, "", `/#${anchorId}`);
-      scrollToAnchor(anchorId);
-      return;
-    }
-
-    navigate(`/#${anchorId}`);
-  }
-
-  useEffect(() => {
-    if (location.pathname !== "/") return;
-    if (!location.hash) return;
-
-    const anchorId = location.hash.replace("#", "");
-    if (!anchorId) return;
-
-    const tryScroll = () => scrollToAnchor(anchorId);
-
-    if (tryScroll()) return;
-
-    const timeout = window.setTimeout(tryScroll, 150);
-    return () => window.clearTimeout(timeout);
-  }, [location.pathname, location.hash]);
-
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
@@ -68,7 +36,11 @@ export default function PressureCalLayout({ children }: PressureCalLayoutProps) 
               }
             }}
           >
-            <img src="/PressureCal_primary_logo.png" alt="PressureCal" className="h-12 w-auto sm:h-14" />
+            <img
+              src="/PressureCal_primary_logo.png"
+              alt="PressureCal"
+              className="h-12 w-auto sm:h-14"
+            />
           </Link>
 
           <nav className="hidden items-center gap-5 md:flex">
@@ -81,13 +53,14 @@ export default function PressureCalLayout({ children }: PressureCalLayoutProps) 
                 {link.label}
               </Link>
             ))}
-            <a
-              href="/#about"
-              onClick={(event) => handleAnchorNavigation(event, "about")}
+
+            <Link
+              to="/about"
               className="text-sm font-medium text-slate-600 transition hover:text-slate-900"
             >
               About
-            </a>
+            </Link>
+
             <Link
               to="/calculator"
               className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
@@ -108,13 +81,13 @@ export default function PressureCalLayout({ children }: PressureCalLayoutProps) 
                 {link.label}
               </Link>
             ))}
-            <a
-              href="/#about"
-              onClick={(event) => handleAnchorNavigation(event, "about")}
+
+            <Link
+              to="/about"
               className="whitespace-nowrap rounded-full border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
             >
               About
-            </a>
+            </Link>
           </div>
         </div>
       </header>
@@ -122,22 +95,53 @@ export default function PressureCalLayout({ children }: PressureCalLayoutProps) 
       <main className="px-4 py-8 sm:py-10">{children}</main>
 
       <footer className="border-t border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-6 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} PressureCal</p>
-          <div className="flex flex-wrap gap-4">
-            <Link to="/" className="transition hover:text-slate-700">Home</Link>
-            {navLinks.map((link) => (
-              <Link key={link.to} to={link.to} className="transition hover:text-slate-700">
-                {link.label}
-              </Link>
-            ))}
-            <a
-              href="/#about"
-              onClick={(event) => handleAnchorNavigation(event, "about")}
-              className="transition hover:text-slate-700"
-            >
-              About
-            </a>
+        <div className="mx-auto max-w-6xl px-4 py-6">
+          <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+            <div className="max-w-xl">
+              <p className="text-base font-semibold text-slate-900">PressureCal</p>
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                Practical pressure washer modelling for nozzle sizing, hose pressure
+                loss, and real at-gun performance.
+              </p>
+              <p className="mt-4 text-sm text-slate-500">
+                © {new Date().getFullYear()} PressureCal
+              </p>
+            </div>
+
+            <div className="grid gap-6 sm:grid-cols-2">
+              <div>
+                <p className="text-sm font-semibold text-slate-900">Tools</p>
+                <div className="mt-3 flex flex-col gap-2 text-sm text-slate-500">
+                  <Link to="/" className="transition hover:text-slate-700">
+                    Home
+                  </Link>
+                  {navLinks.map((link) => (
+                    <Link
+                      key={link.to}
+                      to={link.to}
+                      className="transition hover:text-slate-700"
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm font-semibold text-slate-900">Company</p>
+                <div className="mt-3 flex flex-col gap-2 text-sm text-slate-500">
+                  {legalLinks.map((link) => (
+                    <Link
+                      key={link.to}
+                      to={link.to}
+                      className="transition hover:text-slate-700"
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </footer>

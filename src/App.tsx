@@ -11,6 +11,11 @@ import {
   useNavigationType,
 } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
+
+
+import AboutPage from "./pages/AboutPage";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
+import TermsOfServicePage from "./pages/TermsOfServicePage";
 import PressureCalProPage from "./pages/PressureCalProPage";
 import SavedSetupsPage from "./pages/SavedSetupsPage";
 import AccountPage from "./pages/AccountPage";
@@ -60,7 +65,7 @@ export default function App() {
   const location = useLocation();
 
   return (
-    <>
+    <div className="min-h-screen bg-slate-950 text-slate-100">
       <ScrollManager />
 
       <AnimatePresence mode="wait">
@@ -173,8 +178,37 @@ export default function App() {
             path="/gpm-lpm-calculator"
             element={<Navigate to="/lpm-gpm-calculator" replace />}
           />
+
+          <Route
+            path="/about"
+            element={
+              <PageTransition>
+                <AboutPage />
+              </PageTransition>
+            }
+          />
+
+          <Route
+            path="/privacy"
+            element={
+              <PageTransition>
+                <PrivacyPolicyPage />
+              </PageTransition>
+            }
+          />
+
+          <Route
+            path="/terms"
+            element={
+              <PageTransition>
+                <TermsOfServicePage />
+              </PageTransition>
+            }
+          />
         </Routes>
       </AnimatePresence>
-    </>
+
+    
+    </div>
   );
 }
