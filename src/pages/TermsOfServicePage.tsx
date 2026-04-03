@@ -98,9 +98,9 @@ export default function TermsOfServicePage() {
       </p>
       <p>
         Unless required otherwise by law, subscription fees are generally non-refundable
-        for partial billing periods or unused time. You should update this section to
-        reflect any specific refund, trial, tax, invoicing, GST, or cancellation wording
-        that applies to your business and checkout flow.
+        for partial billing periods or unused time. Any free trial, promotional pricing,
+        tax, invoicing, GST, or cancellation terms presented at checkout or in related
+        billing materials will also apply.
       </p>
 
       <h2>10. Trials, promotions, and plan changes</h2>
