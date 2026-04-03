@@ -65,12 +65,25 @@ export default function TermsOfServicePage() {
 
       <h2>6. Acceptable use</h2>
       <p>You agree not to:</p>
-      <ul>
-        <li>use the service unlawfully or in a way that infringes another person's rights;</li>
-        <li>attempt to interfere with the platform, its security, or its normal operation;</li>
-        <li>reverse engineer, scrape, or copy the service beyond what lawfully applies;</li>
-        <li>misuse accounts, credentials, billing flows, or access controls;</li>
-        <li>use the service in a misleading way or falsely imply endorsement by us.</li>
+      <ul
+        className="my-5 ml-6 space-y-2 text-slate-300"
+        style={{ listStyleType: "disc" }}
+      >
+        <li className="pl-1" style={{ display: "list-item" }}>
+          use the service unlawfully or in a way that infringes another person's rights;
+        </li>
+        <li className="pl-1" style={{ display: "list-item" }}>
+          attempt to interfere with the platform, its security, or its normal operation;
+        </li>
+        <li className="pl-1" style={{ display: "list-item" }}>
+          reverse engineer, scrape, or copy the service beyond what lawfully applies;
+        </li>
+        <li className="pl-1" style={{ display: "list-item" }}>
+          misuse accounts, credentials, billing flows, or access controls;
+        </li>
+        <li className="pl-1" style={{ display: "list-item" }}>
+          use the service in a misleading way or falsely imply endorsement by us.
+        </li>
       </ul>
 
       <h2>7. Accounts</h2>
