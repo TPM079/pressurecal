@@ -26,13 +26,11 @@ type ToolCard = {
   span?: string;
 };
 
-
 const trustBarItems = [
   "Full system modelling",
   "Australian-first defaults (PSI + LPM)",
   "Built for real-world use",
 ];
-
 
 const toolCards: ToolCard[] = [
   {
@@ -81,7 +79,6 @@ const featureBadges = [
   "LPM ↔ GPM conversion",
   "Nozzle size chart",
 ];
-
 
 const proFeatures = [
   "Save setups",
@@ -395,7 +392,6 @@ export default function HomePage() {
       <section className="-mx-4 -mt-8 overflow-hidden border-b border-slate-200 bg-white px-4 sm:-mt-10">
         <div className="mx-auto grid max-w-6xl items-center gap-10 py-14 sm:py-16 lg:grid-cols-[1.08fr_0.92fr]">
           <div>
-
             <h1 className="max-w-3xl text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
               Model your pressure washer setup — from pump to gun.
             </h1>
@@ -939,7 +935,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="border-b border-slate-200 bg-white">
+      <section id="about" className="border-b border-slate-200 bg-white">
         <div className="mx-auto grid max-w-6xl gap-10 px-4 py-16 lg:grid-cols-2">
           <div>
             <h2 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
