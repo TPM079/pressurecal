@@ -26,7 +26,7 @@ const flowHeaders = [
 ];
 
 const examplePresets = [
-  { label: "4000 PSI / 4 GPM", pressure: 276, flow: "15.1" },
+  { label: "4000 PSI / 15 LPM", pressure: 276, flow: "15.0" },
   { label: "3000 PSI / 5.5 GPM", pressure: 207, flow: "20.8" },
   { label: "200 BAR / 15 LPM", pressure: 200, flow: "15.0" },
   { label: "250 BAR / 21 LPM", pressure: 250, flow: "20.8" },
@@ -452,9 +452,9 @@ function TechnicalNotesPanel() {
         </p>
 
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900">
-          <span className="font-semibold">Example:</span> An 8 GPM machine with
-          a 2-nozzle surface cleaner delivers 4 GPM per nozzle, so each nozzle
-          should be selected from the 4 GPM column.
+          <span className="font-semibold">Example:</span> A 30 LPM machine with
+          a 2-nozzle surface cleaner delivers 15 LPM per nozzle, so each nozzle
+          should be selected from the 15.1 LPM (4 GPM) column.
         </div>
 
         <p className="text-xs text-slate-500">
@@ -496,7 +496,7 @@ function ExamplePanel() {
               Machine Flow
             </div>
             <div className="mt-2 text-2xl font-semibold text-slate-900">
-              15.1 LPM
+              15 LPM
             </div>
             <div className="mt-1 text-sm text-slate-500">(4 GPM)</div>
           </div>
@@ -511,18 +511,18 @@ function ExamplePanel() {
           </div>
           <p className="mt-3 text-sm leading-6 text-blue-900">
             Locate <strong>4000 (276)</strong> on the left-hand pressure column,
-            then move across to <strong>15.1 (4)</strong>. The intersection
+            then move across to <strong>15 LPM (4 GPM)</strong>. The intersection
             gives a recommended tip code of <strong>040</strong>.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
             <Link
-              to="/nozzle-size-calculator?p=276&pu=bar&f=15.1&fu=lpm"
+              to="/nozzle-size-calculator?p=276&pu=bar&f=15&fu=lpm"
               className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
             >
               Open in Calculator
             </Link>
             <Link
-              to={buildChartHref(276, "15.1")}
+              to={buildChartHref(276, "15.0")}
               className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
             >
               Highlight in Chart
@@ -571,7 +571,7 @@ function PresetExamples() {
 function SurfaceCleanerHelper() {
   const [pressure, setPressure] = useState<number>(4000);
   const [pressureUnit, setPressureUnit] = useState<PressureUnit>("psi");
-  const [totalFlow, setTotalFlow] = useState<number>(30.3);
+  const [totalFlow, setTotalFlow] = useState<number>(30);
   const [flowUnit, setFlowUnit] = useState<FlowUnit>("lpm");
   const [nozzleCount, setNozzleCount] = useState<number>(2);
 
@@ -738,7 +738,7 @@ function SurfaceCleanerHelper() {
             </div>
 
             <div className="mt-3 text-4xl font-bold tracking-tight text-slate-900">
-              {formatNumber(perNozzleLpm, 1)} LPM
+              {formatNumber(perNozzleLpm, 0)} LPM
             </div>
 
             <div className="mt-2 text-sm text-slate-600">
@@ -754,7 +754,7 @@ function SurfaceCleanerHelper() {
               </div>
               <p className="mt-2 text-sm leading-6 text-blue-900">
                 Chart uses nearest available column:{" "}
-                <strong>{nearestFlow.lpm} LPM</strong> ({nearestFlow.gpm} GPM)
+                <strong>{formatNumber(perNozzleLpm, 0)} LPM</strong> (nearest chart column {nearestFlow.lpm} LPM / {nearestFlow.gpm} GPM)
               </p>
               <p className="mt-2 text-sm leading-6 text-blue-900">
                 Nearest chart row: <strong>{roundedPressureBar} BAR</strong> ({Math.round(pressurePsi)} PSI)
@@ -793,9 +793,9 @@ function SurfaceCleanerHelper() {
 
             <p className="mt-4 text-sm leading-6 text-slate-600">
               Example: a machine delivering{" "}
-              <strong>{formatNumber(totalFlowLpm, 1)} LPM</strong> through{" "}
+              <strong>{formatNumber(totalFlowLpm, 0)} LPM</strong> through{" "}
               <strong>{nozzleCount}</strong> nozzles gives{" "}
-              <strong>{formatNumber(perNozzleLpm, 1)} LPM</strong> per nozzle.
+              <strong>{formatNumber(perNozzleLpm, 0)} LPM</strong> per nozzle.
             </p>
           </div>
         </div>
@@ -958,12 +958,12 @@ function SEOContentBlocks() {
         <div className="space-y-4 px-5 py-5 text-sm leading-7 text-slate-600 md:px-6">
           <p>
             A common professional pressure washer setup is{" "}
-            <strong>15.1 LPM at 4000 PSI</strong>. In the PressureCal chart, that
+            <strong>15 LPM at 4000 PSI</strong>. In the PressureCal chart, that
             corresponds to a <strong>040</strong> tip code.
           </p>
 
           <p>
-            This is why the worked example on this page uses 4000 PSI and 15.1 LPM.
+            This is why the worked example on this page uses 4000 PSI and 15 LPM.
             It is one of the most widely recognised setups in the pressure
             washing industry and makes a useful reference point for contractors
             comparing machines and nozzles.
@@ -971,10 +971,10 @@ function SEOContentBlocks() {
 
           <div>
             <Link
-              to="/nozzle-size-calculator?p=276&pu=bar&f=15.1&fu=lpm"
+              to="/nozzle-size-calculator?p=276&pu=bar&f=15&fu=lpm"
               className="inline-flex rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
             >
-              Open 4000 PSI / 15.1 LPM in Calculator
+              Open 4000 PSI / 15 LPM in Calculator
             </Link>
           </div>
         </div>
@@ -995,9 +995,9 @@ function SEOContentBlocks() {
           </p>
 
           <p>
-            Example: if a 30.3 LPM machine is running a 2-nozzle surface cleaner,
-            each nozzle receives 15.1 LPM. The chart should therefore be read using
-            the 15.1 LPM column, not the full 30.3 LPM machine flow.
+            Example: if a 30 LPM machine is running a 2-nozzle surface cleaner,
+            each nozzle receives 15 LPM. The chart should therefore be read using
+            the 15.1 LPM (4 GPM) column, not the full 30 LPM machine flow.
           </p>
 
           <p>
