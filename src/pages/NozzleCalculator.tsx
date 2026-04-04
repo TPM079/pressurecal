@@ -99,7 +99,6 @@ type CalculatorCoreProps = {
   tip: string;
   orificeMm: number;
   orificeIn: number;
-  gpmAt4000: number;
   tipFlowLabel: string;
   swapUnits: () => void;
   resetAll: () => void;
@@ -120,7 +119,6 @@ function CalculatorCore({
   tip,
   orificeMm,
   orificeIn,
-  gpmAt4000,
   tipFlowLabel,
   swapUnits,
   resetAll,
@@ -520,7 +518,6 @@ export default function NozzleCalculator({ embedded = false }: NozzleCalculatorP
       tip={tip}
       orificeMm={orificeMm}
       orificeIn={orificeIn}
-      gpmAt4000={gpmAt4000}
       tipFlowLabel={tipFlowLabel}
       swapUnits={swapUnits}
       resetAll={resetAll}
