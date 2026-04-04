@@ -22,6 +22,7 @@ function tipFromGpmAt4000(gpmAt4000: number) {
   const tip = Math.round(Math.max(0, gpmAt4000) * 10)
     .toString()
     .padStart(3, "0");
+
   return roundTipCodeToFive(tip);
 }
 
@@ -72,6 +73,15 @@ function fromGpm(valueGpm: number, unit: FlowUnit) {
   return unit === "gpm" ? valueGpm : valueGpm * LPM_PER_GPM;
 }
 
+function flowLabel(valueGpmAt4000: number, preferredUnit: FlowUnit) {
+  if (preferredUnit === "lpm") {
+    const lpm = valueGpmAt4000 * LPM_PER_GPM;
+    return `${fmt(lpm, 2)} L/min (${fmt(valueGpmAt4000, 2)} GPM)`;
+  }
+
+  return `${fmt(valueGpmAt4000, 2)} GPM (${fmt(valueGpmAt4000 * LPM_PER_GPM, 2)} L/min)`;
+}
+
 type NozzleCalculatorProps = {
   embedded?: boolean;
 };
@@ -90,6 +100,7 @@ type CalculatorCoreProps = {
   orificeMm: number;
   orificeIn: number;
   gpmAt4000: number;
+  tipFlowLabel: string;
   swapUnits: () => void;
   resetAll: () => void;
   copySetupLink: () => Promise<void>;
@@ -110,6 +121,7 @@ function CalculatorCore({
   orificeMm,
   orificeIn,
   gpmAt4000,
+  tipFlowLabel,
   swapUnits,
   resetAll,
   copySetupLink,
@@ -133,8 +145,7 @@ function CalculatorCore({
           </h1>
 
           <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-600">
-            Calculate the correct pressure washer nozzle size based on pump pressure and flow
-            rate.
+            Calculate the correct pressure washer nozzle size based on pump pressure and flow rate.
           </p>
 
           <div className="mt-6 flex items-center justify-center gap-2">
@@ -189,8 +200,8 @@ function CalculatorCore({
           </div>
 
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            Dial in the recommended tip size from pump pressure and flow, then use the cards on
-            the right to see how the full setup performs.
+            Dial in the recommended tip size from pump pressure and flow, then use the cards on the
+            right to see how the full setup performs.
           </p>
         </div>
       )}
@@ -263,8 +274,7 @@ function CalculatorCore({
             </div>
 
             <div className="mt-2 text-sm text-slate-500">
-              Tip equivalent ≈ <span className="font-medium">{fmt(gpmAt4000, 2)} GPM</span> @ 4000
-              PSI
+              Tip equivalent ≈ <span className="font-medium">{tipFlowLabel}</span> @ 4000 PSI
             </div>
 
             <div className="mt-8 flex flex-col items-center gap-3">
@@ -301,10 +311,10 @@ function CalculatorCore({
               </p>
 
               <p className="mt-4 text-sm leading-7 text-slate-600">
-                PressureCal estimates the nozzle tip size by using your pump pressure and flow
-                rate, then converts that to the common tip sizing convention based on flow at 4000
-                PSI. It also estimates the approximate orifice diameter so you can better
-                understand what the nozzle is physically doing.
+                PressureCal estimates the nozzle tip size by using your pump pressure and flow rate,
+                then converts that to the common tip sizing convention based on flow at 4000 PSI.
+                It also estimates the approximate orifice diameter so you can better understand what
+                the nozzle is physically doing.
               </p>
 
               <p className="mt-4 text-sm leading-7 text-slate-600">
@@ -323,10 +333,10 @@ function CalculatorCore({
               <div className="mt-6 space-y-5">
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
                   <h3 className="text-sm font-semibold text-slate-900">
-                    What nozzle size do I need for 4 GPM at 4000 PSI?
+                    What nozzle size suits 15 L/min at 4000 PSI?
                   </h3>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
-                    A 4 GPM machine at 4000 PSI commonly corresponds to a 040 tip. PressureCal
+                    A 15 L/min machine at 4000 PSI commonly corresponds to a 040 tip. PressureCal
                     calculates this directly from the values you enter and also shows the estimated
                     orifice diameter.
                   </p>
@@ -381,7 +391,10 @@ function CalculatorCore({
           </section>
 
           <div className="mt-8 text-center">
-            <Link to="/" className="text-sm font-semibold text-slate-700 underline hover:text-slate-900">
+            <Link
+              to="/"
+              className="text-sm font-semibold text-slate-700 underline hover:text-slate-900"
+            >
               Open full PressureCal rig calculator
             </Link>
           </div>
@@ -447,6 +460,7 @@ export default function NozzleCalculator({ embedded = false }: NozzleCalculatorP
     [flowLpm, pressurePsi],
   );
   const orificeIn = useMemo(() => orificeMm / 25.4, [orificeMm]);
+  const tipFlowLabel = useMemo(() => flowLabel(gpmAt4000, flowUnit), [gpmAt4000, flowUnit]);
 
   function resetAll() {
     setPressure(DEFAULTS.pressure);
@@ -507,6 +521,7 @@ export default function NozzleCalculator({ embedded = false }: NozzleCalculatorP
       orificeMm={orificeMm}
       orificeIn={orificeIn}
       gpmAt4000={gpmAt4000}
+      tipFlowLabel={tipFlowLabel}
       swapUnits={swapUnits}
       resetAll={resetAll}
       copySetupLink={copySetupLink}
