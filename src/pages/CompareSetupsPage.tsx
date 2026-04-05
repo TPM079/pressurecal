@@ -40,7 +40,7 @@ function metricWinner(
 }
 
 function verdictRows(a: ComparedSetup, b: ComparedSetup) {
-  return [
+  const rows = [
     {
       label: "Higher pressure",
       winner: metricWinner(a, b, (item) => item.atGunPressurePsi, "higher"),
@@ -56,17 +56,22 @@ function verdictRows(a: ComparedSetup, b: ComparedSetup) {
       winner: metricWinner(a, b, (item) => Math.abs(item.pressureVariancePct), "lower"),
       detail: `${a.setup.name}: ${fmt(Math.abs(a.pressureVariancePct), 1)}% variance · ${b.setup.name}: ${fmt(Math.abs(b.pressureVariancePct), 1)}% variance`,
     },
-    {
+  ];
+
+  if (a.hasEngineHp && b.hasEngineHp) {
+    rows.push({
       label: "Safer engine load",
       winner: metricWinner(
         a,
         b,
-        (item) => item.usableEngineHp - item.requiredHp,
+        (item) => (item.usableEngineHp ?? 0) - item.requiredHp,
         "higher"
       ),
-      detail: `${a.setup.name}: ${fmt(a.usableEngineHp - a.requiredHp, 1)} HP headroom · ${b.setup.name}: ${fmt(b.usableEngineHp - b.requiredHp, 1)} HP headroom`,
-    },
-  ];
+      detail: `${a.setup.name}: ${fmt((a.usableEngineHp ?? 0) - a.requiredHp, 1)} HP headroom · ${b.setup.name}: ${fmt((b.usableEngineHp ?? 0) - b.requiredHp, 1)} HP headroom`,
+    });
+  }
+
+  return rows;
 }
 
 function openCalculatorHref(setup: ComparedSetup) {
@@ -292,10 +297,16 @@ export default function CompareSetupsPage() {
           },
           {
             label: "Usable engine HP",
-            aValue: `${fmt(comparedA.usableEngineHp, 1)} HP`,
-            bValue: `${fmt(comparedB.usableEngineHp, 1)} HP`,
-            aClass: valueClass(comparedA, comparedB, (item) => item.usableEngineHp, "higher", "a"),
-            bClass: valueClass(comparedA, comparedB, (item) => item.usableEngineHp, "higher", "b"),
+            aValue: comparedA.hasEngineHp ? `${fmt(comparedA.usableEngineHp ?? 0, 1)} HP` : "—",
+            bValue: comparedB.hasEngineHp ? `${fmt(comparedB.usableEngineHp ?? 0, 1)} HP` : "—",
+            aClass:
+              comparedA.hasEngineHp && comparedB.hasEngineHp
+                ? valueClass(comparedA, comparedB, (item) => item.usableEngineHp ?? 0, "higher", "a")
+                : "text-slate-900",
+            bClass:
+              comparedA.hasEngineHp && comparedB.hasEngineHp
+                ? valueClass(comparedA, comparedB, (item) => item.usableEngineHp ?? 0, "higher", "b")
+                : "text-slate-900",
           },
           {
             label: "Engine status",
@@ -603,6 +614,11 @@ export default function CompareSetupsPage() {
                           Pressure limited
                         </div>
                       ) : null}
+                      {!comparedA.hasEngineHp ? (
+                        <div className="mt-3 inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
+                          Engine HP not provided
+                        </div>
+                      ) : null}
                     </div>
 
                     <div className="rounded-2xl border border-slate-200 p-5">
@@ -611,6 +627,11 @@ export default function CompareSetupsPage() {
                       {comparedB.isPressureLimited ? (
                         <div className="mt-3 inline-flex rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">
                           Pressure limited
+                        </div>
+                      ) : null}
+                      {!comparedB.hasEngineHp ? (
+                        <div className="mt-3 inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
+                          Engine HP not provided
                         </div>
                       ) : null}
                     </div>

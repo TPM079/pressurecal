@@ -19,7 +19,8 @@ export type ComparedSetup = {
   selectedTipCode: string;
   calibratedTipCode: string;
   requiredHp: number;
-  usableEngineHp: number;
+  usableEngineHp: number | null;
+  hasEngineHp: boolean;
   engineStatus: string;
   ratedPQ: number;
   ratedClass: string;
@@ -39,12 +40,12 @@ function calculateRequiredHp(pressurePsi: number, flowGpm: number, efficiency = 
 }
 
 function calculateUsableEngineHp(ratedHp: number, factor = 0.85) {
-  return !Number.isFinite(ratedHp) || ratedHp <= 0 ? 0 : ratedHp * factor;
+  return !Number.isFinite(ratedHp) || ratedHp <= 0 ? null : ratedHp * factor;
 }
 
-function getEngineStatus(requiredHp: number, usableHp: number) {
-  if (usableHp <= 0) {
-    return "No engine HP saved";
+function getEngineStatus(requiredHp: number, usableHp: number | null) {
+  if (usableHp === null) {
+    return "Not provided";
   }
 
   if (usableHp < requiredHp) {
@@ -77,7 +78,8 @@ export function compareSavedSetup(setup: SavedSetup): ComparedSetup {
   const pressureVariancePct =
     ratedPsi > 0 ? ((result.gunPressurePsi - ratedPsi) / ratedPsi) * 100 : 0;
   const requiredHp = calculateRequiredHp(result.gunPressurePsi, result.gunFlowGpm, 0.9);
-  const usableEngineHp = calculateUsableEngineHp(Number(inputs.engineHp || 0), 0.85);
+  const rawEngineHp = inputs.engineHp === "" ? null : Number(inputs.engineHp);
+  const usableEngineHp = calculateUsableEngineHp(rawEngineHp ?? NaN, 0.85);
 
   return {
     setup,
@@ -92,6 +94,7 @@ export function compareSavedSetup(setup: SavedSetup): ComparedSetup {
     calibratedTipCode: roundTipCodeToFive(result.calibratedTipCode),
     requiredHp,
     usableEngineHp,
+    hasEngineHp: usableEngineHp !== null,
     engineStatus: getEngineStatus(requiredHp, usableEngineHp),
     ratedPQ: result.ratedPQ,
     ratedClass: result.ratedClass,

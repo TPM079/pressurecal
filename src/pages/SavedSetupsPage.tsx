@@ -41,7 +41,7 @@ const EMPTY_FORM: SetupFormState = {
   hoseLengthUnit: "m",
   hoseId: "9.53",
   hoseIdUnit: "mm",
-  engineHp: "13",
+  engineHp: "",
   sprayMode: "wand",
   nozzleCount: "1",
   nozzleSizeText: "040",
@@ -354,7 +354,7 @@ export default function SavedSetupsPage() {
                       {selectedSetupId ? "Edit setup" : "Create a saved setup"}
                     </h2>
                     <p className="mt-2 text-sm leading-6 text-slate-600">
-                      This version stores the full calculator snapshot, including engine HP, max pressure, spray mode, nozzle count, and units.
+                      Engine HP is optional. Leave it blank if you do not want engine-load checks.
                     </p>
                   </div>
 
@@ -457,6 +457,7 @@ export default function SavedSetupsPage() {
                       inputMode="decimal"
                       value={form.engineHp}
                       onChange={(event) => updateField("engineHp", event.target.value)}
+                      placeholder="Optional"
                       className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
                     />
                   </label>
@@ -685,7 +686,7 @@ export default function SavedSetupsPage() {
                           </div>
                           <div className="rounded-2xl bg-slate-50 px-4 py-3">
                             <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">Engine</dt>
-                            <dd className="mt-1">{setup.engineHp ?? "—"} HP</dd>
+                            <dd className="mt-1">{setup.engineHp ?? "Not provided"}</dd>
                           </div>
                           <div className="rounded-2xl bg-slate-50 px-4 py-3">
                             <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">Spray</dt>

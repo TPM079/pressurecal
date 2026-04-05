@@ -92,7 +92,7 @@ const DEFAULT_SNAPSHOT = {
   hoseLengthUnit: "m" as LengthUnit,
   hoseId: 9.53,
   hoseIdUnit: "mm" as DiameterUnit,
-  engineHp: 13,
+  engineHp: null as number | null,
   sprayMode: "wand" as const,
   nozzleCount: 1,
   nozzleMode: "tipSize" as const,
@@ -114,7 +114,7 @@ const INPUT_DEFAULTS: Inputs = {
   hoseLengthUnit: "m",
   hoseId: 9.53,
   hoseIdUnit: "mm",
-  engineHp: 13,
+  engineHp: "",
   sprayMode: "wand",
   nozzleCount: 1,
   nozzleMode: "tipSize",
@@ -215,7 +215,8 @@ function normalizeSavedSetup(raw: unknown, userId: string): SavedSetup | null {
   const sprayMode = toSprayMode(item.sprayMode, DEFAULT_SNAPSHOT.sprayMode);
   const nozzleCount = Math.max(
     sprayMode === "surfaceCleaner" ? 2 : 1,
-    toNullableNumber(item.nozzleCount, DEFAULT_SNAPSHOT.nozzleCount) ?? DEFAULT_SNAPSHOT.nozzleCount
+    toNullableNumber(item.nozzleCount, DEFAULT_SNAPSHOT.nozzleCount) ??
+      DEFAULT_SNAPSHOT.nozzleCount
   );
 
   const nozzleSizeText =
@@ -388,7 +389,7 @@ export function useSavedSetups(userId: string | null) {
         hoseId: input.hoseId ?? existing?.hoseId ?? DEFAULT_SNAPSHOT.hoseId,
         hoseIdUnit:
           input.hoseIdUnit ?? existing?.hoseIdUnit ?? DEFAULT_SNAPSHOT.hoseIdUnit,
-        engineHp: input.engineHp ?? existing?.engineHp ?? DEFAULT_SNAPSHOT.engineHp,
+        engineHp: input.engineHp ?? existing?.engineHp ?? null,
         sprayMode: input.sprayMode ?? existing?.sprayMode ?? DEFAULT_SNAPSHOT.sprayMode,
         nozzleCount:
           input.nozzleCount ?? existing?.nozzleCount ?? DEFAULT_SNAPSHOT.nozzleCount,
