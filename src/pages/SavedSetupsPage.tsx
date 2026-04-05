@@ -1,8 +1,8 @@
 import { Helmet } from "react-helmet-async";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import PressureCalLayout from "../components/PressureCalLayout";
 import BackToTopButton from "../components/BackToTopButton";
+import PressureCalLayout from "../components/PressureCalLayout";
 import RequirePro from "../components/RequirePro";
 import { useSavedSetups } from "../hooks/useSavedSetups";
 import { buildFullRigSearchParams } from "../lib/rigUrlState";
@@ -12,21 +12,39 @@ import { supabase } from "../lib/supabase-browser";
 type SetupFormState = {
   name: string;
   notes: string;
-  machinePsi: string;
-  machineLpm: string;
-  hoseLengthM: string;
-  hoseIdMm: string;
-  nozzleSize: string;
+  pumpPressure: string;
+  pumpPressureUnit: "psi" | "bar";
+  pumpFlow: string;
+  pumpFlowUnit: "lpm" | "gpm";
+  maxPressure: string;
+  maxPressureUnit: "psi" | "bar";
+  hoseLength: string;
+  hoseLengthUnit: "m" | "ft";
+  hoseId: string;
+  hoseIdUnit: "mm" | "in";
+  engineHp: string;
+  sprayMode: "wand" | "surfaceCleaner";
+  nozzleCount: string;
+  nozzleSizeText: string;
 };
 
 const EMPTY_FORM: SetupFormState = {
   name: "",
   notes: "",
-  machinePsi: "",
-  machineLpm: "",
-  hoseLengthM: "",
-  hoseIdMm: "",
-  nozzleSize: "",
+  pumpPressure: "4000",
+  pumpPressureUnit: "psi",
+  pumpFlow: "15",
+  pumpFlowUnit: "lpm",
+  maxPressure: "4000",
+  maxPressureUnit: "psi",
+  hoseLength: "15",
+  hoseLengthUnit: "m",
+  hoseId: "9.53",
+  hoseIdUnit: "mm",
+  engineHp: "13",
+  sprayMode: "wand",
+  nozzleCount: "1",
+  nozzleSizeText: "040",
 };
 
 export default function SavedSetupsPage() {
@@ -84,16 +102,45 @@ export default function SavedSetupsPage() {
     setForm({
       name: editingSetup.name,
       notes: editingSetup.notes ?? "",
-      machinePsi: editingSetup.machinePsi ? String(editingSetup.machinePsi) : "",
-      machineLpm: editingSetup.machineLpm ? String(editingSetup.machineLpm) : "",
-      hoseLengthM: editingSetup.hoseLengthM ? String(editingSetup.hoseLengthM) : "",
-      hoseIdMm: editingSetup.hoseIdMm ? String(editingSetup.hoseIdMm) : "",
-      nozzleSize: editingSetup.nozzleSize ?? "",
+      pumpPressure: editingSetup.pumpPressure != null ? String(editingSetup.pumpPressure) : "",
+      pumpPressureUnit: editingSetup.pumpPressureUnit,
+      pumpFlow: editingSetup.pumpFlow != null ? String(editingSetup.pumpFlow) : "",
+      pumpFlowUnit: editingSetup.pumpFlowUnit,
+      maxPressure: editingSetup.maxPressure != null ? String(editingSetup.maxPressure) : "",
+      maxPressureUnit: editingSetup.maxPressureUnit,
+      hoseLength: editingSetup.hoseLength != null ? String(editingSetup.hoseLength) : "",
+      hoseLengthUnit: editingSetup.hoseLengthUnit,
+      hoseId: editingSetup.hoseId != null ? String(editingSetup.hoseId) : "",
+      hoseIdUnit: editingSetup.hoseIdUnit,
+      engineHp: editingSetup.engineHp != null ? String(editingSetup.engineHp) : "",
+      sprayMode: editingSetup.sprayMode,
+      nozzleCount: String(editingSetup.nozzleCount),
+      nozzleSizeText: editingSetup.nozzleSizeText ?? "",
     });
   }, [editingSetup]);
 
   function updateField<K extends keyof SetupFormState>(field: K, value: SetupFormState[K]) {
-    setForm((current) => ({ ...current, [field]: value }));
+    setForm((current) => {
+      const next = { ...current, [field]: value };
+
+      if (field === "pumpPressure" && current.maxPressure === current.pumpPressure) {
+        next.maxPressure = value as string;
+      }
+
+      if (field === "pumpPressureUnit" && current.maxPressureUnit === current.pumpPressureUnit) {
+        next.maxPressureUnit = value as "psi" | "bar";
+      }
+
+      if (field === "sprayMode" && value === "wand") {
+        next.nozzleCount = "1";
+      }
+
+      if (field === "sprayMode" && value === "surfaceCleaner" && Number(next.nozzleCount) < 2) {
+        next.nozzleCount = "2";
+      }
+
+      return next;
+    });
   }
 
   function resetForm() {
@@ -125,15 +172,50 @@ export default function SavedSetupsPage() {
       return;
     }
 
+    const hoseLength = toNumberOrNull(form.hoseLength);
+    const hoseId = toNumberOrNull(form.hoseId);
+    const pumpPressure = toNumberOrNull(form.pumpPressure);
+    const pumpFlow = toNumberOrNull(form.pumpFlow);
+    const nozzleSizeText = form.nozzleSizeText.trim() || null;
+
     const saved = saveSetup({
       id: selectedSetupId ?? undefined,
       name,
       notes: form.notes.trim() || null,
-      machinePsi: toNumberOrNull(form.machinePsi),
-      machineLpm: toNumberOrNull(form.machineLpm),
-      hoseLengthM: toNumberOrNull(form.hoseLengthM),
-      hoseIdMm: toNumberOrNull(form.hoseIdMm),
-      nozzleSize: form.nozzleSize.trim() || null,
+
+      machinePsi:
+        form.pumpPressureUnit === "psi"
+          ? pumpPressure
+          : null,
+      machineLpm:
+        form.pumpFlowUnit === "lpm"
+          ? pumpFlow
+          : null,
+      hoseLengthM: form.hoseLengthUnit === "m" ? hoseLength : null,
+      hoseIdMm: form.hoseIdUnit === "mm" ? hoseId : null,
+      nozzleSize: nozzleSizeText,
+
+      pumpPressure,
+      pumpPressureUnit: form.pumpPressureUnit,
+      pumpFlow,
+      pumpFlowUnit: form.pumpFlowUnit,
+      maxPressure: toNumberOrNull(form.maxPressure),
+      maxPressureUnit: form.maxPressureUnit,
+      hoseLength,
+      hoseLengthUnit: form.hoseLengthUnit,
+      hoseId,
+      hoseIdUnit: form.hoseIdUnit,
+      engineHp: toNumberOrNull(form.engineHp),
+      sprayMode: form.sprayMode,
+      nozzleCount: Math.max(
+        form.sprayMode === "surfaceCleaner" ? 2 : 1,
+        Number(form.nozzleCount || "1")
+      ),
+      nozzleSizeText,
+      orificeMm: 1.2,
+      dischargeCoeffCd: 0.62,
+      waterDensity: 1000,
+      hoseRoughnessMm: 0.0015,
     });
 
     setSelectedSetupId(saved.id);
@@ -176,7 +258,7 @@ export default function SavedSetupsPage() {
         <title>Saved Setups | PressureCal Pro</title>
         <meta
           name="description"
-          content="Save, organise, and reuse your common machine and nozzle setups with PressureCal Pro."
+          content="Save, organise, and reuse your full machine configuration with PressureCal Pro."
         />
       </Helmet>
 
@@ -190,8 +272,8 @@ export default function SavedSetupsPage() {
               Saved Setups
             </h1>
             <p className="mt-5 text-lg leading-8 text-slate-300">
-              Save your common machine and hose setups so you can come back to them
-              quickly instead of rebuilding them from scratch every time.
+              Save the full calculator snapshot so your pressure, flow, hose, engine,
+              nozzle, and spray-mode assumptions stay accurate when you compare or reopen a setup.
             </p>
           </div>
         </div>
@@ -230,8 +312,7 @@ export default function SavedSetupsPage() {
               <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
                 <h2 className="text-2xl font-bold text-slate-950">Saved Setups is a Pro feature</h2>
                 <p className="mt-3 text-base leading-7 text-slate-600">
-                  Your billing foundation is ready, and this page is the first real Pro-only area.
-                  Upgrade to PressureCal Pro to unlock saved setups.
+                  Upgrade to PressureCal Pro to save full rig snapshots and compare them accurately.
                 </p>
                 <div className="mt-6">
                   <Link
@@ -256,7 +337,7 @@ export default function SavedSetupsPage() {
                       {selectedSetupId ? "Edit setup" : "Create a saved setup"}
                     </h2>
                     <p className="mt-2 text-sm leading-6 text-slate-600">
-                      This starter version stores setups per signed-in user in the browser so you can prove the Pro flow before wiring in cloud sync.
+                      This version stores the full calculator snapshot, including engine HP, max pressure, spray mode, nozzle count, and units.
                     </p>
                   </div>
 
@@ -284,60 +365,164 @@ export default function SavedSetupsPage() {
                   </label>
 
                   <label className="block">
-                    <span className="text-sm font-semibold text-slate-800">Machine PSI</span>
+                    <span className="text-sm font-semibold text-slate-800">Pump pressure</span>
+                    <div className="mt-2 flex gap-3">
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        value={form.pumpPressure}
+                        onChange={(event) => updateField("pumpPressure", event.target.value)}
+                        className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                      />
+                      <select
+                        value={form.pumpPressureUnit}
+                        onChange={(event) =>
+                          updateField("pumpPressureUnit", event.target.value as "psi" | "bar")
+                        }
+                        className="rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                      >
+                        <option value="psi">PSI</option>
+                        <option value="bar">BAR</option>
+                      </select>
+                    </div>
+                  </label>
+
+                  <label className="block">
+                    <span className="text-sm font-semibold text-slate-800">Pump flow</span>
+                    <div className="mt-2 flex gap-3">
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        value={form.pumpFlow}
+                        onChange={(event) => updateField("pumpFlow", event.target.value)}
+                        className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                      />
+                      <select
+                        value={form.pumpFlowUnit}
+                        onChange={(event) =>
+                          updateField("pumpFlowUnit", event.target.value as "lpm" | "gpm")
+                        }
+                        className="rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                      >
+                        <option value="lpm">LPM</option>
+                        <option value="gpm">GPM</option>
+                      </select>
+                    </div>
+                  </label>
+
+                  <label className="block">
+                    <span className="text-sm font-semibold text-slate-800">Max pressure (unloader)</span>
+                    <div className="mt-2 flex gap-3">
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        value={form.maxPressure}
+                        onChange={(event) => updateField("maxPressure", event.target.value)}
+                        className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                      />
+                      <select
+                        value={form.maxPressureUnit}
+                        onChange={(event) =>
+                          updateField("maxPressureUnit", event.target.value as "psi" | "bar")
+                        }
+                        className="rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                      >
+                        <option value="psi">PSI</option>
+                        <option value="bar">BAR</option>
+                      </select>
+                    </div>
+                  </label>
+
+                  <label className="block">
+                    <span className="text-sm font-semibold text-slate-800">Engine HP</span>
                     <input
                       type="number"
                       inputMode="decimal"
-                      value={form.machinePsi}
-                      onChange={(event) => updateField("machinePsi", event.target.value)}
-                      placeholder="4000"
+                      value={form.engineHp}
+                      onChange={(event) => updateField("engineHp", event.target.value)}
                       className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
                     />
                   </label>
 
                   <label className="block">
-                    <span className="text-sm font-semibold text-slate-800">Machine LPM</span>
-                    <input
-                      type="number"
-                      inputMode="decimal"
-                      value={form.machineLpm}
-                      onChange={(event) => updateField("machineLpm", event.target.value)}
-                      placeholder="15"
-                      className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
-                    />
+                    <span className="text-sm font-semibold text-slate-800">Hose length</span>
+                    <div className="mt-2 flex gap-3">
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        value={form.hoseLength}
+                        onChange={(event) => updateField("hoseLength", event.target.value)}
+                        className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                      />
+                      <select
+                        value={form.hoseLengthUnit}
+                        onChange={(event) =>
+                          updateField("hoseLengthUnit", event.target.value as "m" | "ft")
+                        }
+                        className="rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                      >
+                        <option value="m">m</option>
+                        <option value="ft">ft</option>
+                      </select>
+                    </div>
                   </label>
 
                   <label className="block">
-                    <span className="text-sm font-semibold text-slate-800">Hose length (m)</span>
-                    <input
-                      type="number"
-                      inputMode="decimal"
-                      value={form.hoseLengthM}
-                      onChange={(event) => updateField("hoseLengthM", event.target.value)}
-                      placeholder="30"
-                      className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
-                    />
+                    <span className="text-sm font-semibold text-slate-800">Hose ID</span>
+                    <div className="mt-2 flex gap-3">
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        value={form.hoseId}
+                        onChange={(event) => updateField("hoseId", event.target.value)}
+                        className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                      />
+                      <select
+                        value={form.hoseIdUnit}
+                        onChange={(event) =>
+                          updateField("hoseIdUnit", event.target.value as "mm" | "in")
+                        }
+                        className="rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                      >
+                        <option value="mm">mm</option>
+                        <option value="in">in</option>
+                      </select>
+                    </div>
                   </label>
 
                   <label className="block">
-                    <span className="text-sm font-semibold text-slate-800">Hose ID (mm)</span>
+                    <span className="text-sm font-semibold text-slate-800">Spray mode</span>
+                    <select
+                      value={form.sprayMode}
+                      onChange={(event) =>
+                        updateField("sprayMode", event.target.value as "wand" | "surfaceCleaner")
+                      }
+                      className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                    >
+                      <option value="wand">Wand</option>
+                      <option value="surfaceCleaner">Surface cleaner</option>
+                    </select>
+                  </label>
+
+                  <label className="block">
+                    <span className="text-sm font-semibold text-slate-800">Nozzle count</span>
                     <input
                       type="number"
-                      inputMode="decimal"
-                      value={form.hoseIdMm}
-                      onChange={(event) => updateField("hoseIdMm", event.target.value)}
-                      placeholder="8"
+                      inputMode="numeric"
+                      min={form.sprayMode === "surfaceCleaner" ? 2 : 1}
+                      value={form.nozzleCount}
+                      onChange={(event) => updateField("nozzleCount", event.target.value)}
                       className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
                     />
                   </label>
 
                   <label className="block sm:col-span-2">
-                    <span className="text-sm font-semibold text-slate-800">Nozzle size</span>
+                    <span className="text-sm font-semibold text-slate-800">Nozzle size / tip</span>
                     <input
                       type="text"
-                      value={form.nozzleSize}
-                      onChange={(event) => updateField("nozzleSize", event.target.value)}
-                      placeholder="Example: 045"
+                      value={form.nozzleSizeText}
+                      onChange={(event) => updateField("nozzleSizeText", event.target.value)}
+                      placeholder="Example: 040"
                       className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
                     />
                   </label>
@@ -463,26 +648,30 @@ export default function SavedSetupsPage() {
 
                         <dl className="mt-4 grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
                           <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                            <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
-                              Machine
-                            </dt>
+                            <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">Pump</dt>
                             <dd className="mt-1">
-                              {setup.machinePsi ?? "—"} PSI · {setup.machineLpm ?? "—"} LPM
+                              {setup.pumpPressure ?? "—"} {setup.pumpPressureUnit.toUpperCase()} · {setup.pumpFlow ?? "—"} {setup.pumpFlowUnit.toUpperCase()}
                             </dd>
                           </div>
                           <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                            <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
-                              Hose
-                            </dt>
+                            <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">Hose</dt>
                             <dd className="mt-1">
-                              {setup.hoseLengthM ?? "—"} m · {setup.hoseIdMm ?? "—"} mm
+                              {setup.hoseLength ?? "—"} {setup.hoseLengthUnit} · {setup.hoseId ?? "—"} {setup.hoseIdUnit}
+                            </dd>
+                          </div>
+                          <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                            <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">Engine</dt>
+                            <dd className="mt-1">{setup.engineHp ?? "—"} HP</dd>
+                          </div>
+                          <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                            <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">Spray</dt>
+                            <dd className="mt-1">
+                              {setup.sprayMode === "surfaceCleaner" ? "Surface cleaner" : "Wand"} · {setup.nozzleCount} nozzle{setup.nozzleCount === 1 ? "" : "s"}
                             </dd>
                           </div>
                           <div className="rounded-2xl bg-slate-50 px-4 py-3 sm:col-span-2">
-                            <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
-                              Nozzle
-                            </dt>
-                            <dd className="mt-1">{setup.nozzleSize ?? "—"}</dd>
+                            <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">Nozzle</dt>
+                            <dd className="mt-1">{setup.nozzleSizeText ?? "—"}</dd>
                           </div>
                         </dl>
 
