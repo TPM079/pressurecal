@@ -1,7 +1,11 @@
+
 import { Helmet } from "react-helmet-async";
-import { useEffect, useRef, useState, type FocusEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FocusEvent } from "react";
+import { Link } from "react-router-dom";
 import BackToTopButton from "../components/BackToTopButton";
 import PressureCalLayout from "../components/PressureCalLayout";
+import { useProAccess } from "../hooks/useProAccess";
+import { useSavedSetups } from "../hooks/useSavedSetups";
 import { buildFullRigSearchParams, parseRigSearchParams } from "../lib/rigUrlState";
 import { solvePressureCal, barFromPsi, lpmFromGpm, roundTipCodeToFive } from "../pressurecal";
 import type { Inputs, PressureUnit, FlowUnit, LengthUnit, DiameterUnit } from "../pressurecal";
@@ -24,9 +28,9 @@ const defaultInputs: Inputs = {
   hoseLengthUnit: "m",
   hoseId: 9.53,
   hoseIdUnit: "mm",
-  engineHp: 13,
+  engineHp: "",
   sprayMode: "wand",
-  nozzleCount: 2,
+  nozzleCount: 1,
   nozzleMode: "tipSize",
   nozzleSizeText: "040",
   orificeMm: 1.2,
@@ -121,6 +125,34 @@ function statusBadge(status: string) {
   return { text: "Over-calibrated", cls: "bg-red-50 text-red-800 border-red-200" };
 }
 
+function buildSuggestedSetupName(inputs: Inputs) {
+  const pressureValue = Number(inputs.pumpPressure || 0);
+  const flowValue = Number(inputs.pumpFlow || 0);
+  const pressureUnit = inputs.pumpPressureUnit.toUpperCase();
+  const flowUnit = inputs.pumpFlowUnit === "lpm" ? "LPM" : "GPM";
+  const nozzleText = (inputs.nozzleSizeText || "").trim();
+  const modeText = inputs.sprayMode === "surfaceCleaner" ? "surface cleaner" : "wand";
+
+  const parts = [`${fmt(pressureValue, 0)} ${pressureUnit}`, `${fmt(flowValue, flowUnit === "LPM" ? 1 : 2)} ${flowUnit}`];
+
+  if (nozzleText) {
+    parts.push(`tip ${nozzleText}`);
+  }
+
+  parts.push(modeText);
+
+  return parts.join(" · ");
+}
+
+function toNumberOrNull(value: string | number) {
+  if (value === "" || value === null || value === undefined) {
+    return null;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 export default function FullRigCalculatorPage() {
   const [inputs, setInputs] = useState<Inputs>(() => ({
     ...defaultInputs,
@@ -129,7 +161,17 @@ export default function FullRigCalculatorPage() {
   const [copyMessage, setCopyMessage] = useState("");
   const [highlightSetup, setHighlightSetup] = useState(false);
   const [loadedFromLink, setLoadedFromLink] = useState(false);
+  const [savePanelOpen, setSavePanelOpen] = useState(false);
+  const [saveName, setSaveName] = useState("");
+  const [saveNotes, setSaveNotes] = useState("");
+  const [saveMessage, setSaveMessage] = useState("");
+  const [lastSavedSetupId, setLastSavedSetupId] = useState<string | null>(null);
   const maxWasManuallyEditedRef = useRef(false);
+
+  const { loading: proAccessLoading, isAuthenticated, isPro, userId } = useProAccess();
+  const { isReady: savedSetupsReady, saveSetup } = useSavedSetups(userId);
+
+  const suggestedSetupName = useMemo(() => buildSuggestedSetupName(inputs), [inputs]);
 
   useEffect(() => {
     const parsed = parseRigSearchParams(window.location.search);
@@ -153,6 +195,14 @@ export default function FullRigCalculatorPage() {
     const nextUrl = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
     window.history.replaceState({}, "", nextUrl);
   }, [inputs]);
+
+  useEffect(() => {
+    if (!savePanelOpen) {
+      return;
+    }
+
+    setSaveName((current) => (current.trim() ? current : suggestedSetupName));
+  }, [savePanelOpen, suggestedSetupName]);
 
   const safeInputs = {
     ...inputs,
@@ -224,7 +274,7 @@ export default function FullRigCalculatorPage() {
     },
     {
       label: "Engine",
-      value: `${fmt(Number(inputs.engineHp || 0), 1)} HP`,
+      value: inputs.engineHp === "" ? "Optional" : `${fmt(Number(inputs.engineHp || 0), 1)} HP`,
     },
   ];
 
@@ -240,6 +290,73 @@ export default function FullRigCalculatorPage() {
     } catch {
       window.prompt("Copy this link:", url);
     }
+  }
+
+  function handleOpenSavePanel() {
+    setSavePanelOpen(true);
+    setSaveMessage("");
+    setSaveName((current) => (current.trim() ? current : suggestedSetupName));
+  }
+
+  function handleCloseSavePanel() {
+    setSavePanelOpen(false);
+    setSaveMessage("");
+  }
+
+  function handleSaveCurrentSetup() {
+    if (!isAuthenticated || !userId) {
+      window.alert("Please sign in before saving setups.");
+      return;
+    }
+
+    if (!isPro) {
+      window.alert("Save Setup is available on PressureCal Pro.");
+      return;
+    }
+
+    const trimmedName = saveName.trim();
+
+    if (!trimmedName) {
+      window.alert("Please enter a setup name.");
+      return;
+    }
+
+    const nozzleSizeText = (inputs.nozzleSizeText || "").trim() || null;
+
+    const saved = saveSetup({
+      name: trimmedName,
+      notes: saveNotes.trim() || null,
+
+      machinePsi: inputs.pumpPressureUnit === "psi" ? toNumberOrNull(inputs.pumpPressure) : null,
+      machineLpm: inputs.pumpFlowUnit === "lpm" ? toNumberOrNull(inputs.pumpFlow) : null,
+      hoseLengthM: inputs.hoseLengthUnit === "m" ? toNumberOrNull(inputs.hoseLength) : null,
+      hoseIdMm: inputs.hoseIdUnit === "mm" ? toNumberOrNull(inputs.hoseId) : null,
+      nozzleSize: nozzleSizeText,
+
+      pumpPressure: toNumberOrNull(inputs.pumpPressure),
+      pumpPressureUnit: inputs.pumpPressureUnit,
+      pumpFlow: toNumberOrNull(inputs.pumpFlow),
+      pumpFlowUnit: inputs.pumpFlowUnit,
+      maxPressure: toNumberOrNull(inputs.maxPressure),
+      maxPressureUnit: inputs.maxPressureUnit,
+      hoseLength: toNumberOrNull(inputs.hoseLength),
+      hoseLengthUnit: inputs.hoseLengthUnit,
+      hoseId: toNumberOrNull(inputs.hoseId),
+      hoseIdUnit: inputs.hoseIdUnit,
+      engineHp: toNumberOrNull(inputs.engineHp),
+      sprayMode: inputs.sprayMode,
+      nozzleCount: Math.max(inputs.sprayMode === "surfaceCleaner" ? 2 : 1, Number(inputs.nozzleCount || 1)),
+      nozzleSizeText,
+      orificeMm: toNumberOrNull(inputs.orificeMm) ?? 1.2,
+      dischargeCoeffCd: toNumberOrNull(inputs.dischargeCoeffCd) ?? 0.62,
+      waterDensity: toNumberOrNull(inputs.waterDensity) ?? 1000,
+      hoseRoughnessMm: toNumberOrNull(inputs.hoseRoughnessMm) ?? 0.0015,
+    });
+
+    setLastSavedSetupId(saved.id);
+    setSaveMessage("Setup saved");
+    setSavePanelOpen(false);
+    window.setTimeout(() => setSaveMessage(""), 2500);
   }
 
   return (
@@ -286,6 +403,12 @@ export default function FullRigCalculatorPage() {
                     Shared setup loaded
                   </div>
                 ) : null}
+
+                {saveMessage ? (
+                  <div className="mt-3 inline-flex items-center rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
+                    {saveMessage}
+                  </div>
+                ) : null}
               </div>
 
               <div className="flex flex-wrap gap-2">
@@ -305,16 +428,179 @@ export default function FullRigCalculatorPage() {
               </div>
 
               <div className="flex flex-col items-start gap-2 lg:items-end">
-                <button
-                  type="button"
-                  onClick={copySetupLink}
-                  className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-slate-800 hover:shadow-lg"
-                >
-                  {copyMessage ? "Copied ✓" : "Copy setup link"}
-                </button>
-                <div className="text-xs text-slate-500">{copyMessage || "Share this exact rig setup."}</div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={copySetupLink}
+                    className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-slate-800 hover:shadow-lg"
+                  >
+                    {copyMessage ? "Copied ✓" : "Copy setup link"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleOpenSavePanel}
+                    disabled={proAccessLoading || (isAuthenticated && isPro && !savedSetupsReady)}
+                    className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Save setup
+                  </button>
+                </div>
+
+                <div className="text-xs text-slate-500">
+                  {copyMessage
+                    ? copyMessage
+                    : isAuthenticated && isPro
+                      ? "Save this exact rig into your Saved Setups library."
+                      : "Share this exact rig setup."}
+                </div>
               </div>
             </div>
+
+            {savePanelOpen ? (
+              <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="max-w-xl">
+                    <div className="text-sm font-semibold text-slate-900">Save current setup</div>
+                    <p className="mt-1 text-sm leading-6 text-slate-600">
+                      Save the current calculator snapshot directly to Saved Setups. Engine HP stays optional and the saved setup will work with open, compare, and share.
+                    </p>
+                  </div>
+
+                  {lastSavedSetupId ? (
+                    <Link
+                      to="/saved-setups"
+                      className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                    >
+                      View saved setups
+                    </Link>
+                  ) : null}
+                </div>
+
+                {!proAccessLoading && !isAuthenticated ? (
+                  <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
+                    <p className="text-sm text-slate-700">
+                      Sign in to save setups to your PressureCal account.
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Link
+                        to="/account"
+                        className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+                      >
+                        Sign in
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={handleCloseSavePanel}
+                        className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+
+                {!proAccessLoading && isAuthenticated && !isPro ? (
+                  <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
+                    <p className="text-sm text-slate-700">
+                      Save Setup is part of PressureCal Pro.
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Link
+                        to="/pro"
+                        className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+                      >
+                        View PressureCal Pro
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={handleCloseSavePanel}
+                        className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+
+                {(!proAccessLoading && isAuthenticated && isPro) ? (
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    <label className="block sm:col-span-2">
+                      <span className="text-sm font-semibold text-slate-800">Setup name</span>
+                      <input
+                        type="text"
+                        value={saveName}
+                        onChange={(event) => setSaveName(event.target.value)}
+                        placeholder="Example: Trailer rig · 4000 PSI · 15 LPM"
+                        className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                      />
+                    </label>
+
+                    <label className="block sm:col-span-2">
+                      <span className="text-sm font-semibold text-slate-800">Notes</span>
+                      <textarea
+                        value={saveNotes}
+                        onChange={(event) => setSaveNotes(event.target.value)}
+                        placeholder="Optional notes about pump, hose, gun, reel, or use case."
+                        rows={4}
+                        className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                      />
+                    </label>
+
+                    <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 sm:col-span-2">
+                      <div className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">
+                        Snapshot being saved
+                      </div>
+                      <div className="mt-3 grid gap-3 text-sm text-slate-700 sm:grid-cols-2 lg:grid-cols-3">
+                        <div>
+                          <span className="font-semibold text-slate-900">Pump:</span>{" "}
+                          {inputs.pumpPressure || "—"} {inputs.pumpPressureUnit.toUpperCase()} · {inputs.pumpFlow || "—"} {inputs.pumpFlowUnit.toUpperCase()}
+                        </div>
+                        <div>
+                          <span className="font-semibold text-slate-900">Max pressure:</span>{" "}
+                          {inputs.maxPressure || "—"} {inputs.maxPressureUnit.toUpperCase()}
+                        </div>
+                        <div>
+                          <span className="font-semibold text-slate-900">Engine:</span>{" "}
+                          {inputs.engineHp === "" ? "Not provided" : `${inputs.engineHp} HP`}
+                        </div>
+                        <div>
+                          <span className="font-semibold text-slate-900">Hose:</span>{" "}
+                          {inputs.hoseLength || "—"} {inputs.hoseLengthUnit} · {inputs.hoseId || "—"} {inputs.hoseIdUnit}
+                        </div>
+                        <div>
+                          <span className="font-semibold text-slate-900">Spray mode:</span>{" "}
+                          {inputs.sprayMode === "surfaceCleaner" ? "Surface cleaner" : "Wand"}
+                        </div>
+                        <div>
+                          <span className="font-semibold text-slate-900">Nozzle:</span>{" "}
+                          {inputs.nozzleSizeText || "—"}{inputs.sprayMode === "surfaceCleaner" ? ` × ${inputs.nozzleCount}` : ""}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-3 sm:col-span-2 sm:flex-row">
+                      <button
+                        type="button"
+                        onClick={handleSaveCurrentSetup}
+                        disabled={!savedSetupsReady}
+                        className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Save setup
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleCloseSavePanel}
+                        className="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
           </div>
 
           <main className="grid gap-6 lg:grid-cols-2">
