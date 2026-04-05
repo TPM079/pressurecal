@@ -12,12 +12,12 @@ import {
 } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 
-
 import AboutPage from "./pages/AboutPage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import TermsOfServicePage from "./pages/TermsOfServicePage";
 import PressureCalProPage from "./pages/PressureCalProPage";
 import SavedSetupsPage from "./pages/SavedSetupsPage";
+import CompareSetupsPage from "./pages/CompareSetupsPage";
 import AccountPage from "./pages/AccountPage";
 import HomePage from "./pages/HomePage";
 import FullRigCalculatorPage from "./pages/FullRigCalculator";
@@ -130,6 +130,15 @@ export default function App() {
           />
 
           <Route
+            path="/compare-setups"
+            element={
+              <PageTransition>
+                <CompareSetupsPage />
+              </PageTransition>
+            }
+          />
+
+          <Route
             path="/nozzle-size-calculator"
             element={
               <PageTransition>
@@ -207,8 +216,6 @@ export default function App() {
           />
         </Routes>
       </AnimatePresence>
-
-    
     </div>
   );
 }

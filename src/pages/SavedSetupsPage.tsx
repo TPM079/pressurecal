@@ -4,8 +4,10 @@ import { Link } from "react-router-dom";
 import PressureCalLayout from "../components/PressureCalLayout";
 import BackToTopButton from "../components/BackToTopButton";
 import RequirePro from "../components/RequirePro";
-import { supabase } from "../lib/supabase-browser";
 import { useSavedSetups } from "../hooks/useSavedSetups";
+import { buildFullRigSearchParams } from "../lib/rigUrlState";
+import { savedSetupToInputs } from "../lib/savedSetupToInputs";
+import { supabase } from "../lib/supabase-browser";
 
 type SetupFormState = {
   name: string;
@@ -142,6 +144,32 @@ export default function SavedSetupsPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  function openInCalculatorHref(setupId: string) {
+    const setup = getSetupById(setupId);
+
+    if (!setup) {
+      return "/calculator";
+    }
+
+    const params = buildFullRigSearchParams(savedSetupToInputs(setup));
+    const search = params.toString();
+
+    return search ? `/calculator?${search}` : "/calculator";
+  }
+
+  function compareHref(setupId: string) {
+    const alternate = setups.find((setup) => setup.id !== setupId);
+    const search = new URLSearchParams();
+
+    search.set("a", setupId);
+
+    if (alternate) {
+      search.set("b", alternate.id);
+    }
+
+    return `/compare-setups?${search.toString()}`;
+  }
+
   return (
     <PressureCalLayout>
       <Helmet>
@@ -176,14 +204,20 @@ export default function SavedSetupsPage() {
               <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
                 <h2 className="text-2xl font-bold text-slate-950">Sign in to use Saved Setups</h2>
                 <p className="mt-3 text-base leading-7 text-slate-600">
-                  Saved Setups are linked to your PressureCal account, so you need to be signed in first.
+                  Saved Setups are linked to your PressureCal account. Sign in to access your saved setups and Pro tools.
                 </p>
-                <div className="mt-6">
+                <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                   <Link
-                    to="/pro"
+                    to="/account"
                     className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
                   >
-                    Back to PressureCal Pro
+                    Sign in
+                  </Link>
+                  <Link
+                    to="/pro"
+                    className="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                  >
+                    View PressureCal Pro
                   </Link>
                 </div>
               </div>
@@ -348,6 +382,15 @@ export default function SavedSetupsPage() {
                       {setups.length} {setups.length === 1 ? "setup" : "setups"} saved
                     </p>
                   </div>
+
+                  {setups.length >= 2 ? (
+                    <Link
+                      to={`/compare-setups?a=${setups[0].id}&b=${setups[1].id}`}
+                      className="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                    >
+                      Compare setups
+                    </Link>
+                  ) : null}
                 </div>
 
                 {!isReady ? (
@@ -381,6 +424,18 @@ export default function SavedSetupsPage() {
                             >
                               Edit
                             </button>
+                            <Link
+                              to={openInCalculatorHref(setup.id)}
+                              className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                            >
+                              Open in calculator
+                            </Link>
+                            <Link
+                              to={compareHref(setup.id)}
+                              className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                            >
+                              Compare
+                            </Link>
                             <button
                               type="button"
                               onClick={() => duplicateSetup(setup.id)}
@@ -391,7 +446,7 @@ export default function SavedSetupsPage() {
                             <button
                               type="button"
                               onClick={() => {
-                                const confirmed = window.confirm(`Delete \"${setup.name}\"?`);
+                                const confirmed = window.confirm(`Delete "${setup.name}"?`);
                                 if (confirmed) {
                                   deleteSetup(setup.id);
                                   if (selectedSetupId === setup.id) {
@@ -408,15 +463,25 @@ export default function SavedSetupsPage() {
 
                         <dl className="mt-4 grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
                           <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                            <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">Machine</dt>
-                            <dd className="mt-1">{setup.machinePsi ?? "—"} PSI · {setup.machineLpm ?? "—"} LPM</dd>
+                            <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
+                              Machine
+                            </dt>
+                            <dd className="mt-1">
+                              {setup.machinePsi ?? "—"} PSI · {setup.machineLpm ?? "—"} LPM
+                            </dd>
                           </div>
                           <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                            <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">Hose</dt>
-                            <dd className="mt-1">{setup.hoseLengthM ?? "—"} m · {setup.hoseIdMm ?? "—"} mm</dd>
+                            <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
+                              Hose
+                            </dt>
+                            <dd className="mt-1">
+                              {setup.hoseLengthM ?? "—"} m · {setup.hoseIdMm ?? "—"} mm
+                            </dd>
                           </div>
                           <div className="rounded-2xl bg-slate-50 px-4 py-3 sm:col-span-2">
-                            <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">Nozzle</dt>
+                            <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
+                              Nozzle
+                            </dt>
                             <dd className="mt-1">{setup.nozzleSize ?? "—"}</dd>
                           </div>
                         </dl>
