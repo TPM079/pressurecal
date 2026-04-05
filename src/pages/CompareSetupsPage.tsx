@@ -102,6 +102,7 @@ export default function CompareSetupsPage() {
   const [authUserId, setAuthUserId] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [searchParams, setSearchParams] = useSearchParams();
+  const [copiedCompareLink, setCopiedCompareLink] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -189,6 +190,17 @@ export default function CompareSetupsPage() {
     next.set("a", setupBId);
     next.set("b", setupAId);
     setSearchParams(next);
+  }
+
+  async function copyCompareLink() {
+    const url = `${window.location.origin}${window.location.pathname}${window.location.search}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedCompareLink(true);
+      window.setTimeout(() => setCopiedCompareLink(false), 1800);
+    } catch {
+      window.prompt("Copy this compare link:", url);
+    }
   }
 
   const comparisonRows =
@@ -432,6 +444,14 @@ export default function CompareSetupsPage() {
                     className="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     Swap setups
+                  </button>
+                  <button
+                    type="button"
+                    onClick={copyCompareLink}
+                    disabled={!setupAId || !setupBId}
+                    className="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {copiedCompareLink ? "Copied ✓" : "Copy compare link"}
                   </button>
                   <Link
                     to="/saved-setups"

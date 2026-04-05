@@ -52,6 +52,7 @@ export default function SavedSetupsPage() {
   const [authLoading, setAuthLoading] = useState(true);
   const [selectedSetupId, setSelectedSetupId] = useState<string | null>(null);
   const [form, setForm] = useState<SetupFormState>(EMPTY_FORM);
+  const [copiedSetupId, setCopiedSetupId] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -183,14 +184,8 @@ export default function SavedSetupsPage() {
       name,
       notes: form.notes.trim() || null,
 
-      machinePsi:
-        form.pumpPressureUnit === "psi"
-          ? pumpPressure
-          : null,
-      machineLpm:
-        form.pumpFlowUnit === "lpm"
-          ? pumpFlow
-          : null,
+      machinePsi: form.pumpPressureUnit === "psi" ? pumpPressure : null,
+      machineLpm: form.pumpFlowUnit === "lpm" ? pumpFlow : null,
       hoseLengthM: form.hoseLengthUnit === "m" ? hoseLength : null,
       hoseIdMm: form.hoseIdUnit === "mm" ? hoseId : null,
       nozzleSize: nozzleSizeText,
@@ -250,6 +245,28 @@ export default function SavedSetupsPage() {
     }
 
     return `/compare-setups?${search.toString()}`;
+  }
+
+  async function copyShareLink(setupId: string) {
+    const setup = getSetupById(setupId);
+
+    if (!setup) {
+      return;
+    }
+
+    const params = buildFullRigSearchParams(savedSetupToInputs(setup));
+    const search = params.toString();
+    const url = `${window.location.origin}/calculator${search ? `?${search}` : ""}`;
+
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedSetupId(setupId);
+      window.setTimeout(() => {
+        setCopiedSetupId((current) => (current === setupId ? null : current));
+      }, 1800);
+    } catch {
+      window.prompt("Copy this share link:", url);
+    }
   }
 
   return (
@@ -615,6 +632,13 @@ export default function SavedSetupsPage() {
                             >
                               Open in calculator
                             </Link>
+                            <button
+                              type="button"
+                              onClick={() => copyShareLink(setup.id)}
+                              className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                            >
+                              {copiedSetupId === setup.id ? "Copied ✓" : "Copy share link"}
+                            </button>
                             <Link
                               to={compareHref(setup.id)}
                               className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
