@@ -153,6 +153,45 @@ function toNumberOrNull(value: string | number) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+
+
+function buildShareSummaryText(args: {
+  inputs: Inputs;
+  gunPressurePsi: number;
+  gunPressureBar: number;
+  gunFlowLpm: number;
+  gunFlowGpm: number;
+  hoseLossPsi: number;
+  hoseLossBar: number;
+  nozzleStatusText: string;
+  nozzleStatusMessage: string;
+  selectedTipCode: string;
+}) {
+  const { inputs, gunPressurePsi, gunPressureBar, gunFlowLpm, gunFlowGpm, hoseLossPsi, hoseLossBar, nozzleStatusText, nozzleStatusMessage, selectedTipCode } = args;
+  const setupLine = [
+    `${fmt(Number(inputs.pumpPressure || 0), 0)} ${inputs.pumpPressureUnit.toUpperCase()}`,
+    `${fmt(Number(inputs.pumpFlow || 0), inputs.pumpFlowUnit === "gpm" ? 2 : 1)} ${inputs.pumpFlowUnit.toUpperCase()}`,
+    `${fmt(Number(inputs.hoseLength || 0), 0)} ${inputs.hoseLengthUnit}`,
+    `${fmt(Number(inputs.hoseId || 0), inputs.hoseIdUnit === "in" ? 2 : 1)} ${inputs.hoseIdUnit}`,
+    inputs.sprayMode === "surfaceCleaner"
+      ? `Nozzle ${inputs.nozzleSizeText || "—"} × ${inputs.nozzleCount}`
+      : `Nozzle ${inputs.nozzleSizeText || "—"}`,
+    inputs.engineHp === "" ? "Engine HP optional" : `Engine ${fmt(Number(inputs.engineHp || 0), 1)} HP`,
+  ].join(" · ");
+
+  return [
+    "PressureCal result",
+    "",
+    `Setup: ${setupLine}`,
+    `At-gun pressure: ${fmt(gunPressurePsi, 0)} PSI (${fmt(gunPressureBar, 1)} bar)`,
+    `Flow: ${fmt(gunFlowLpm, 1)} L/min (${fmt(gunFlowGpm, 2)} GPM)`,
+    `Hose loss: ${fmt(hoseLossPsi, 0)} PSI (${fmt(hoseLossBar, 1)} bar)`,
+    `Nozzle status: ${nozzleStatusText}`,
+    `Selected nozzle: ${selectedTipCode}`,
+    `Note: ${nozzleStatusMessage}`,
+  ].join("\n");
+}
+
 export default function FullRigCalculatorPage() {
   const [inputs, setInputs] = useState<Inputs>(() => ({
     ...defaultInputs,
@@ -166,6 +205,8 @@ export default function FullRigCalculatorPage() {
   const [saveNotes, setSaveNotes] = useState("");
   const [saveMessage, setSaveMessage] = useState("");
   const [lastSavedSetupId, setLastSavedSetupId] = useState<string | null>(null);
+  const [sharePanelOpen, setSharePanelOpen] = useState(false);
+  const [shareMessage, setShareMessage] = useState("");
   const maxWasManuallyEditedRef = useRef(false);
 
   const { loading: proAccessLoading, isAuthenticated, isPro, userId } = useProAccess();
@@ -203,6 +244,22 @@ export default function FullRigCalculatorPage() {
 
     setSaveName((current) => (current.trim() ? current : suggestedSetupName));
   }, [savePanelOpen, suggestedSetupName]);
+
+  useEffect(() => {
+    if (!sharePanelOpen) {
+      return;
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setSharePanelOpen(false);
+        setShareMessage("");
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [sharePanelOpen]);
 
   const safeInputs = {
     ...inputs,
@@ -278,18 +335,68 @@ export default function FullRigCalculatorPage() {
     },
   ];
 
-  async function copySetupLink() {
+  const shareUrl = useMemo(() => {
     const params = buildFullRigSearchParams(inputs);
     const qs = params.toString();
-    const url = `${window.location.origin}/calculator${qs ? `?${qs}` : ""}`;
+    return `${window.location.origin}/calculator${qs ? `?${qs}` : ""}`;
+  }, [inputs]);
 
+  const shareSummaryText = useMemo(
+    () =>
+      buildShareSummaryText({
+        inputs,
+        gunPressurePsi: r.gunPressurePsi,
+        gunPressureBar: gunBar,
+        gunFlowLpm: gunLpm,
+        gunFlowGpm: r.gunFlowGpm,
+        hoseLossPsi: r.hoseLossPsi,
+        hoseLossBar: lossBar,
+        nozzleStatusText: badge.text,
+        nozzleStatusMessage: r.statusMessage,
+        selectedTipCode: selectedDisplayTipCode,
+      }),
+    [badge.text, gunBar, gunLpm, inputs, lossBar, r.gunFlowGpm, r.gunPressurePsi, r.hoseLossPsi, r.statusMessage, selectedDisplayTipCode]
+  );
+
+  async function copySetupLink() {
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(shareUrl);
       setCopyMessage("Setup link copied");
       window.setTimeout(() => setCopyMessage(""), 2000);
     } catch {
-      window.prompt("Copy this link:", url);
+      window.prompt("Copy this link:", shareUrl);
     }
+  }
+
+
+  async function handleCopyShareResultLink() {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setShareMessage("Share link copied");
+      window.setTimeout(() => setShareMessage(""), 2000);
+    } catch {
+      window.prompt("Copy this link:", shareUrl);
+    }
+  }
+
+  async function handleCopyResultSummary() {
+    try {
+      await navigator.clipboard.writeText(shareSummaryText);
+      setShareMessage("Result summary copied");
+      window.setTimeout(() => setShareMessage(""), 2000);
+    } catch {
+      window.prompt("Copy this summary:", shareSummaryText);
+    }
+  }
+
+  function handleOpenSharePanel() {
+    setSharePanelOpen(true);
+    setShareMessage("");
+  }
+
+  function handleCloseSharePanel() {
+    setSharePanelOpen(false);
+    setShareMessage("");
   }
 
   function handleOpenSavePanel() {
@@ -435,6 +542,14 @@ export default function FullRigCalculatorPage() {
                     className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-slate-800 hover:shadow-lg"
                   >
                     {copyMessage ? "Copied ✓" : "Copy setup link"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleOpenSharePanel}
+                    className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                  >
+                    Share result
                   </button>
 
                   <button
@@ -943,9 +1058,18 @@ export default function FullRigCalculatorPage() {
             <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
               <div className="border-b border-slate-200 px-5 py-4">
                 <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-900">
-                    Calculated performance
-                  </h2>
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-900">
+                      Calculated performance
+                    </h2>
+                    <button
+                      type="button"
+                      onClick={handleOpenSharePanel}
+                      className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                    >
+                      Share result
+                    </button>
+                  </div>
                   <div
                     className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${systemBadge.cls}`}
                   >
@@ -1127,6 +1251,149 @@ export default function FullRigCalculatorPage() {
           </main>
         </div>
       </section>
+
+
+      {sharePanelOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 py-6">
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-slate-200 bg-white shadow-2xl">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Share result
+                </div>
+                <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
+                  Share this PressureCal result
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  Copy a clean result summary or share the live calculator link with the exact rig loaded.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleCloseSharePanel}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-300 text-lg font-semibold text-slate-600 transition hover:bg-slate-100"
+                aria-label="Close share result panel"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="space-y-5 px-6 py-6">
+              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Export card
+                </div>
+
+                <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                      <div className="text-sm font-semibold text-slate-950">PressureCal result</div>
+                      <div className="mt-1 text-sm text-slate-600">{suggestedSetupName}</div>
+                    </div>
+
+                    <div
+                      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${badge.cls}`}
+                    >
+                      {badge.text}
+                    </div>
+                  </div>
+
+                  <div className="mt-5 grid gap-4 sm:grid-cols-3">
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                      <div className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">
+                        At-gun pressure
+                      </div>
+                      <div className="mt-2 text-2xl font-semibold text-slate-950">
+                        {fmt(r.gunPressurePsi, 0)} <span className="text-sm font-medium text-slate-500">PSI</span>
+                      </div>
+                      <div className="mt-1 text-sm text-slate-600">{fmt(gunBar, 1)} bar</div>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                      <div className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">
+                        Flow
+                      </div>
+                      <div className="mt-2 text-2xl font-semibold text-slate-950">
+                        {fmt(gunLpm, 1)} <span className="text-sm font-medium text-slate-500">L/min</span>
+                      </div>
+                      <div className="mt-1 text-sm text-slate-600">{fmt(r.gunFlowGpm, 2)} GPM</div>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                      <div className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">
+                        Hose loss
+                      </div>
+                      <div className="mt-2 text-2xl font-semibold text-slate-950">
+                        {fmt(r.hoseLossPsi, 0)} <span className="text-sm font-medium text-slate-500">PSI</span>
+                      </div>
+                      <div className="mt-1 text-sm text-slate-600">{fmt(lossBar, 1)} bar</div>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
+                    <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                      <span className="font-semibold text-slate-900">Pump:</span>{" "}
+                      {inputs.pumpPressure || "—"} {inputs.pumpPressureUnit.toUpperCase()} · {inputs.pumpFlow || "—"} {inputs.pumpFlowUnit.toUpperCase()}
+                    </div>
+                    <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                      <span className="font-semibold text-slate-900">Hose:</span>{" "}
+                      {inputs.hoseLength || "—"} {inputs.hoseLengthUnit} · {inputs.hoseId || "—"} {inputs.hoseIdUnit}
+                    </div>
+                    <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                      <span className="font-semibold text-slate-900">Nozzle:</span>{" "}
+                      {inputs.nozzleSizeText || "—"}{inputs.sprayMode === "surfaceCleaner" ? ` × ${inputs.nozzleCount}` : ""}
+                    </div>
+                    <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                      <span className="font-semibold text-slate-900">Engine:</span>{" "}
+                      {inputs.engineHp === "" ? "Optional" : `${fmt(Number(inputs.engineHp || 0), 1)} HP`}
+                    </div>
+                  </div>
+
+                  <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                    <div className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">
+                      Nozzle status
+                    </div>
+                    <div className="mt-2 text-sm font-semibold text-slate-900">{badge.text}</div>
+                    <p className="mt-1 text-sm leading-6 text-slate-600">{r.statusMessage}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-5">
+                <div className="text-sm font-semibold text-slate-900">Share actions</div>
+                <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                  <button
+                    type="button"
+                    onClick={handleCopyShareResultLink}
+                    className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                  >
+                    Copy share link
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCopyResultSummary}
+                    className="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                  >
+                    Copy result summary
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCloseSharePanel}
+                    className="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                  >
+                    Close
+                  </button>
+                </div>
+
+                <div className="mt-3 text-xs text-slate-500">
+                  {shareMessage || "Copy the live link or a clean text summary for messages, quotes, or job notes."}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <BackToTopButton />
     </PressureCalLayout>
