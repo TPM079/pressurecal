@@ -133,7 +133,10 @@ function buildSuggestedSetupName(inputs: Inputs) {
   const nozzleText = (inputs.nozzleSizeText || "").trim();
   const modeText = inputs.sprayMode === "surfaceCleaner" ? "surface cleaner" : "wand";
 
-  const parts = [`${fmt(pressureValue, 0)} ${pressureUnit}`, `${fmt(flowValue, flowUnit === "LPM" ? 1 : 2)} ${flowUnit}`];
+  const parts = [
+    `${fmt(pressureValue, 0)} ${pressureUnit}`,
+    `${fmt(flowValue, flowUnit === "LPM" ? 1 : 2)} ${flowUnit}`,
+  ];
 
   if (nozzleText) {
     parts.push(`tip ${nozzleText}`);
@@ -153,8 +156,6 @@ function toNumberOrNull(value: string | number) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-
-
 function buildShareSummaryText(args: {
   inputs: Inputs;
   gunPressurePsi: number;
@@ -167,7 +168,19 @@ function buildShareSummaryText(args: {
   nozzleStatusMessage: string;
   selectedTipCode: string;
 }) {
-  const { inputs, gunPressurePsi, gunPressureBar, gunFlowLpm, gunFlowGpm, hoseLossPsi, hoseLossBar, nozzleStatusText, nozzleStatusMessage, selectedTipCode } = args;
+  const {
+    inputs,
+    gunPressurePsi,
+    gunPressureBar,
+    gunFlowLpm,
+    gunFlowGpm,
+    hoseLossPsi,
+    hoseLossBar,
+    nozzleStatusText,
+    nozzleStatusMessage,
+    selectedTipCode,
+  } = args;
+
   const setupLine = [
     `${fmt(Number(inputs.pumpPressure || 0), 0)} ${inputs.pumpPressureUnit.toUpperCase()}`,
     `${fmt(Number(inputs.pumpFlow || 0), inputs.pumpFlowUnit === "gpm" ? 2 : 1)} ${inputs.pumpFlowUnit.toUpperCase()}`,
@@ -192,6 +205,20 @@ function buildShareSummaryText(args: {
   ].join("\n");
 }
 
+function buildLiveCompareHref(inputs: Inputs, savedSetupId: string, liveName: string) {
+  const params = new URLSearchParams();
+  params.set("live", "1");
+  params.set("liveName", liveName);
+  params.set("b", savedSetupId);
+
+  const rigParams = buildFullRigSearchParams(inputs);
+  rigParams.forEach((value, key) => {
+    params.set(`live_${key}`, value);
+  });
+
+  return `/compare-setups?${params.toString()}`;
+}
+
 export default function FullRigCalculatorPage() {
   const [inputs, setInputs] = useState<Inputs>(() => ({
     ...defaultInputs,
@@ -209,10 +236,12 @@ export default function FullRigCalculatorPage() {
   const [shareMessage, setShareMessage] = useState("");
   const [shareLinkCopied, setShareLinkCopied] = useState(false);
   const [resultSummaryCopied, setResultSummaryCopied] = useState(false);
+  const [comparePanelOpen, setComparePanelOpen] = useState(false);
+  const [compareTargetSetupId, setCompareTargetSetupId] = useState("");
   const maxWasManuallyEditedRef = useRef(false);
 
   const { loading: proAccessLoading, isAuthenticated, isPro, userId } = useProAccess();
-  const { isReady: savedSetupsReady, saveSetup } = useSavedSetups(userId);
+  const { setups, isReady: savedSetupsReady, saveSetup } = useSavedSetups(userId);
 
   const suggestedSetupName = useMemo(() => buildSuggestedSetupName(inputs), [inputs]);
 
@@ -246,6 +275,22 @@ export default function FullRigCalculatorPage() {
 
     setSaveName((current) => (current.trim() ? current : suggestedSetupName));
   }, [savePanelOpen, suggestedSetupName]);
+
+  useEffect(() => {
+    if (comparePanelOpen && savedSetupsReady && setups.length > 0 && !compareTargetSetupId) {
+      setCompareTargetSetupId(setups[0].id);
+    }
+  }, [comparePanelOpen, compareTargetSetupId, savedSetupsReady, setups]);
+
+  useEffect(() => {
+    if (!comparePanelOpen) {
+      return;
+    }
+
+    if (compareTargetSetupId && !setups.some((setup) => setup.id === compareTargetSetupId)) {
+      setCompareTargetSetupId(setups[0]?.id ?? "");
+    }
+  }, [comparePanelOpen, compareTargetSetupId, setups]);
 
   useEffect(() => {
     if (!sharePanelOpen) {
@@ -343,6 +388,14 @@ export default function FullRigCalculatorPage() {
     return `${window.location.origin}/calculator${qs ? `?${qs}` : ""}`;
   }, [inputs]);
 
+  const liveCompareHref = useMemo(
+    () =>
+      compareTargetSetupId
+        ? buildLiveCompareHref(inputs, compareTargetSetupId, suggestedSetupName)
+        : "",
+    [compareTargetSetupId, inputs, suggestedSetupName]
+  );
+
   const shareSummaryText = useMemo(
     () =>
       buildShareSummaryText({
@@ -369,7 +422,6 @@ export default function FullRigCalculatorPage() {
       window.prompt("Copy this link:", shareUrl);
     }
   }
-
 
   function resetShareFeedback() {
     setShareMessage("");
@@ -419,6 +471,7 @@ export default function FullRigCalculatorPage() {
 
   function handleOpenSavePanel() {
     setSavePanelOpen(true);
+    setComparePanelOpen(false);
     setSaveMessage("");
     setSaveName((current) => (current.trim() ? current : suggestedSetupName));
   }
@@ -426,6 +479,15 @@ export default function FullRigCalculatorPage() {
   function handleCloseSavePanel() {
     setSavePanelOpen(false);
     setSaveMessage("");
+  }
+
+  function handleOpenComparePanel() {
+    setComparePanelOpen(true);
+    setSavePanelOpen(false);
+  }
+
+  function handleCloseComparePanel() {
+    setComparePanelOpen(false);
   }
 
   function handleSaveCurrentSetup() {
@@ -487,12 +549,45 @@ export default function FullRigCalculatorPage() {
   return (
     <PressureCalLayout>
       <Helmet>
-        <title>Full Setup Calculator | PressureCal</title>
+        <title>Full Rig Calculator | PressureCal</title>
         <meta
           name="description"
-          content="Model a real pressure washer setup, including hose loss, nozzle match, at-gun pressure, flow, and power requirement."
+          content="Full rig calculator for pressure washer setup, including hose loss, nozzle calibration, operating pressure, and power requirement."
         />
         <link rel="canonical" href="https://www.pressurecal.com/calculator" />
+        <meta
+          property="og:title"
+          content="Full Rig Calculator | PressureCal"
+        />
+        <meta
+          property="og:description"
+          content="Full rig calculator for pressure washer setup, including hose loss, nozzle calibration, operating pressure, and power requirement."
+        />
+        <meta
+          property="og:url"
+          content="https://www.pressurecal.com/calculator"
+        />
+        <meta property="og:type" content="website" />
+        <meta
+          name="twitter:title"
+          content="Full Rig Calculator | PressureCal"
+        />
+        <meta
+          name="twitter:description"
+          content="Full rig calculator for pressure washer setup, including hose loss, nozzle calibration, operating pressure, and power requirement."
+        />
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebApplication",
+            name: "PressureCal Full Rig Calculator",
+            url: "https://www.pressurecal.com/calculator",
+            applicationCategory: "Calculator",
+            operatingSystem: "Web",
+            description:
+              "Full rig calculator for pressure washer setup, including hose loss, nozzle calibration, operating pressure, and power requirement.",
+          })}
+        </script>
       </Helmet>
 
       <section className="-mx-4 bg-slate-100 px-4 pb-8 pt-12 sm:pb-10">
@@ -572,6 +667,15 @@ export default function FullRigCalculatorPage() {
 
                   <button
                     type="button"
+                    onClick={handleOpenComparePanel}
+                    disabled={proAccessLoading || (isAuthenticated && isPro && !savedSetupsReady)}
+                    className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Compare to saved
+                  </button>
+
+                  <button
+                    type="button"
                     onClick={handleOpenSavePanel}
                     disabled={proAccessLoading || (isAuthenticated && isPro && !savedSetupsReady)}
                     className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
@@ -584,7 +688,7 @@ export default function FullRigCalculatorPage() {
                   {copyMessage
                     ? copyMessage
                     : isAuthenticated && isPro
-                      ? "Save this exact rig into your Saved Setups library."
+                      ? "Save, share, or compare this exact rig setup."
                       : "Share this exact rig setup."}
                 </div>
               </div>
@@ -656,7 +760,7 @@ export default function FullRigCalculatorPage() {
                   </div>
                 ) : null}
 
-                {(!proAccessLoading && isAuthenticated && isPro) ? (
+                {!proAccessLoading && isAuthenticated && isPro ? (
                   <div className="mt-4 grid gap-4 sm:grid-cols-2">
                     <label className="block sm:col-span-2">
                       <span className="text-sm font-semibold text-slate-800">Setup name</span>
@@ -725,6 +829,171 @@ export default function FullRigCalculatorPage() {
                       <button
                         type="button"
                         onClick={handleCloseSavePanel}
+                        className="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            {comparePanelOpen ? (
+              <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="max-w-xl">
+                    <div className="text-sm font-semibold text-slate-900">Compare current calculator vs saved setup</div>
+                    <p className="mt-1 text-sm leading-6 text-slate-600">
+                      Launch a side-by-side comparison using your live calculator state as Setup A and one saved setup as Setup B.
+                    </p>
+                  </div>
+                </div>
+
+                {!proAccessLoading && !isAuthenticated ? (
+                  <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
+                    <p className="text-sm text-slate-700">
+                      Sign in to compare your current calculator against a saved setup.
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Link
+                        to="/account"
+                        className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+                      >
+                        Sign in
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={handleCloseComparePanel}
+                        className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+
+                {!proAccessLoading && isAuthenticated && !isPro ? (
+                  <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
+                    <p className="text-sm text-slate-700">
+                      Compare Setups is part of PressureCal Pro.
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Link
+                        to="/pro"
+                        className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+                      >
+                        View PressureCal Pro
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={handleCloseComparePanel}
+                        className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+
+                {!proAccessLoading && isAuthenticated && isPro && savedSetupsReady && setups.length === 0 ? (
+                  <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
+                    <p className="text-sm text-slate-700">
+                      You need at least one saved setup before you can compare the live calculator against it.
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Link
+                        to="/saved-setups"
+                        className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+                      >
+                        Open Saved Setups
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={handleCloseComparePanel}
+                        className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+
+                {!proAccessLoading && isAuthenticated && isPro && savedSetupsReady && setups.length > 0 ? (
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 sm:col-span-2">
+                      <div className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">
+                        Setup A
+                      </div>
+                      <div className="mt-2 text-sm font-semibold text-slate-900">Current calculator</div>
+                      <div className="mt-1 text-sm text-slate-600">
+                        {suggestedSetupName}
+                      </div>
+                    </div>
+
+                    <label className="block sm:col-span-2">
+                      <span className="text-sm font-semibold text-slate-800">Saved setup to compare against</span>
+                      <select
+                        value={compareTargetSetupId}
+                        onChange={(event) => setCompareTargetSetupId(event.target.value)}
+                        className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                      >
+                        <option value="">Select saved setup</option>
+                        {setups.map((setup) => (
+                          <option key={setup.id} value={setup.id}>
+                            {setup.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 sm:col-span-2">
+                      <div className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">
+                        Live snapshot being compared
+                      </div>
+                      <div className="mt-3 grid gap-3 text-sm text-slate-700 sm:grid-cols-2 lg:grid-cols-3">
+                        <div>
+                          <span className="font-semibold text-slate-900">Pump:</span>{" "}
+                          {inputs.pumpPressure || "—"} {inputs.pumpPressureUnit.toUpperCase()} · {inputs.pumpFlow || "—"} {inputs.pumpFlowUnit.toUpperCase()}
+                        </div>
+                        <div>
+                          <span className="font-semibold text-slate-900">Max pressure:</span>{" "}
+                          {inputs.maxPressure || "—"} {inputs.maxPressureUnit.toUpperCase()}
+                        </div>
+                        <div>
+                          <span className="font-semibold text-slate-900">Engine:</span>{" "}
+                          {inputs.engineHp === "" ? "Not provided" : `${inputs.engineHp} HP`}
+                        </div>
+                        <div>
+                          <span className="font-semibold text-slate-900">Hose:</span>{" "}
+                          {inputs.hoseLength || "—"} {inputs.hoseLengthUnit} · {inputs.hoseId || "—"} {inputs.hoseIdUnit}
+                        </div>
+                        <div>
+                          <span className="font-semibold text-slate-900">Spray mode:</span>{" "}
+                          {inputs.sprayMode === "surfaceCleaner" ? "Surface cleaner" : "Wand"}
+                        </div>
+                        <div>
+                          <span className="font-semibold text-slate-900">Nozzle:</span>{" "}
+                          {inputs.nozzleSizeText || "—"}{inputs.sprayMode === "surfaceCleaner" ? ` × ${inputs.nozzleCount}` : ""}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-3 sm:col-span-2 sm:flex-row">
+                      <Link
+                        to={liveCompareHref || "#"}
+                        className={`inline-flex items-center justify-center rounded-2xl px-6 py-3 text-sm font-semibold transition ${
+                          compareTargetSetupId
+                            ? "bg-slate-950 text-white hover:bg-slate-800"
+                            : "pointer-events-none bg-slate-300 text-slate-600"
+                        }`}
+                      >
+                        Compare now
+                      </Link>
+
+                      <button
+                        type="button"
+                        onClick={handleCloseComparePanel}
                         className="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
                       >
                         Cancel
@@ -1269,7 +1538,6 @@ export default function FullRigCalculatorPage() {
           </main>
         </div>
       </section>
-
 
       {sharePanelOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 py-6">
