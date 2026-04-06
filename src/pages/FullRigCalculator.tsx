@@ -549,7 +549,7 @@ export default function FullRigCalculatorPage() {
   return (
     <PressureCalLayout>
       <Helmet>
-        <title>Full Rig Calculator | PressureCal</title>
+        <title>Full Rig Pressure Washer Calculator | PressureCal</title>
         <meta
           name="description"
           content="Full rig calculator for pressure washer setup, including hose loss, nozzle calibration, operating pressure, and power requirement."
@@ -557,7 +557,7 @@ export default function FullRigCalculatorPage() {
         <link rel="canonical" href="https://www.pressurecal.com/calculator" />
         <meta
           property="og:title"
-          content="Full Rig Calculator | PressureCal"
+          content="Full Rig Pressure Washer Calculator | PressureCal"
         />
         <meta
           property="og:description"
@@ -570,7 +570,7 @@ export default function FullRigCalculatorPage() {
         <meta property="og:type" content="website" />
         <meta
           name="twitter:title"
-          content="Full Rig Calculator | PressureCal"
+          content="Full Rig Pressure Washer Calculator | PressureCal"
         />
         <meta
           name="twitter:description"
@@ -597,10 +597,10 @@ export default function FullRigCalculatorPage() {
               Full setup calculator
             </div>
             <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
-              Model your real pressure washer setup
+              Full Rig Pressure Washer Calculator
             </h1>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              See how hose length, hose ID, nozzle size, and machine specs affect real-world performance.
+              Model hose loss, nozzle match, at-gun pressure, flow, and power requirement in one real-world setup view.
             </p>
           </div>
 
@@ -1004,6 +1004,58 @@ export default function FullRigCalculatorPage() {
               </div>
             ) : null}
           </div>
+
+          <section className="mb-6 rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
+            <div className="max-w-4xl">
+              <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+                What this full rig calculator models
+              </h2>
+              <p className="mt-3 text-sm leading-7 text-slate-600">
+                This full rig pressure washer calculator is designed for operators who want to understand
+                how the whole setup behaves, not just one number at a time. It combines machine pressure,
+                machine flow, hose length, hose internal diameter, nozzle size, and optional engine power
+                so you can estimate the real operating point at the gun.
+              </p>
+              <p className="mt-4 text-sm leading-7 text-slate-600">
+                Use this page when a simple nozzle chart or conversion tool is not enough. It is especially
+                useful when the machine feels weak at the gun, when hose runs are long, when surface cleaner
+                nozzle counts change the required tip size, or when you want to compare rated pump pressure
+                with the pressure you are likely to see while working.
+              </p>
+              <div className="mt-5 flex flex-wrap gap-3">
+                <Link
+                  to="/nozzle-size-calculator"
+                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                >
+                  Nozzle Size Calculator
+                </Link>
+                <Link
+                  to="/hose-pressure-loss-calculator"
+                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                >
+                  Hose Pressure Loss Calculator
+                </Link>
+                <Link
+                  to="/nozzle-size-chart"
+                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                >
+                  Nozzle Size Chart
+                </Link>
+                <Link
+                  to="/psi-bar-calculator"
+                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                >
+                  PSI ↔ BAR Calculator
+                </Link>
+                <Link
+                  to="/lpm-gpm-calculator"
+                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                >
+                  LPM ↔ GPM Calculator
+                </Link>
+              </div>
+            </div>
+          </section>
 
           <main className="grid gap-6 lg:grid-cols-2">
             <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -1538,6 +1590,75 @@ export default function FullRigCalculatorPage() {
           </main>
         </div>
       </section>
+
+          <section className="mt-8 rounded-2xl border border-slate-200 bg-white px-5 py-6 shadow-sm">
+            <div className="max-w-4xl">
+              <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+                Full rig calculator FAQ
+              </h2>
+              <p className="mt-3 text-sm leading-7 text-slate-600">
+                These are the most common questions behind nozzle mismatch, hose loss, bypass activity,
+                and real pressure differences at the gun.
+              </p>
+            </div>
+
+            <div className="mt-8 grid gap-5 lg:grid-cols-2">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <h3 className="text-lg font-semibold text-slate-900">
+                  How is at-gun pressure calculated?
+                </h3>
+                <p className="mt-3 text-sm leading-7 text-slate-600">
+                  PressureCal estimates at-gun pressure by considering the machine output together with
+                  hose length, hose internal diameter, and nozzle size. That gives a more realistic result
+                  than relying only on the rated pump pressure on the spec sheet.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <h3 className="text-lg font-semibold text-slate-900">
+                  Why is my gun pressure lower than rated pump pressure?
+                </h3>
+                <p className="mt-3 text-sm leading-7 text-slate-600">
+                  Real pressure drops when hose friction, fittings, reels, bends, and nozzle choice reduce the
+                  available pressure between the pump and the gun. Long hose runs and smaller hose IDs make
+                  that pressure drop worse.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <h3 className="text-lg font-semibold text-slate-900">
+                  What does bypass active mean?
+                </h3>
+                <p className="mt-3 text-sm leading-7 text-slate-600">
+                  Bypass active means the selected nozzle and operating conditions are causing the system to hit
+                  the maximum pressure setting before all pump flow is used through the nozzle. In practical
+                  terms, that usually means the selected nozzle is too small for the setup.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <h3 className="text-lg font-semibold text-slate-900">
+                  How does hose ID affect pressure?
+                </h3>
+                <p className="mt-3 text-sm leading-7 text-slate-600">
+                  Smaller hose internal diameter increases velocity and friction loss, which increases pressure
+                  drop along the hose. That is why a long 1/4&quot; hose often feels much weaker than a shorter
+                  3/8&quot; hose on the same machine.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 lg:col-span-2">
+                <h3 className="text-lg font-semibold text-slate-900">
+                  Why does nozzle size change operating pressure?
+                </h3>
+                <p className="mt-3 text-sm leading-7 text-slate-600">
+                  Nozzle size determines how easily the machine can discharge flow at the gun. A smaller nozzle
+                  increases restriction and can raise pressure, while a larger nozzle reduces restriction and can
+                  lower pressure. This is why nozzle match is central to accurate setup modelling.
+                </p>
+              </div>
+            </div>
+          </section>
 
       {sharePanelOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 py-6">

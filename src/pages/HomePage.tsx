@@ -577,6 +577,78 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section className="border-b border-slate-200 bg-white">
+        <div className="mx-auto max-w-6xl px-4 py-14">
+          <div className="max-w-4xl">
+            <h2 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
+              What PressureCal helps you calculate
+            </h2>
+            <p className="mt-4 text-lg leading-8 text-slate-600">
+              PressureCal is a pressure washer calculator built to help operators model
+              nozzle size, hose pressure loss, and real at-gun performance before buying,
+              swapping, or troubleshooting parts. Instead of stopping at a simple conversion
+              or generic chart, it helps connect pump pressure, flow, hose length, hose ID,
+              and nozzle choice into one practical setup picture.
+            </p>
+            <p className="mt-4 text-base leading-7 text-slate-600">
+              Use the homepage calculator for a fast answer, then jump into the individual
+              tools when you want to check one part of the setup more closely.
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              {
+                title: "Nozzle Size Calculator",
+                description:
+                  "Work out the right tip size from rated pressure and flow before you guess, buy, or swap nozzles.",
+                href: "/nozzle-size-calculator",
+              },
+              {
+                title: "Hose Pressure Loss Calculator",
+                description:
+                  "Estimate how much pressure you are losing through hose length and hose internal diameter.",
+                href: "/hose-pressure-loss-calculator",
+              },
+              {
+                title: "Full Rig Calculator",
+                description:
+                  "Model the whole pressure washer setup including hose loss, nozzle match, operating pressure, and flow.",
+                href: fullRigHref,
+              },
+              {
+                title: "PSI ↔ BAR Calculator",
+                description:
+                  "Convert pressure quickly for machine specs, gauges, labels, and compliance references.",
+                href: "/psi-bar-calculator",
+              },
+              {
+                title: "LPM ↔ GPM Calculator",
+                description:
+                  "Convert flow rates instantly for pumps, injectors, nozzles, and hose loss checks.",
+                href: "/lpm-gpm-calculator",
+              },
+              {
+                title: "Nozzle Size Chart",
+                description:
+                  "Use a quick field chart for common pressure and flow combinations in PSI, BAR, LPM, and GPM.",
+                href: "/nozzle-size-chart",
+              },
+            ].map((item) => (
+              <Link
+                key={item.title}
+                to={item.href}
+                className="rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-white hover:shadow-md"
+              >
+                <h3 className="text-xl font-semibold text-slate-950">{item.title}</h3>
+                <p className="mt-3 text-sm leading-6 text-slate-600">{item.description}</p>
+                <p className="mt-5 text-sm font-semibold text-slate-950">Open tool →</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section id="calculator" className="-mx-4 border-b border-slate-200 bg-slate-50/70 px-4">
         <div className="mx-auto max-w-6xl py-10 lg:py-12">
           <div className="max-w-3xl">
@@ -1073,6 +1145,73 @@ export default function HomePage() {
                 <p className="mt-5 text-sm font-semibold text-slate-950">{tool.cta}</p>
               </Link>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b border-slate-200 bg-slate-50/70">
+        <div className="mx-auto max-w-6xl px-4 py-16">
+          <div className="max-w-3xl">
+            <h2 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
+              Pressure washer calculator FAQ
+            </h2>
+            <p className="mt-4 text-lg leading-8 text-slate-600">
+              These are some of the most common setup questions operators ask when
+              pressure, flow, hose loss, and nozzle sizing do not seem to line up in the field.
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-5 lg:grid-cols-2">
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="text-lg font-semibold text-slate-950">
+                What does a pressure washer calculator do?
+              </h3>
+              <p className="mt-3 text-sm leading-7 text-slate-600">
+                A pressure washer calculator helps estimate the relationship between pump pressure,
+                flow rate, hose loss, nozzle size, and real operating performance. PressureCal goes
+                beyond simple unit conversions by helping you see what the machine is likely doing
+                at the gun, not just what it is rated for at the pump.
+              </p>
+            </div>
+
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="text-lg font-semibold text-slate-950">
+                How do I calculate the right nozzle size?
+              </h3>
+              <p className="mt-3 text-sm leading-7 text-slate-600">
+                The correct nozzle size depends on both pressure and flow. If the nozzle is too small,
+                pressure can climb and engine load can increase. If the nozzle is too large, pressure can
+                drop and cleaning performance can feel weak. The{" "}
+                <Link to="/nozzle-size-calculator" className="font-semibold text-slate-900 underline hover:text-slate-700">
+                  Nozzle Size Calculator
+                </Link>{" "}
+                is the fastest way to check this.
+              </p>
+            </div>
+
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="text-lg font-semibold text-slate-950">
+                Why is my pressure lower at the gun than at the pump?
+              </h3>
+              <p className="mt-3 text-sm leading-7 text-slate-600">
+                Real pressure at the gun is lower when hose friction, hose length, hose internal diameter,
+                fittings, or nozzle selection reduce the available pressure between the pump and the gun.
+                That is why a setup can look fine on paper but feel weaker in the field. PressureCal helps
+                model that difference directly.
+              </p>
+            </div>
+
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="text-lg font-semibold text-slate-950">
+                What PSI and LPM should I use for setup decisions?
+              </h3>
+              <p className="mt-3 text-sm leading-7 text-slate-600">
+                Use the rated machine pressure and rated machine flow as your starting point, then check how
+                hose length, hose ID, and nozzle choice change the real operating point. PressureCal is designed
+                around the way working operators compare PSI and LPM in the field, while still making BAR and GPM
+                easy to use where needed.
+              </p>
+            </div>
           </div>
         </div>
       </section>
