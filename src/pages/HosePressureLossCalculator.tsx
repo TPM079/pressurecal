@@ -282,6 +282,27 @@ export default function HosePressureLossCalculator() {
           rel="canonical"
           href="https://www.pressurecal.com/hose-pressure-loss-calculator"
         />
+        <meta
+          property="og:title"
+          content="Hose Pressure Loss Calculator | PressureCal"
+        />
+        <meta
+          property="og:description"
+          content="Calculate pressure loss in hoses based on length, internal diameter, and flow rate. Essential tool for accurate pressure washer system setup."
+        />
+        <meta
+          property="og:url"
+          content="https://www.pressurecal.com/hose-pressure-loss-calculator"
+        />
+        <meta property="og:type" content="website" />
+        <meta
+          name="twitter:title"
+          content="Hose Pressure Loss Calculator | PressureCal"
+        />
+        <meta
+          name="twitter:description"
+          content="Calculate pressure loss in hoses based on length, internal diameter, and flow rate. Essential tool for accurate pressure washer system setup."
+        />
         <script type="application/ld+json">
           {JSON.stringify({
             "@context": "https://schema.org",
@@ -291,7 +312,7 @@ export default function HosePressureLossCalculator() {
             applicationCategory: "Calculator",
             operatingSystem: "Web",
             description:
-              "Estimate pressure loss in pressure washer hoses based on hose length, diameter, pressure and flow.",
+              "Calculate pressure loss in hoses based on length, internal diameter, and flow rate. Essential tool for accurate pressure washer system setup.",
           })}
         </script>
       </Helmet>
