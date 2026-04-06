@@ -207,6 +207,8 @@ export default function FullRigCalculatorPage() {
   const [lastSavedSetupId, setLastSavedSetupId] = useState<string | null>(null);
   const [sharePanelOpen, setSharePanelOpen] = useState(false);
   const [shareMessage, setShareMessage] = useState("");
+  const [shareLinkCopied, setShareLinkCopied] = useState(false);
+  const [resultSummaryCopied, setResultSummaryCopied] = useState(false);
   const maxWasManuallyEditedRef = useRef(false);
 
   const { loading: proAccessLoading, isAuthenticated, isPro, userId } = useProAccess();
@@ -253,7 +255,7 @@ export default function FullRigCalculatorPage() {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setSharePanelOpen(false);
-        setShareMessage("");
+        resetShareFeedback();
       }
     }
 
@@ -369,11 +371,22 @@ export default function FullRigCalculatorPage() {
   }
 
 
+  function resetShareFeedback() {
+    setShareMessage("");
+    setShareLinkCopied(false);
+    setResultSummaryCopied(false);
+  }
+
   async function handleCopyShareResultLink() {
     try {
       await navigator.clipboard.writeText(shareUrl);
       setShareMessage("Share link copied");
-      window.setTimeout(() => setShareMessage(""), 2000);
+      setShareLinkCopied(true);
+      setResultSummaryCopied(false);
+      window.setTimeout(() => {
+        setShareMessage("");
+        setShareLinkCopied(false);
+      }, 2000);
     } catch {
       window.prompt("Copy this link:", shareUrl);
     }
@@ -383,7 +396,12 @@ export default function FullRigCalculatorPage() {
     try {
       await navigator.clipboard.writeText(shareSummaryText);
       setShareMessage("Result summary copied");
-      window.setTimeout(() => setShareMessage(""), 2000);
+      setResultSummaryCopied(true);
+      setShareLinkCopied(false);
+      window.setTimeout(() => {
+        setShareMessage("");
+        setResultSummaryCopied(false);
+      }, 2000);
     } catch {
       window.prompt("Copy this summary:", shareSummaryText);
     }
@@ -391,12 +409,12 @@ export default function FullRigCalculatorPage() {
 
   function handleOpenSharePanel() {
     setSharePanelOpen(true);
-    setShareMessage("");
+    resetShareFeedback();
   }
 
   function handleCloseSharePanel() {
     setSharePanelOpen(false);
-    setShareMessage("");
+    resetShareFeedback();
   }
 
   function handleOpenSavePanel() {
@@ -1368,14 +1386,14 @@ export default function FullRigCalculatorPage() {
                     onClick={handleCopyShareResultLink}
                     className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
                   >
-                    Copy share link
+                    {shareLinkCopied ? "Copied ✓" : "Copy share link"}
                   </button>
                   <button
                     type="button"
                     onClick={handleCopyResultSummary}
                     className="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
                   >
-                    Copy result summary
+                    {resultSummaryCopied ? "Copied ✓" : "Copy result summary"}
                   </button>
                   <button
                     type="button"
