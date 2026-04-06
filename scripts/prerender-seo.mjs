@@ -24,9 +24,9 @@ const ROUTES = [
   },
   {
     path: "/calculator",
-    title: "Full Rig Calculator | PressureCal",
+    title: "Full Rig Pressure Washer Calculator | PressureCal",
     description:
-      "Full rig calculator for pressure washer setup, including hose loss, nozzle calibration, operating pressure, and power requirement.",
+      "Full rig pressure washer calculator for hose loss, nozzle calibration, at-gun pressure, flow, and power requirement.",
     schema: {
       "@context": "https://schema.org",
       "@type": "WebApplication",
@@ -35,7 +35,7 @@ const ROUTES = [
       applicationCategory: "Calculator",
       operatingSystem: "Web",
       description:
-        "Full rig calculator for pressure washer setup, including hose loss, nozzle calibration, operating pressure, and power requirement."
+        "Full rig pressure washer calculator for hose loss, nozzle calibration, at-gun pressure, flow, and power requirement."
     }
   },
   {
