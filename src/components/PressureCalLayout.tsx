@@ -1,5 +1,6 @@
+import { type ReactNode, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { type ReactNode } from "react";
+import { supabase } from "../lib/supabase-browser";
 import FeedbackWidget from "./FeedbackWidget";
 
 type PressureCalLayoutProps = {
@@ -22,6 +23,53 @@ const legalLinks = [
 ];
 
 export default function PressureCalLayout({ children }: PressureCalLayoutProps) {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadSession() {
+      const { data } = await supabase.auth.getSession();
+
+      if (!mounted) {
+        return;
+      }
+
+      setIsAuthenticated(Boolean(data.session?.user));
+    }
+
+    void loadSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(Boolean(session?.user));
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  async function handleSignOut() {
+    setSigningOut(true);
+
+    try {
+      const { error } = await supabase.auth.signOut();
+
+      if (error) {
+        window.alert(error.message);
+        return;
+      }
+
+      window.location.assign("/");
+    } finally {
+      setSigningOut(false);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
@@ -67,6 +115,32 @@ export default function PressureCalLayout({ children }: PressureCalLayoutProps) 
             >
               Open Full Rig Calculator
             </Link>
+
+            {isAuthenticated ? (
+              <>
+                <Link
+                  to="/account"
+                  className="text-sm font-medium text-slate-600 transition hover:text-slate-900"
+                >
+                  Account
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  disabled={signingOut}
+                  className="inline-flex items-center justify-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {signingOut ? "Signing out..." : "Sign out"}
+                </button>
+              </>
+            ) : (
+              <Link
+                to="/account"
+                className="inline-flex items-center justify-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                Sign in
+              </Link>
+            )}
           </nav>
         </div>
 
@@ -88,6 +162,24 @@ export default function PressureCalLayout({ children }: PressureCalLayoutProps) 
             >
               About
             </Link>
+
+            <Link
+              to="/account"
+              className="whitespace-nowrap rounded-full border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
+            >
+              {isAuthenticated ? "Account" : "Sign in"}
+            </Link>
+
+            {isAuthenticated ? (
+              <button
+                type="button"
+                onClick={handleSignOut}
+                disabled={signingOut}
+                className="whitespace-nowrap rounded-full border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {signingOut ? "Signing out..." : "Sign out"}
+              </button>
+            ) : null}
           </div>
         </div>
       </header>
