@@ -128,6 +128,43 @@ export default function GpmLpmCalculatorPage() {
             name="description"
             content="Convert LPM to GPM and GPM to LPM instantly. Accurate flow rate calculator for pressure washers, pumps, and equipment sizing."
           />
+          <link
+            rel="canonical"
+            href="https://www.pressurecal.com/lpm-gpm-calculator"
+          />
+          <meta
+            property="og:title"
+            content="LPM to GPM Calculator | PressureCal"
+          />
+          <meta
+            property="og:description"
+            content="Convert LPM to GPM and GPM to LPM instantly. Accurate flow rate calculator for pressure washers, pumps, and equipment sizing."
+          />
+          <meta
+            property="og:url"
+            content="https://www.pressurecal.com/lpm-gpm-calculator"
+          />
+          <meta property="og:type" content="website" />
+          <meta
+            name="twitter:title"
+            content="LPM to GPM Calculator | PressureCal"
+          />
+          <meta
+            name="twitter:description"
+            content="Convert LPM to GPM and GPM to LPM instantly. Accurate flow rate calculator for pressure washers, pumps, and equipment sizing."
+          />
+          <script type="application/ld+json">
+            {JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebApplication",
+              name: "LPM to GPM Calculator",
+              url: "https://www.pressurecal.com/lpm-gpm-calculator",
+              applicationCategory: "Calculator",
+              operatingSystem: "Web",
+              description:
+                "Convert LPM to GPM and GPM to LPM instantly. Accurate flow rate calculator for pressure washers, pumps, and equipment sizing.",
+            })}
+          </script>
         </Helmet>
 
         <div className="mx-auto max-w-3xl">

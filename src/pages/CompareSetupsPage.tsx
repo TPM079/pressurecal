@@ -5,10 +5,11 @@ import BackToTopButton from "../components/BackToTopButton";
 import PressureCalLayout from "../components/PressureCalLayout";
 import RequirePro from "../components/RequirePro";
 import { useSavedSetups } from "../hooks/useSavedSetups";
-import { compareSavedSetup, type ComparedSetup } from "../lib/compareSetups";
-import { buildFullRigSearchParams } from "../lib/rigUrlState";
+import { compareCurrentInputs, compareSavedSetup, type ComparedSetup } from "../lib/compareSetups";
+import { buildFullRigSearchParams, parseRigSearchParams } from "../lib/rigUrlState";
 import { savedSetupToInputs } from "../lib/savedSetupToInputs";
 import { supabase } from "../lib/supabase-browser";
+import type { Inputs } from "../pressurecal";
 
 function fmt(value: number, decimals: number) {
   if (!Number.isFinite(value)) {
@@ -103,6 +104,36 @@ function valueClass(
   return "text-slate-900";
 }
 
+function parseLiveInputsFromSearchParams(searchParams: URLSearchParams): Partial<Inputs> {
+  const rigParams = new URLSearchParams();
+
+  const keys = [
+    "pumpPressure",
+    "pumpPressureUnit",
+    "pumpFlow",
+    "pumpFlowUnit",
+    "maxPressure",
+    "maxPressureUnit",
+    "hoseLength",
+    "hoseLengthUnit",
+    "hoseId",
+    "hoseIdUnit",
+    "engineHp",
+    "sprayMode",
+    "nozzleCount",
+    "nozzleSizeText",
+  ];
+
+  keys.forEach((key) => {
+    const value = searchParams.get(`live_${key}`);
+    if (value !== null && value !== "") {
+      rigParams.set(key, value);
+    }
+  });
+
+  return parseRigSearchParams(rigParams.toString());
+}
+
 export default function CompareSetupsPage() {
   const [authUserId, setAuthUserId] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -138,24 +169,34 @@ export default function CompareSetupsPage() {
 
   const { setups, isReady, getSetupById } = useSavedSetups(authUserId);
 
+  const liveMode = searchParams.get("live") === "1";
+  const liveName = (searchParams.get("liveName") || "").trim() || "Current calculator";
+  const liveInputs = useMemo(
+    () => (liveMode ? parseLiveInputsFromSearchParams(searchParams) : null),
+    [liveMode, searchParams]
+  );
+
   const setupAId = searchParams.get("a") ?? "";
   const setupBId = searchParams.get("b") ?? "";
 
   useEffect(() => {
-    if (!isReady || setups.length < 2) {
+    if (!isReady || setups.length === 0) {
       return;
     }
 
     const next = new URLSearchParams(searchParams);
     let changed = false;
 
-    if (!setupAId) {
+    if (!liveMode && !setupAId) {
       next.set("a", setups[0].id);
       changed = true;
     }
 
     if (!setupBId) {
-      const fallbackB = setups.find((setup) => setup.id !== (next.get("a") ?? "")) ?? setups[1];
+      const fallbackB = liveMode
+        ? setups[0]
+        : setups.find((setup) => setup.id !== (next.get("a") ?? "")) ?? setups[1];
+
       if (fallbackB) {
         next.set("b", fallbackB.id);
         changed = true;
@@ -165,11 +206,11 @@ export default function CompareSetupsPage() {
     if (changed) {
       setSearchParams(next, { replace: true });
     }
-  }, [isReady, searchParams, setSearchParams, setupAId, setupBId, setups]);
+  }, [isReady, liveMode, searchParams, setSearchParams, setupAId, setupBId, setups]);
 
   const setupA = useMemo(
-    () => (setupAId ? getSetupById(setupAId) : null),
-    [getSetupById, setupAId]
+    () => (!liveMode && setupAId ? getSetupById(setupAId) : null),
+    [getSetupById, liveMode, setupAId]
   );
 
   const setupB = useMemo(
@@ -177,8 +218,16 @@ export default function CompareSetupsPage() {
     [getSetupById, setupBId]
   );
 
-  const comparedA = useMemo(() => (setupA ? compareSavedSetup(setupA) : null), [setupA]);
+  const comparedA = useMemo(() => {
+    if (liveMode && liveInputs) {
+      return compareCurrentInputs(liveInputs, liveName);
+    }
+
+    return setupA ? compareSavedSetup(setupA) : null;
+  }, [liveInputs, liveMode, liveName, setupA]);
+
   const comparedB = useMemo(() => (setupB ? compareSavedSetup(setupB) : null), [setupB]);
+
   const verdicts = useMemo(
     () => (comparedA && comparedB ? verdictRows(comparedA, comparedB) : []),
     [comparedA, comparedB]
@@ -191,6 +240,10 @@ export default function CompareSetupsPage() {
   }
 
   function swapSetups() {
+    if (liveMode) {
+      return;
+    }
+
     const next = new URLSearchParams(searchParams);
     next.set("a", setupBId);
     next.set("b", setupAId);
@@ -338,7 +391,7 @@ export default function CompareSetupsPage() {
         <title>Compare Setups | PressureCal Pro</title>
         <meta
           name="description"
-          content="Compare two saved pressure washer setups side by side with PressureCal Pro."
+          content="Compare two pressure washer setups side by side with PressureCal Pro."
         />
       </Helmet>
 
@@ -352,8 +405,7 @@ export default function CompareSetupsPage() {
               Compare Setups
             </h1>
             <p className="mt-5 text-lg leading-8 text-slate-300">
-              Compare two saved setups side by side so it is easier to see pressure,
-              hose loss, nozzle match, and overall performance differences.
+              Compare a live calculator snapshot against a saved setup, or compare two saved setups side by side.
             </p>
           </div>
         </div>
@@ -412,32 +464,46 @@ export default function CompareSetupsPage() {
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
               <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                 <div className="grid flex-1 gap-5 md:grid-cols-2">
-                  <label className="block">
-                    <span className="text-sm font-semibold text-slate-800">Setup A</span>
-                    <select
-                      value={setupAId}
-                      onChange={(event) => updateSelection("a", event.target.value)}
-                      disabled={authLoading || !isReady || setups.length === 0}
-                      className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
-                    >
-                      <option value="">Select setup A</option>
-                      {setups.map((setup) => (
-                        <option key={setup.id} value={setup.id}>
-                          {setup.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  {liveMode ? (
+                    <div className="rounded-2xl border border-slate-300 bg-slate-50 px-4 py-4">
+                      <span className="text-sm font-semibold text-slate-800">Setup A</span>
+                      <div className="mt-2 rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                        <div className="text-sm font-semibold text-slate-950">{liveName}</div>
+                        <div className="mt-1 text-sm text-slate-600">
+                          Live calculator snapshot loaded from the compare link.
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <label className="block">
+                      <span className="text-sm font-semibold text-slate-800">Setup A</span>
+                      <select
+                        value={setupAId}
+                        onChange={(event) => updateSelection("a", event.target.value)}
+                        disabled={authLoading || !isReady || setups.length === 0}
+                        className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                      >
+                        <option value="">Select setup A</option>
+                        {setups.map((setup) => (
+                          <option key={setup.id} value={setup.id}>
+                            {setup.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
 
                   <label className="block">
-                    <span className="text-sm font-semibold text-slate-800">Setup B</span>
+                    <span className="text-sm font-semibold text-slate-800">
+                      {liveMode ? "Saved setup" : "Setup B"}
+                    </span>
                     <select
                       value={setupBId}
                       onChange={(event) => updateSelection("b", event.target.value)}
                       disabled={authLoading || !isReady || setups.length === 0}
                       className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
                     >
-                      <option value="">Select setup B</option>
+                      <option value="">{liveMode ? "Select saved setup" : "Select setup B"}</option>
                       {setups.map((setup) => (
                         <option key={setup.id} value={setup.id}>
                           {setup.name}
@@ -448,36 +514,49 @@ export default function CompareSetupsPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    onClick={swapSetups}
-                    disabled={!setupAId || !setupBId}
-                    className="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    Swap setups
-                  </button>
+                  {!liveMode ? (
+                    <button
+                      type="button"
+                      onClick={swapSetups}
+                      disabled={!setupAId || !setupBId}
+                      className="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      Swap setups
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     onClick={copyCompareLink}
-                    disabled={!setupAId || !setupBId}
+                    disabled={liveMode ? !setupBId : !setupAId || !setupBId}
                     className="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {copiedCompareLink ? "Copied ✓" : "Copy compare link"}
                   </button>
                   <Link
-                    to="/saved-setups"
+                    to={liveMode ? "/calculator" : "/saved-setups"}
                     className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
                   >
-                    Back to Saved Setups
+                    {liveMode ? "Back to calculator" : "Back to Saved Setups"}
                   </Link>
                 </div>
               </div>
 
-              {isReady && setups.length < 2 ? (
+              {liveMode ? (
+                <div className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 p-4">
+                  <p className="text-sm font-semibold text-blue-900">Live compare mode</p>
+                  <p className="mt-2 text-sm leading-6 text-blue-800">
+                    Setup A is your current calculator state. Choose one saved setup to compare it against.
+                  </p>
+                </div>
+              ) : null}
+
+              {isReady && setups.length < (liveMode ? 1 : 2) ? (
                 <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6">
-                  <p className="text-sm font-semibold text-slate-900">You need at least two saved setups</p>
+                  <p className="text-sm font-semibold text-slate-900">
+                    {liveMode ? "You need at least one saved setup" : "You need at least two saved setups"}
+                  </p>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
-                    Save another setup first, then come back to compare them.
+                    Save {liveMode ? "a" : "another"} setup first, then come back to compare.
                   </p>
                 </div>
               ) : null}
@@ -488,7 +567,7 @@ export default function CompareSetupsPage() {
                 <div className="mt-6 grid gap-6 lg:grid-cols-2">
                   {[comparedA, comparedB].map((item, index) => (
                     <article
-                      key={item.setup.id}
+                      key={`${item.setup.id}-${index}`}
                       className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8"
                     >
                       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -640,9 +719,13 @@ export default function CompareSetupsPage() {
               </>
             ) : (
               <div className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center shadow-sm">
-                <h2 className="text-2xl font-bold text-slate-950">Select two setups to compare</h2>
+                <h2 className="text-2xl font-bold text-slate-950">
+                  {liveMode ? "Select a saved setup to compare" : "Select two setups to compare"}
+                </h2>
                 <p className="mt-3 text-base leading-7 text-slate-600">
-                  Pick a setup in both dropdowns above and PressureCal will generate a side-by-side comparison.
+                  {liveMode
+                    ? "Choose one saved setup above and PressureCal will compare it against your current calculator snapshot."
+                    : "Pick a setup in both dropdowns above and PressureCal will generate a side-by-side comparison."}
                 </p>
               </div>
             )}

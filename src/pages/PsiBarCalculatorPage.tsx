@@ -128,6 +128,43 @@ export default function PsiBarCalculatorPage() {
             name="description"
             content="Convert PSI to BAR and BAR to PSI instantly. Accurate pressure conversion calculator for pressure washing equipment, pumps, and system setup."
           />
+          <link
+            rel="canonical"
+            href="https://www.pressurecal.com/psi-bar-calculator"
+          />
+          <meta
+            property="og:title"
+            content="PSI to BAR Calculator | PressureCal"
+          />
+          <meta
+            property="og:description"
+            content="Convert PSI to BAR and BAR to PSI instantly. Accurate pressure conversion calculator for pressure washing equipment, pumps, and system setup."
+          />
+          <meta
+            property="og:url"
+            content="https://www.pressurecal.com/psi-bar-calculator"
+          />
+          <meta property="og:type" content="website" />
+          <meta
+            name="twitter:title"
+            content="PSI to BAR Calculator | PressureCal"
+          />
+          <meta
+            name="twitter:description"
+            content="Convert PSI to BAR and BAR to PSI instantly. Accurate pressure conversion calculator for pressure washing equipment, pumps, and system setup."
+          />
+          <script type="application/ld+json">
+            {JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebApplication",
+              name: "PSI to BAR Calculator",
+              url: "https://www.pressurecal.com/psi-bar-calculator",
+              applicationCategory: "Calculator",
+              operatingSystem: "Web",
+              description:
+                "Convert PSI to BAR and BAR to PSI instantly. Accurate pressure conversion calculator for pressure washing equipment, pumps, and system setup.",
+            })}
+          </script>
         </Helmet>
 
         <div className="mx-auto max-w-3xl">
@@ -347,11 +384,11 @@ export default function PsiBarCalculatorPage() {
               </h3>
               <div className="mt-3 flex flex-wrap gap-3">
                 <Link
-  to="/lpm-gpm-calculator"
-  className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 active:scale-[0.98]"
->
-  LPM ↔ GPM Calculator
-</Link>
+                  to="/lpm-gpm-calculator"
+                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 active:scale-[0.98]"
+                >
+                  LPM ↔ GPM Calculator
+                </Link>
 
                 <Link
                   to="/nozzle-size-calculator"
