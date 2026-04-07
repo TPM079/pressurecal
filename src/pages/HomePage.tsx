@@ -23,61 +23,43 @@ type ToolCard = {
   title: string;
   description: string;
   cta: string;
-  span?: string;
 };
 
 const trustBarItems = [
   "Real-world setup modelling",
   "Australian-first defaults (PSI + LPM)",
-  "Built for working operators",
+  "Built for real operators",
 ];
 
 const toolCards: ToolCard[] = [
   {
+    href: "/calculator",
+    title: "Full Rig Calculator",
+    description:
+      "Model the whole setup in one place, including nozzle match, hose loss, operating pressure, flow, and power requirement.",
+    cta: "Open full calculator →",
+  },
+  {
     href: "/nozzle-size-calculator",
     title: "Nozzle Size Calculator",
     description:
-      "Find the right tip size for your pump output before you buy, swap, or refine the wider setup.",
+      "Estimate the right tip size from pressure and flow before you buy, swap, or troubleshoot.",
     cta: "Open tool →",
   },
   {
     href: "/hose-pressure-loss-calculator",
     title: "Hose Pressure Loss Calculator",
     description:
-      "Estimate real pressure drop from hose length, hose ID, and flow instead of relying on rough rules of thumb.",
-    cta: "Open tool →",
-  },
-  {
-    href: "/psi-bar-calculator",
-    title: "PSI ↔ BAR Calculator",
-    description:
-      "Convert pressure quickly for machine specs, gauges, labels, and compliance references.",
-    cta: "Open tool →",
-  },
-  {
-    href: "/lpm-gpm-calculator",
-    title: "LPM ↔ GPM Calculator",
-    description:
-      "Convert flow rates instantly for pumps, injectors, nozzles, and hose loss checks.",
+      "Estimate pressure drop from hose length, hose ID, and flow instead of relying on rough rules of thumb.",
     cta: "Open tool →",
   },
   {
     href: "/nozzle-size-chart",
     title: "Nozzle Size Chart",
     description:
-      "Use a quick dual-unit field chart across standard and high-pressure ranges.",
+      "Use a quick field reference for common pressure and flow combinations in PSI, BAR, LPM, and GPM.",
     cta: "Open chart →",
-    span: "sm:col-span-2",
   },
-];
-
-const featureBadges = [
-  "Full setup modelling",
-  "Nozzle sizing",
-  "Hose pressure loss",
-  "PSI ↔ BAR conversion",
-  "LPM ↔ GPM conversion",
-  "Nozzle size chart",
 ];
 
 const proFeatures = [
@@ -421,15 +403,19 @@ export default function HomePage() {
       </Helmet>
 
       <section className="-mx-4 -mt-8 overflow-hidden border-b border-slate-200 bg-white px-4 sm:-mt-10">
-        <div className="mx-auto grid max-w-6xl items-center gap-10 py-14 sm:py-16 lg:grid-cols-[1.08fr_0.92fr]">
+        <div className="mx-auto grid max-w-6xl items-center gap-10 py-14 sm:py-16 lg:grid-cols-[1.05fr_0.95fr]">
           <div>
-            <h1 className="max-w-3xl text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
-              Stop guessing your pressure washer setup.
+            <div className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm font-medium text-slate-600">
+              Built for real operators
+            </div>
+
+            <h1 className="mt-6 max-w-3xl text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
+              Pressure washer setup modelling for real operators
             </h1>
 
             <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600 sm:text-xl">
-              Model nozzle size, hose loss, and real at-gun pressure in one place so you
-              can make better setup decisions with less guesswork.
+              Model your machine from pump to gun. Estimate nozzle size, hose pressure
+              loss, at-gun pressure, flow, and bypass behaviour in one place.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -438,7 +424,7 @@ export default function HomePage() {
                 onClick={scrollToCalculator}
                 className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
               >
-                Start your setup
+                Start Modelling
               </button>
 
               <Link
@@ -455,31 +441,22 @@ export default function HomePage() {
               </Link>
             </div>
 
-            <p className="mt-4 text-sm text-slate-500">
-              Built for working pressure washing operators.
-            </p>
-
-            <div className="mt-8 grid gap-4 sm:grid-cols-3">
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
               {[
-                {
-                  title: "Real hose loss",
-                  description:
-                    "Quantify pressure drop from hose length and hose ID instead of guessing what the line is costing you.",
-                },
                 {
                   title: "Nozzle match",
                   description:
                     "See whether your tip is the right size for the machine — or costing you performance.",
                 },
                 {
-                  title: "At-gun performance",
+                  title: "Real hose loss",
                   description:
-                    "See the pressure and flow that matter where the work happens — at the gun.",
+                    "Estimate what hose length and hose ID are taking away before the water reaches the gun.",
                 },
               ].map((item) => (
                 <div
                   key={item.title}
-                  className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm"
+                  className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
                 >
                   <p className="text-sm font-semibold text-slate-950">{item.title}</p>
                   <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
@@ -559,17 +536,28 @@ export default function HomePage() {
                   </div>
                 </div>
               </div>
+
+              <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p className="text-xs uppercase tracking-[0.14em] text-slate-300">
+                  Why it matters
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-300">
+                  Small changes in hose, nozzle, and setup can shift real working
+                  performance. PressureCal helps you model the full picture before you
+                  make changes in the field.
+                </p>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       <section className="border-b border-slate-200 bg-slate-950 text-white">
-        <div className="mx-auto grid max-w-6xl gap-4 px-4 py-5 sm:grid-cols-3">
+        <div className="mx-auto grid max-w-6xl gap-3 px-4 py-4 sm:grid-cols-3">
           {trustBarItems.map((item) => (
             <div
               key={item}
-              className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-sm font-medium text-slate-100"
+              className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-slate-100"
             >
               {item}
             </div>
@@ -581,70 +569,56 @@ export default function HomePage() {
         <div className="mx-auto max-w-6xl px-4 py-14">
           <div className="max-w-4xl">
             <h2 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-              What PressureCal helps you calculate
+              Stop guessing what your setup is really doing
             </h2>
             <p className="mt-4 text-lg leading-8 text-slate-600">
-              PressureCal is a pressure washer calculator built to help operators model
-              nozzle size, hose pressure loss, and real at-gun performance before buying,
-              swapping, or troubleshooting parts. Instead of stopping at a simple conversion
-              or generic chart, it helps connect pump pressure, flow, hose length, hose ID,
-              and nozzle choice into one practical setup picture.
-            </p>
-            <p className="mt-4 text-base leading-7 text-slate-600">
-              Use the homepage calculator for a fast answer, then jump into the individual
-              tools when you want to check one part of the setup more closely.
+              Machine specs only tell part of the story. Hose length, hose ID, nozzle size,
+              and system setup all affect real working performance. PressureCal helps you
+              estimate how your setup behaves from pump to gun, so you can make better
+              decisions with more confidence.
             </p>
           </div>
 
-          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {[
-              {
-                title: "Nozzle Size Calculator",
-                description:
-                  "Work out the right tip size from rated pressure and flow before you guess, buy, or swap nozzles.",
-                href: "/nozzle-size-calculator",
-              },
-              {
-                title: "Hose Pressure Loss Calculator",
-                description:
-                  "Estimate how much pressure you are losing through hose length and hose internal diameter.",
-                href: "/hose-pressure-loss-calculator",
-              },
-              {
-                title: "Full Rig Calculator",
-                description:
-                  "Model the whole pressure washer setup including hose loss, nozzle match, operating pressure, and flow.",
-                href: fullRigHref,
-              },
-              {
-                title: "PSI ↔ BAR Calculator",
-                description:
-                  "Convert pressure quickly for machine specs, gauges, labels, and compliance references.",
-                href: "/psi-bar-calculator",
-              },
-              {
-                title: "LPM ↔ GPM Calculator",
-                description:
-                  "Convert flow rates instantly for pumps, injectors, nozzles, and hose loss checks.",
-                href: "/lpm-gpm-calculator",
-              },
-              {
-                title: "Nozzle Size Chart",
-                description:
-                  "Use a quick field chart for common pressure and flow combinations in PSI, BAR, LPM, and GPM.",
-                href: "/nozzle-size-chart",
-              },
-            ].map((item) => (
+          <div className="mt-10 grid gap-5 sm:grid-cols-2">
+            {toolCards.map((item) => (
               <Link
                 key={item.title}
-                to={item.href}
+                to={item.href === "/calculator" ? fullRigHref : item.href}
+                onClick={() =>
+                  trackEvent("homepage_tool_clicked", {
+                    page: "home",
+                    tool: item.title,
+                  })
+                }
                 className="rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-white hover:shadow-md"
               >
                 <h3 className="text-xl font-semibold text-slate-950">{item.title}</h3>
                 <p className="mt-3 text-sm leading-6 text-slate-600">{item.description}</p>
-                <p className="mt-5 text-sm font-semibold text-slate-950">Open tool →</p>
+                <p className="mt-5 text-sm font-semibold text-slate-950">{item.cta}</p>
               </Link>
             ))}
+          </div>
+
+          <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+              More quick converters
+            </p>
+
+            <div className="mt-2 flex flex-col gap-2 text-sm">
+              <Link
+                to="/psi-bar-calculator"
+                className="font-medium text-slate-700 hover:text-slate-950"
+              >
+                PSI ↔ BAR Converter
+              </Link>
+
+              <Link
+                to="/lpm-gpm-calculator"
+                className="font-medium text-slate-700 hover:text-slate-950"
+              >
+                LPM ↔ GPM Converter
+              </Link>
+            </div>
           </div>
         </div>
       </section>
@@ -666,7 +640,7 @@ export default function HomePage() {
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <h3 className="mt-2 text-2xl font-semibold text-slate-950">Core inputs</h3>
+                  <h3 className="text-2xl font-semibold text-slate-950">Core inputs</h3>
                 </div>
 
                 <Link
@@ -801,7 +775,7 @@ export default function HomePage() {
                     Hose length ({inputs.hoseLengthUnit})
                   </label>
                   <p className="mt-1 text-xs leading-5 text-slate-500">
-                    Assumes 9.53 mm (3/8") hose ID
+                    Assumes 9.53 mm (3/8&quot;) hose ID
                   </p>
                   <div className="mt-2 flex gap-3">
                     <input
@@ -852,9 +826,13 @@ export default function HomePage() {
                   {recommendedTip}
                 </p>
                 <p className="mt-3 text-sm text-slate-600">
-                  Rated flow <span className="font-semibold text-slate-900">{fmt(flowLpm, 1)} LPM</span>
+                  Rated flow{" "}
+                  <span className="font-semibold text-slate-900">{fmt(flowLpm, 1)} LPM</span>
                   {" · "}
-                  Estimated hose loss <span className="font-semibold text-slate-900">{fmt(solved.hoseLossPsi, 0)} PSI</span>
+                  Estimated hose loss{" "}
+                  <span className="font-semibold text-slate-900">
+                    {fmt(solved.hoseLossPsi, 0)} PSI
+                  </span>
                 </p>
 
                 <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
@@ -924,9 +902,7 @@ export default function HomePage() {
               </div>
 
               <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h3 className="mt-3 text-xl font-semibold text-slate-950">
-                  System details
-                </h3>
+                <h3 className="text-xl font-semibold text-slate-950">System details</h3>
 
                 <div className="mt-5 grid gap-4 sm:grid-cols-2">
                   <div className="rounded-2xl border border-slate-200 p-4">
@@ -973,7 +949,8 @@ export default function HomePage() {
                         : `${fmt(reqPumpBar, 1)} BAR`}
                     </p>
                     <p className="mt-1 text-sm text-slate-600">
-                      Pump pressure shown {inputs.pumpPressureUnit === "psi"
+                      Pump pressure shown{" "}
+                      {inputs.pumpPressureUnit === "psi"
                         ? `${fmt(solved.pumpPressurePsi, 0)} PSI`
                         : `${fmt(pumpBar, 1)} BAR`}
                     </p>
@@ -990,12 +967,11 @@ export default function HomePage() {
           <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
             <div className="max-w-2xl">
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                Save the setups you trust
+                Save your setups and build a better workflow
               </h2>
               <p className="mt-4 text-base leading-7 text-slate-300 sm:text-lg">
-                The core calculator is free and useful on its own. PressureCal Pro helps
-                regular operators save proven setups, compare changes, and keep repeat-job
-                configurations organised.
+                PressureCal Pro helps regular operators save proven setups, compare changes,
+                and keep repeat-job configurations organised.
               </p>
 
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
@@ -1004,185 +980,74 @@ export default function HomePage() {
                   onClick={() =>
                     trackEvent("pro_bridge_clicked", {
                       page: "home",
-                      location: "pro_bridge",
+                      location: "pro_section",
                     })
                   }
                   className="inline-flex items-center justify-center rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-200"
                 >
-                  See PressureCal Pro
+                  Explore PressureCal Pro
                 </Link>
+
                 <Link
-                  to={fullRigHref}
+                  to="/saved-setups"
                   onClick={() =>
-                    trackEvent("open_full_setup_calculator_clicked", {
+                    trackEvent("saved_setups_page_clicked", {
                       page: "home",
-                      location: "pro_bridge",
+                      location: "pro_section",
                     })
                   }
                   className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
                 >
-                  Open full setup calculator
+                  View saved setups
                 </Link>
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              {proFeatures.map((item) => (
-                <div
-                  key={item}
-                  className="rounded-3xl border border-white/10 bg-white/5 p-5"
-                >
-                  <p className="text-base font-semibold text-white">{item}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-300">
+                PressureCal Pro
+              </p>
 
-      <section id="about" className="border-b border-slate-200 bg-white">
-        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-16 lg:grid-cols-2">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-              Most tools stop at charts. Real setup decisions do not.
-            </h2>
-            <p className="mt-4 text-lg leading-8 text-slate-600">
-              Pressure washer calculators often stop at simple conversions. They can
-              swap PSI for BAR or GPM for LPM, but they do not tell you how the full
-              setup will actually perform.
-            </p>
-            <ul className="mt-6 space-y-3 text-base leading-7 text-slate-700">
-              <li>• What pressure am I actually getting at the gun?</li>
-              <li>• Is my nozzle correctly matched?</li>
-              <li>• How much is my hose reducing performance?</li>
-              <li>• What changes before I buy a different nozzle, hose, or accessory?</li>
-            </ul>
-            <p className="mt-6 text-lg font-semibold text-slate-950">
-              Because your setup is not just numbers — it is connected.
-            </p>
-          </div>
-
-          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm">
-            <h2 className="text-3xl font-bold tracking-tight text-slate-950">
-              PressureCal models the whole setup.
-            </h2>
-
-            <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-6">
-              <div className="grid gap-3 text-center sm:grid-cols-4">
-                {[
-                  "Pump",
-                  "Hose",
-                  "Nozzle",
-                  "Gun",
-                ].map((item, index) => (
+              <div className="mt-5 grid gap-3">
+                {proFeatures.map((feature) => (
                   <div
-                    key={item}
-                    className="relative rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                    key={feature}
+                    className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-sm text-slate-100"
                   >
-                    <p className="text-sm font-semibold text-slate-950">{item}</p>
-                    {index < 3 ? (
-                      <span className="absolute -right-3 top-1/2 hidden -translate-y-1/2 text-slate-400 sm:block">
-                        →
-                      </span>
-                    ) : null}
+                    {feature}
                   </div>
                 ))}
               </div>
             </div>
-
-            <div className="mt-8 space-y-4 text-base leading-7 text-slate-600">
-              <p>PressureCal shows how each part of the setup affects the others:</p>
-              <ul className="space-y-3 text-slate-700">
-                <li>• Pump sets available flow</li>
-                <li>• Nozzle determines operating pressure</li>
-                <li>• Hose introduces real pressure loss</li>
-                <li>• The result shows likely performance where the work happens</li>
-              </ul>
-            </div>
-
-            <p className="mt-6 text-lg font-semibold text-slate-950">
-              See what your machine is actually doing — not just what it is rated for.
-            </p>
           </div>
         </div>
       </section>
 
       <section className="border-b border-slate-200 bg-white">
-        <div className="mx-auto max-w-6xl px-4 py-16">
+        <div className="mx-auto max-w-6xl px-4 py-14">
           <div className="max-w-3xl">
             <h2 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-              More tools for real setup decisions
+              Better setup decisions start with better estimates
             </h2>
             <p className="mt-4 text-lg leading-8 text-slate-600">
-              Start with the quick calculator here, then use these tools when you want
-              to check one part of the setup in more detail before you buy, swap, or
-              troubleshoot parts.
+              PressureCal helps operators move beyond rough guesses by connecting pressure,
+              flow, hose loss, and nozzle choice into one practical setup picture.
             </p>
           </div>
 
-          <div className="mt-10 flex flex-wrap gap-3">
-            {featureBadges.map((item) => (
-              <div
-                key={item}
-                className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-900"
-              >
-                {item}
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-10 grid gap-5 sm:grid-cols-2">
-            {toolCards.map((tool) => (
-              <Link
-                key={tool.href}
-                to={tool.href}
-                className={`group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md ${tool.span ?? ""}`}
-              >
-                <h3 className="text-xl font-semibold text-slate-950 group-hover:text-blue-700">
-                  {tool.title}
-                </h3>
-                <p className="mt-3 text-sm leading-6 text-slate-600">{tool.description}</p>
-                <p className="mt-5 text-sm font-semibold text-slate-950">{tool.cta}</p>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="border-b border-slate-200 bg-slate-50/70">
-        <div className="mx-auto max-w-6xl px-4 py-16">
-          <div className="max-w-3xl">
-            <h2 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-              Pressure washer calculator FAQ
-            </h2>
-            <p className="mt-4 text-lg leading-8 text-slate-600">
-              These are some of the most common setup questions operators ask when
-              pressure, flow, hose loss, and nozzle sizing do not seem to line up in the field.
-            </p>
-          </div>
-
-          <div className="mt-10 grid gap-5 lg:grid-cols-2">
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-slate-950">
-                What does a pressure washer calculator do?
-              </h3>
-              <p className="mt-3 text-sm leading-7 text-slate-600">
-                A pressure washer calculator helps estimate the relationship between pump pressure,
-                flow rate, hose loss, nozzle size, and real operating performance. PressureCal goes
-                beyond simple unit conversions by helping you see what the machine is likely doing
-                at the gun, not just what it is rated for at the pump.
-              </p>
-            </div>
-
+          <div className="mt-10 grid gap-5 md:grid-cols-2">
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
               <h3 className="text-lg font-semibold text-slate-950">
                 How do I calculate the right nozzle size?
               </h3>
               <p className="mt-3 text-sm leading-7 text-slate-600">
-                The correct nozzle size depends on both pressure and flow. If the nozzle is too small,
-                pressure can climb and engine load can increase. If the nozzle is too large, pressure can
-                drop and cleaning performance can feel weak. The{" "}
-                <Link to="/nozzle-size-calculator" className="font-semibold text-slate-900 underline hover:text-slate-700">
+                The correct nozzle size depends on both pressure and flow. If the nozzle is
+                too small, pressure can climb and engine load can increase. If the nozzle is
+                too large, pressure can drop and cleaning performance can feel weak. The{" "}
+                <Link
+                  to="/nozzle-size-calculator"
+                  className="font-semibold text-slate-900 underline hover:text-slate-700"
+                >
                   Nozzle Size Calculator
                 </Link>{" "}
                 is the fastest way to check this.
@@ -1194,22 +1059,11 @@ export default function HomePage() {
                 Why is my pressure lower at the gun than at the pump?
               </h3>
               <p className="mt-3 text-sm leading-7 text-slate-600">
-                Real pressure at the gun is lower when hose friction, hose length, hose internal diameter,
-                fittings, or nozzle selection reduce the available pressure between the pump and the gun.
-                That is why a setup can look fine on paper but feel weaker in the field. PressureCal helps
-                model that difference directly.
-              </p>
-            </div>
-
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-slate-950">
-                What PSI and LPM should I use for setup decisions?
-              </h3>
-              <p className="mt-3 text-sm leading-7 text-slate-600">
-                Use the rated machine pressure and rated machine flow as your starting point, then check how
-                hose length, hose ID, and nozzle choice change the real operating point. PressureCal is designed
-                around the way working operators compare PSI and LPM in the field, while still making BAR and GPM
-                easy to use where needed.
+                Real pressure at the gun is lower when hose friction, hose length, hose
+                internal diameter, fittings, or nozzle selection reduce the available
+                pressure between the pump and the gun. That is why a setup can look fine on
+                paper but feel weaker in the field. PressureCal helps model that difference
+                directly.
               </p>
             </div>
           </div>
@@ -1220,21 +1074,22 @@ export default function HomePage() {
         <div className="mx-auto grid max-w-6xl gap-8 px-4 py-16 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="max-w-3xl">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Make better setup decisions with confidence
+              Ready to model your setup?
             </h2>
             <p className="mt-4 text-base leading-7 text-slate-300">
-              Use PressureCal free to check your setup before you buy, swap, or
-              troubleshoot parts.
+              Start with the free calculator to check pressure, hose loss, and nozzle match
+              before you buy, swap, or troubleshoot parts.
             </p>
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Link
-              to="/#calculator"
+            <button
+              type="button"
+              onClick={scrollToCalculator}
               className="inline-flex items-center justify-center rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-200"
             >
-              Start your setup
-            </Link>
+              Start Modelling
+            </button>
             <Link
               to={fullRigHref}
               className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
