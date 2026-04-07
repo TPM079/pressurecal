@@ -635,71 +635,64 @@ export default function FullRigCalculatorPage() {
               </div>
             </div>
 
-{comparePanelOpen ? (
-  <div className="mt-5">
-    {!proAccessLoading && !isAuthenticated ? (
-      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-        <p className="text-sm text-slate-700">
-          Sign in to compare your live calculator against a saved setup.
-        </p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Link
-            to="/account"
-            className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
-          >
-            Sign in
-          </Link>
-          <button
-            type="button"
-            onClick={handleCloseComparePanel}
-            className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
-    ) : !proAccessLoading && isAuthenticated && !isPro ? (
-      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-        <p className="text-sm text-slate-700">
-          Compare to saved is part of PressureCal Pro.
-        </p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Link
-            to="/pro"
-            className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
-          >
-            View PressureCal Pro
-          </Link>
-          <button
-            type="button"
-            onClick={handleCloseComparePanel}
-            className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
-    ) : (
-      <CompactCurrentVsSavedComparePanel
-        currentSetupTitle="Current calculator"
-        currentSetupSummary={suggestedSetupName}
-        selectedSavedSetupId={compareTargetSetupId}
-        savedSetupOptions={setups.map((setup) => ({
-          id: setup.id,
-          label: setup.name,
-        }))}
-        onSavedSetupChange={setCompareTargetSetupId}
-        snapshotItems={compactCompareSnapshotItems}
-        onCompare={() => {
-          if (!compareTargetSetupId || !liveCompareHref) return;
-          window.location.href = liveCompareHref;
-        }}
-        onCancel={handleCloseComparePanel}
-        compareDisabled={!compareTargetSetupId}
-      />
-    )}
-  </div>
-) : null}
+            {comparePanelOpen ? (
+              <div className="mt-5">
+                {!proAccessLoading && !isAuthenticated ? (
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-sm text-slate-700">Sign in to compare your live calculator against a saved setup.</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Link
+                        to="/account"
+                        className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+                      >
+                        Sign in
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={handleCloseComparePanel}
+                        className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : !proAccessLoading && isAuthenticated && !isPro ? (
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-sm text-slate-700">Compare to saved is part of PressureCal Pro.</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Link
+                        to="/pro"
+                        className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+                      >
+                        View PressureCal Pro
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={handleCloseComparePanel}
+                        className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <CompactCurrentVsSavedComparePanel
+                    currentSetupTitle="Current calculator"
+                    currentSetupSummary={suggestedSetupName}
+                    selectedSavedSetupId={compareTargetSetupId}
+                    savedSetupOptions={setups.map((setup) => ({ id: setup.id, label: setup.name }))}
+                    onSavedSetupChange={setCompareTargetSetupId}
+                    snapshotItems={compactCompareSnapshotItems}
+                    onCompare={() => {
+                      if (!compareTargetSetupId || !liveCompareHref) return;
+                      window.location.href = liveCompareHref;
+                    }}
+                    onCancel={handleCloseComparePanel}
+                    compareDisabled={!compareTargetSetupId}
+                  />
+                )}
+              </div>
+            ) : null}
 
             {savePanelOpen ? (
               <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
@@ -890,14 +883,16 @@ export default function FullRigCalculatorPage() {
                 What this full rig calculator models
               </h2>
               <p className="mt-3 text-sm leading-7 text-slate-600">
-                Use this calculator when you want more than a quick conversion or chart. It models machine
-                pressure, machine flow, hose length, hose internal diameter, nozzle size, and optional engine
-                power so you can estimate the real operating point at the gun.
+                This full rig pressure washer calculator is designed for operators who want to understand
+                how the whole setup behaves, not just one number at a time. It combines machine pressure,
+                machine flow, hose length, hose internal diameter, nozzle size, and optional engine power
+                so you can estimate the real operating point at the gun.
               </p>
               <p className="mt-4 text-sm leading-7 text-slate-600">
-                It is especially useful when a setup feels weak at the gun, when hose runs are long, when
-                surface cleaner nozzle counts change the required tip size, or when you want to compare rated
-                pump pressure with the pressure you are likely to see while working.
+                Use this page when a simple nozzle chart or conversion tool is not enough. It is especially
+                useful when the machine feels weak at the gun, when hose runs are long, when surface cleaner
+                nozzle counts change the required tip size, or when you want to compare rated pump pressure
+                with the pressure you are likely to see while working.
               </p>
               <div className="mt-5 flex flex-wrap gap-3">
                 <Link to="/nozzle-size-calculator" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
@@ -1100,19 +1095,30 @@ export default function FullRigCalculatorPage() {
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-slate-800">Nozzle count</label>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    min={inputs.sprayMode === "surfaceCleaner" ? 2 : 1}
-                    value={inputs.nozzleCount}
-                    onChange={(event) =>
-                      updateInput("nozzleCount", Math.max(inputs.sprayMode === "surfaceCleaner" ? 2 : 1, Number(event.target.value || 1)) as Inputs["nozzleCount"])
-                    }
-                    className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
-                  />
-                </div>
+                {inputs.sprayMode === "surfaceCleaner" ? (
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-800">Nozzle count</label>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {[2, 3, 4].map((count) => (
+                        <button
+                          key={count}
+                          type="button"
+                          onClick={() => updateInput("nozzleCount", count as Inputs["nozzleCount"])}
+                          className={`inline-flex min-w-[64px] items-center justify-center rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
+                            inputs.nozzleCount === count
+                              ? "border-slate-950 bg-slate-950 text-white"
+                              : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
+                          }`}
+                        >
+                          {count}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="mt-2 text-xs text-slate-500">
+                      Surface cleaner mode uses 2 or more nozzles. Wand mode stays fixed at 1.
+                    </div>
+                  </div>
+                ) : null}
 
                 <div className="lg:col-span-2">
                   <label className="block text-sm font-semibold text-slate-800">Nozzle size / tip</label>
