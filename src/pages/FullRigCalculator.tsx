@@ -1,14 +1,14 @@
-
 import { Helmet } from "react-helmet-async";
 import { useEffect, useMemo, useRef, useState, type FocusEvent } from "react";
 import { Link } from "react-router-dom";
 import BackToTopButton from "../components/BackToTopButton";
+import CompactCurrentVsSavedComparePanel from "../components/CompactCurrentVsSavedComparePanel";
 import PressureCalLayout from "../components/PressureCalLayout";
 import { useProAccess } from "../hooks/useProAccess";
 import { useSavedSetups } from "../hooks/useSavedSetups";
 import { buildFullRigSearchParams, parseRigSearchParams } from "../lib/rigUrlState";
 import { solvePressureCal, barFromPsi, lpmFromGpm, roundTipCodeToFive } from "../pressurecal";
-import type { Inputs, PressureUnit, FlowUnit, LengthUnit, DiameterUnit } from "../pressurecal";
+import type { Inputs, PressureUnit, FlowUnit, LengthUnit } from "../pressurecal";
 
 const hosePresets = [
   { label: '1/4" (6.35 mm)', valueMm: 6.35 },
@@ -48,12 +48,12 @@ function toPsi(value: number, unit: PressureUnit) {
   return unit === "psi" ? value : value * 14.5037738;
 }
 
-function toGpm(value: number, unit: FlowUnit) {
-  return unit === "gpm" ? value : value / 3.785411784;
-}
-
 function fromPsi(value: number, unit: PressureUnit) {
   return unit === "psi" ? value : value / 14.5037738;
+}
+
+function toGpm(value: number, unit: FlowUnit) {
+  return unit === "gpm" ? value : value / 3.785411784;
 }
 
 function fromGpm(value: number, unit: FlowUnit) {
@@ -74,6 +74,14 @@ function roundForUnit(value: number, decimals: number) {
 
 function selectAllOnFocus(e: FocusEvent<HTMLInputElement>) {
   e.target.select();
+}
+
+function toNumberOrNull(value: string | number) {
+  if (value === "" || value === null || value === undefined) {
+    return null;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function calculateRequiredHp(pressurePsi: number, flowGpm: number, efficiency = 0.9) {
@@ -143,17 +151,7 @@ function buildSuggestedSetupName(inputs: Inputs) {
   }
 
   parts.push(modeText);
-
   return parts.join(" · ");
-}
-
-function toNumberOrNull(value: string | number) {
-  if (value === "" || value === null || value === undefined) {
-    return null;
-  }
-
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function buildShareSummaryText(args: {
@@ -231,11 +229,8 @@ export default function FullRigCalculatorPage() {
   const [saveName, setSaveName] = useState("");
   const [saveNotes, setSaveNotes] = useState("");
   const [saveMessage, setSaveMessage] = useState("");
-  const [lastSavedSetupId, setLastSavedSetupId] = useState<string | null>(null);
   const [sharePanelOpen, setSharePanelOpen] = useState(false);
   const [shareMessage, setShareMessage] = useState("");
-  const [shareLinkCopied, setShareLinkCopied] = useState(false);
-  const [resultSummaryCopied, setResultSummaryCopied] = useState(false);
   const [comparePanelOpen, setComparePanelOpen] = useState(false);
   const [compareTargetSetupId, setCompareTargetSetupId] = useState("");
   const maxWasManuallyEditedRef = useRef(false);
@@ -269,10 +264,7 @@ export default function FullRigCalculatorPage() {
   }, [inputs]);
 
   useEffect(() => {
-    if (!savePanelOpen) {
-      return;
-    }
-
+    if (!savePanelOpen) return;
     setSaveName((current) => (current.trim() ? current : suggestedSetupName));
   }, [savePanelOpen, suggestedSetupName]);
 
@@ -283,30 +275,11 @@ export default function FullRigCalculatorPage() {
   }, [comparePanelOpen, compareTargetSetupId, savedSetupsReady, setups]);
 
   useEffect(() => {
-    if (!comparePanelOpen) {
-      return;
-    }
-
+    if (!comparePanelOpen) return;
     if (compareTargetSetupId && !setups.some((setup) => setup.id === compareTargetSetupId)) {
       setCompareTargetSetupId(setups[0]?.id ?? "");
     }
   }, [comparePanelOpen, compareTargetSetupId, setups]);
-
-  useEffect(() => {
-    if (!sharePanelOpen) {
-      return;
-    }
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setSharePanelOpen(false);
-        resetShareFeedback();
-      }
-    }
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [sharePanelOpen]);
 
   const safeInputs = {
     ...inputs,
@@ -413,6 +386,33 @@ export default function FullRigCalculatorPage() {
     [badge.text, gunBar, gunLpm, inputs, lossBar, r.gunFlowGpm, r.gunPressurePsi, r.hoseLossPsi, r.statusMessage, selectedDisplayTipCode]
   );
 
+  const compactCompareSnapshotItems = [
+    {
+      label: "Pump",
+      value: `${inputs.pumpPressure || "—"} ${inputs.pumpPressureUnit.toUpperCase()} · ${inputs.pumpFlow || "—"} ${inputs.pumpFlowUnit.toUpperCase()}`,
+    },
+    {
+      label: "Max pressure",
+      value: `${inputs.maxPressure || "—"} ${inputs.maxPressureUnit.toUpperCase()}`,
+    },
+    {
+      label: "Engine",
+      value: inputs.engineHp === "" ? "Not provided" : `${inputs.engineHp} HP`,
+    },
+    {
+      label: "Hose",
+      value: `${inputs.hoseLength || "—"} ${inputs.hoseLengthUnit} · ${inputs.hoseId || "—"} ${inputs.hoseIdUnit}`,
+    },
+    {
+      label: "Spray mode",
+      value: inputs.sprayMode === "surfaceCleaner" ? "Surface cleaner" : "Wand",
+    },
+    {
+      label: "Nozzle",
+      value: inputs.nozzleSizeText || "—",
+    },
+  ];
+
   async function copySetupLink() {
     try {
       await navigator.clipboard.writeText(shareUrl);
@@ -423,50 +423,13 @@ export default function FullRigCalculatorPage() {
     }
   }
 
-  function resetShareFeedback() {
-    setShareMessage("");
-    setShareLinkCopied(false);
-    setResultSummaryCopied(false);
+  function handleOpenComparePanel() {
+    setComparePanelOpen(true);
+    setSavePanelOpen(false);
   }
 
-  async function handleCopyShareResultLink() {
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      setShareMessage("Share link copied");
-      setShareLinkCopied(true);
-      setResultSummaryCopied(false);
-      window.setTimeout(() => {
-        setShareMessage("");
-        setShareLinkCopied(false);
-      }, 2000);
-    } catch {
-      window.prompt("Copy this link:", shareUrl);
-    }
-  }
-
-  async function handleCopyResultSummary() {
-    try {
-      await navigator.clipboard.writeText(shareSummaryText);
-      setShareMessage("Result summary copied");
-      setResultSummaryCopied(true);
-      setShareLinkCopied(false);
-      window.setTimeout(() => {
-        setShareMessage("");
-        setResultSummaryCopied(false);
-      }, 2000);
-    } catch {
-      window.prompt("Copy this summary:", shareSummaryText);
-    }
-  }
-
-  function handleOpenSharePanel() {
-    setSharePanelOpen(true);
-    resetShareFeedback();
-  }
-
-  function handleCloseSharePanel() {
-    setSharePanelOpen(false);
-    resetShareFeedback();
+  function handleCloseComparePanel() {
+    setComparePanelOpen(false);
   }
 
   function handleOpenSavePanel() {
@@ -481,13 +444,24 @@ export default function FullRigCalculatorPage() {
     setSaveMessage("");
   }
 
-  function handleOpenComparePanel() {
-    setComparePanelOpen(true);
-    setSavePanelOpen(false);
+  async function handleCopyShareResultLink() {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setShareMessage("Share link copied");
+      window.setTimeout(() => setShareMessage(""), 2000);
+    } catch {
+      window.prompt("Copy this link:", shareUrl);
+    }
   }
 
-  function handleCloseComparePanel() {
-    setComparePanelOpen(false);
+  async function handleCopyResultSummary() {
+    try {
+      await navigator.clipboard.writeText(shareSummaryText);
+      setShareMessage("Result summary copied");
+      window.setTimeout(() => setShareMessage(""), 2000);
+    } catch {
+      window.prompt("Copy this summary:", shareSummaryText);
+    }
   }
 
   function handleSaveCurrentSetup() {
@@ -502,7 +476,6 @@ export default function FullRigCalculatorPage() {
     }
 
     const trimmedName = saveName.trim();
-
     if (!trimmedName) {
       window.alert("Please enter a setup name.");
       return;
@@ -510,7 +483,7 @@ export default function FullRigCalculatorPage() {
 
     const nozzleSizeText = (inputs.nozzleSizeText || "").trim() || null;
 
-    const saved = saveSetup({
+    saveSetup({
       name: trimmedName,
       notes: saveNotes.trim() || null,
 
@@ -540,10 +513,13 @@ export default function FullRigCalculatorPage() {
       hoseRoughnessMm: toNumberOrNull(inputs.hoseRoughnessMm) ?? 0.0015,
     });
 
-    setLastSavedSetupId(saved.id);
     setSaveMessage("Setup saved");
     setSavePanelOpen(false);
     window.setTimeout(() => setSaveMessage(""), 2500);
+  }
+
+  function updateInput<K extends keyof Inputs>(key: K, value: Inputs[K]) {
+    setInputs((current) => ({ ...current, [key]: value }));
   }
 
   return (
@@ -555,39 +531,6 @@ export default function FullRigCalculatorPage() {
           content="Full rig calculator for pressure washer setup, including hose loss, nozzle calibration, operating pressure, and power requirement."
         />
         <link rel="canonical" href="https://www.pressurecal.com/calculator" />
-        <meta
-          property="og:title"
-          content="Full Rig Pressure Washer Calculator | PressureCal"
-        />
-        <meta
-          property="og:description"
-          content="Full rig calculator for pressure washer setup, including hose loss, nozzle calibration, operating pressure, and power requirement."
-        />
-        <meta
-          property="og:url"
-          content="https://www.pressurecal.com/calculator"
-        />
-        <meta property="og:type" content="website" />
-        <meta
-          name="twitter:title"
-          content="Full Rig Pressure Washer Calculator | PressureCal"
-        />
-        <meta
-          name="twitter:description"
-          content="Full rig calculator for pressure washer setup, including hose loss, nozzle calibration, operating pressure, and power requirement."
-        />
-        <script type="application/ld+json">
-          {JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "WebApplication",
-            name: "PressureCal Full Rig Calculator",
-            url: "https://www.pressurecal.com/calculator",
-            applicationCategory: "Calculator",
-            operatingSystem: "Web",
-            description:
-              "Full rig calculator for pressure washer setup, including hose loss, nozzle calibration, operating pressure, and power requirement.",
-          })}
-        </script>
       </Helmet>
 
       <section className="-mx-4 bg-slate-100 px-4 pb-8 pt-12 sm:pb-10">
@@ -609,57 +552,41 @@ export default function FullRigCalculatorPage() {
               highlightSetup ? "border-blue-300 bg-blue-50 shadow-lg" : "border-slate-200 bg-white"
             }`}
           >
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  Your setup
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    Your setup
+                  </div>
+                  <div className="mt-1 text-sm text-slate-600">
+                    Live summary of what PressureCal is modelling right now.
+                  </div>
+
+                  {loadedFromLink ? (
+                    <div className="mt-3 inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                      Shared setup loaded
+                    </div>
+                  ) : null}
+
+                  {saveMessage ? (
+                    <div className="mt-3 inline-flex items-center rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
+                      {saveMessage}
+                    </div>
+                  ) : null}
                 </div>
-                <div className="mt-1 text-sm text-slate-600">
-                  Live summary of what PressureCal is modelling right now.
-                </div>
 
-                {loadedFromLink ? (
-                  <div className="mt-3 inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                    Shared setup loaded
-                  </div>
-                ) : null}
-
-                {saveMessage ? (
-                  <div className="mt-3 inline-flex items-center rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
-                    {saveMessage}
-                  </div>
-                ) : null}
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                {liveSetupItems.map((item) => (
-                  <div
-                    key={item.label}
-                    className={`rounded-full border px-3 py-1 text-sm transition ${
-                      highlightSetup
-                        ? "border-blue-300 bg-blue-100 text-slate-900"
-                        : "border-slate-200 bg-slate-50 text-slate-700"
-                    }`}
-                  >
-                    <span className="font-medium text-slate-500">{item.label}:</span>{" "}
-                    <span className="font-semibold text-slate-900">{item.value}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex flex-col items-start gap-2 lg:items-end">
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
                     onClick={copySetupLink}
-                    className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-slate-800 hover:shadow-lg"
+                    className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-slate-800"
                   >
                     {copyMessage ? "Copied ✓" : "Copy setup link"}
                   </button>
 
                   <button
                     type="button"
-                    onClick={handleOpenSharePanel}
+                    onClick={() => setSharePanelOpen(true)}
                     className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
                   >
                     Share result
@@ -683,42 +610,109 @@ export default function FullRigCalculatorPage() {
                     Save setup
                   </button>
                 </div>
+              </div>
 
-                <div className="text-xs text-slate-500">
-                  {copyMessage
-                    ? copyMessage
-                    : isAuthenticated && isPro
-                      ? "Save, share, or compare this exact rig setup."
-                      : "Share this exact rig setup."}
-                </div>
+              <div className="flex flex-wrap gap-2">
+                {liveSetupItems.map((item) => (
+                  <div
+                    key={item.label}
+                    className={`rounded-full border px-3 py-1 text-sm transition ${
+                      highlightSetup
+                        ? "border-blue-300 bg-blue-100 text-slate-900"
+                        : "border-slate-200 bg-slate-50 text-slate-700"
+                    }`}
+                  >
+                    <span className="font-medium text-slate-500">{item.label}:</span>{" "}
+                    <span className="font-semibold text-slate-900">{item.value}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="text-xs text-slate-500">
+                {isAuthenticated && isPro
+                  ? "Save, share, or compare this exact rig setup."
+                  : "Share this exact rig setup."}
               </div>
             </div>
 
+{comparePanelOpen ? (
+  <div className="mt-5">
+    {!proAccessLoading && !isAuthenticated ? (
+      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <p className="text-sm text-slate-700">
+          Sign in to compare your live calculator against a saved setup.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Link
+            to="/account"
+            className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+          >
+            Sign in
+          </Link>
+          <button
+            type="button"
+            onClick={handleCloseComparePanel}
+            className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    ) : !proAccessLoading && isAuthenticated && !isPro ? (
+      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <p className="text-sm text-slate-700">
+          Compare to saved is part of PressureCal Pro.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Link
+            to="/pro"
+            className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+          >
+            View PressureCal Pro
+          </Link>
+          <button
+            type="button"
+            onClick={handleCloseComparePanel}
+            className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    ) : (
+      <CompactCurrentVsSavedComparePanel
+        currentSetupTitle="Current calculator"
+        currentSetupSummary={suggestedSetupName}
+        selectedSavedSetupId={compareTargetSetupId}
+        savedSetupOptions={setups.map((setup) => ({
+          id: setup.id,
+          label: setup.name,
+        }))}
+        onSavedSetupChange={setCompareTargetSetupId}
+        snapshotItems={compactCompareSnapshotItems}
+        onCompare={() => {
+          if (!compareTargetSetupId || !liveCompareHref) return;
+          window.location.href = liveCompareHref;
+        }}
+        onCancel={handleCloseComparePanel}
+        compareDisabled={!compareTargetSetupId}
+      />
+    )}
+  </div>
+) : null}
+
             {savePanelOpen ? (
               <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="max-w-xl">
-                    <div className="text-sm font-semibold text-slate-900">Save current setup</div>
-                    <p className="mt-1 text-sm leading-6 text-slate-600">
-                      Save the current calculator snapshot directly to Saved Setups. Engine HP stays optional and the saved setup will work with open, compare, and share.
-                    </p>
-                  </div>
-
-                  {lastSavedSetupId ? (
-                    <Link
-                      to="/saved-setups"
-                      className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                    >
-                      View saved setups
-                    </Link>
-                  ) : null}
+                <div className="max-w-xl">
+                  <div className="text-sm font-semibold text-slate-900">Save current setup</div>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">
+                    Save the current calculator snapshot directly to Saved Setups.
+                  </p>
                 </div>
 
                 {!proAccessLoading && !isAuthenticated ? (
                   <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
-                    <p className="text-sm text-slate-700">
-                      Sign in to save setups to your PressureCal account.
-                    </p>
+                    <p className="text-sm text-slate-700">Sign in to save setups to your PressureCal account.</p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <Link
                         to="/account"
@@ -735,13 +729,9 @@ export default function FullRigCalculatorPage() {
                       </button>
                     </div>
                   </div>
-                ) : null}
-
-                {!proAccessLoading && isAuthenticated && !isPro ? (
+                ) : !proAccessLoading && isAuthenticated && !isPro ? (
                   <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
-                    <p className="text-sm text-slate-700">
-                      Save Setup is part of PressureCal Pro.
-                    </p>
+                    <p className="text-sm text-slate-700">Save Setup is part of PressureCal Pro.</p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <Link
                         to="/pro"
@@ -758,9 +748,7 @@ export default function FullRigCalculatorPage() {
                       </button>
                     </div>
                   </div>
-                ) : null}
-
-                {!proAccessLoading && isAuthenticated && isPro ? (
+                ) : (
                   <div className="mt-4 grid gap-4 sm:grid-cols-2">
                     <label className="block sm:col-span-2">
                       <span className="text-sm font-semibold text-slate-800">Setup name</span>
@@ -768,7 +756,6 @@ export default function FullRigCalculatorPage() {
                         type="text"
                         value={saveName}
                         onChange={(event) => setSaveName(event.target.value)}
-                        placeholder="Example: Trailer rig · 4000 PSI · 15 LPM"
                         className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
                       />
                     </label>
@@ -778,43 +765,10 @@ export default function FullRigCalculatorPage() {
                       <textarea
                         value={saveNotes}
                         onChange={(event) => setSaveNotes(event.target.value)}
-                        placeholder="Optional notes about pump, hose, gun, reel, or use case."
                         rows={4}
                         className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
                       />
                     </label>
-
-                    <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 sm:col-span-2">
-                      <div className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">
-                        Snapshot being saved
-                      </div>
-                      <div className="mt-3 grid gap-3 text-sm text-slate-700 sm:grid-cols-2 lg:grid-cols-3">
-                        <div>
-                          <span className="font-semibold text-slate-900">Pump:</span>{" "}
-                          {inputs.pumpPressure || "—"} {inputs.pumpPressureUnit.toUpperCase()} · {inputs.pumpFlow || "—"} {inputs.pumpFlowUnit.toUpperCase()}
-                        </div>
-                        <div>
-                          <span className="font-semibold text-slate-900">Max pressure:</span>{" "}
-                          {inputs.maxPressure || "—"} {inputs.maxPressureUnit.toUpperCase()}
-                        </div>
-                        <div>
-                          <span className="font-semibold text-slate-900">Engine:</span>{" "}
-                          {inputs.engineHp === "" ? "Not provided" : `${inputs.engineHp} HP`}
-                        </div>
-                        <div>
-                          <span className="font-semibold text-slate-900">Hose:</span>{" "}
-                          {inputs.hoseLength || "—"} {inputs.hoseLengthUnit} · {inputs.hoseId || "—"} {inputs.hoseIdUnit}
-                        </div>
-                        <div>
-                          <span className="font-semibold text-slate-900">Spray mode:</span>{" "}
-                          {inputs.sprayMode === "surfaceCleaner" ? "Surface cleaner" : "Wand"}
-                        </div>
-                        <div>
-                          <span className="font-semibold text-slate-900">Nozzle:</span>{" "}
-                          {inputs.nozzleSizeText || "—"}{inputs.sprayMode === "surfaceCleaner" ? ` × ${inputs.nozzleCount}` : ""}
-                        </div>
-                      </div>
-                    </div>
 
                     <div className="flex flex-col gap-3 sm:col-span-2 sm:flex-row">
                       <button
@@ -835,175 +789,100 @@ export default function FullRigCalculatorPage() {
                       </button>
                     </div>
                   </div>
-                ) : null}
-              </div>
-            ) : null}
-
-            {comparePanelOpen ? (
-              <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="max-w-xl">
-                    <div className="text-sm font-semibold text-slate-900">Compare current calculator vs saved setup</div>
-                    <p className="mt-1 text-sm leading-6 text-slate-600">
-                      Launch a side-by-side comparison using your live calculator state as Setup A and one saved setup as Setup B.
-                    </p>
-                  </div>
-                </div>
-
-                {!proAccessLoading && !isAuthenticated ? (
-                  <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
-                    <p className="text-sm text-slate-700">
-                      Sign in to compare your current calculator against a saved setup.
-                    </p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <Link
-                        to="/account"
-                        className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
-                      >
-                        Sign in
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={handleCloseComparePanel}
-                        className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                ) : null}
-
-                {!proAccessLoading && isAuthenticated && !isPro ? (
-                  <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
-                    <p className="text-sm text-slate-700">
-                      Compare Setups is part of PressureCal Pro.
-                    </p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <Link
-                        to="/pro"
-                        className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
-                      >
-                        View PressureCal Pro
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={handleCloseComparePanel}
-                        className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                ) : null}
-
-                {!proAccessLoading && isAuthenticated && isPro && savedSetupsReady && setups.length === 0 ? (
-                  <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
-                    <p className="text-sm text-slate-700">
-                      You need at least one saved setup before you can compare the live calculator against it.
-                    </p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <Link
-                        to="/saved-setups"
-                        className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
-                      >
-                        Open Saved Setups
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={handleCloseComparePanel}
-                        className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                ) : null}
-
-                {!proAccessLoading && isAuthenticated && isPro && savedSetupsReady && setups.length > 0 ? (
-                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                    <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 sm:col-span-2">
-                      <div className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">
-                        Setup A
-                      </div>
-                      <div className="mt-2 text-sm font-semibold text-slate-900">Current calculator</div>
-                      <div className="mt-1 text-sm text-slate-600">
-                        {suggestedSetupName}
-                      </div>
-                    </div>
-
-                    <label className="block sm:col-span-2">
-                      <span className="text-sm font-semibold text-slate-800">Saved setup to compare against</span>
-                      <select
-                        value={compareTargetSetupId}
-                        onChange={(event) => setCompareTargetSetupId(event.target.value)}
-                        className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
-                      >
-                        <option value="">Select saved setup</option>
-                        {setups.map((setup) => (
-                          <option key={setup.id} value={setup.id}>
-                            {setup.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-
-                    <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 sm:col-span-2">
-                      <div className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">
-                        Live snapshot being compared
-                      </div>
-                      <div className="mt-3 grid gap-3 text-sm text-slate-700 sm:grid-cols-2 lg:grid-cols-3">
-                        <div>
-                          <span className="font-semibold text-slate-900">Pump:</span>{" "}
-                          {inputs.pumpPressure || "—"} {inputs.pumpPressureUnit.toUpperCase()} · {inputs.pumpFlow || "—"} {inputs.pumpFlowUnit.toUpperCase()}
-                        </div>
-                        <div>
-                          <span className="font-semibold text-slate-900">Max pressure:</span>{" "}
-                          {inputs.maxPressure || "—"} {inputs.maxPressureUnit.toUpperCase()}
-                        </div>
-                        <div>
-                          <span className="font-semibold text-slate-900">Engine:</span>{" "}
-                          {inputs.engineHp === "" ? "Not provided" : `${inputs.engineHp} HP`}
-                        </div>
-                        <div>
-                          <span className="font-semibold text-slate-900">Hose:</span>{" "}
-                          {inputs.hoseLength || "—"} {inputs.hoseLengthUnit} · {inputs.hoseId || "—"} {inputs.hoseIdUnit}
-                        </div>
-                        <div>
-                          <span className="font-semibold text-slate-900">Spray mode:</span>{" "}
-                          {inputs.sprayMode === "surfaceCleaner" ? "Surface cleaner" : "Wand"}
-                        </div>
-                        <div>
-                          <span className="font-semibold text-slate-900">Nozzle:</span>{" "}
-                          {inputs.nozzleSizeText || "—"}{inputs.sprayMode === "surfaceCleaner" ? ` × ${inputs.nozzleCount}` : ""}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-3 sm:col-span-2 sm:flex-row">
-                      <Link
-                        to={liveCompareHref || "#"}
-                        className={`inline-flex items-center justify-center rounded-2xl px-6 py-3 text-sm font-semibold transition ${
-                          compareTargetSetupId
-                            ? "bg-slate-950 text-white hover:bg-slate-800"
-                            : "pointer-events-none bg-slate-300 text-slate-600"
-                        }`}
-                      >
-                        Compare now
-                      </Link>
-
-                      <button
-                        type="button"
-                        onClick={handleCloseComparePanel}
-                        className="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                ) : null}
+                )}
               </div>
             ) : null}
           </div>
+
+          {sharePanelOpen ? (
+            <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    Share result
+                  </div>
+                  <h2 className="mt-2 text-2xl font-semibold text-slate-900">Share this PressureCal result</h2>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    Copy a clean result summary or share the live calculator link with the exact rig loaded.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSharePanelOpen(false);
+                    setShareMessage("");
+                  }}
+                  className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-100"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Export card
+                </div>
+
+                <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-5">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-lg font-semibold text-slate-950">PressureCal result</p>
+                      <p className="mt-1 text-sm text-slate-600">{suggestedSetupName}</p>
+                    </div>
+
+                    <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${badge.cls}`}>
+                      {badge.text}
+                    </span>
+                  </div>
+
+                  <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <p className="text-xs uppercase tracking-[0.14em] text-slate-500">At-gun pressure</p>
+                      <p className="mt-2 text-2xl font-semibold text-slate-950">{fmt(r.gunPressurePsi, 0)} PSI</p>
+                      <p className="mt-1 text-sm text-slate-600">{fmt(gunBar, 1)} bar</p>
+                    </div>
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Flow</p>
+                      <p className="mt-2 text-2xl font-semibold text-slate-950">{fmt(gunLpm, 1)} L/min</p>
+                      <p className="mt-1 text-sm text-slate-600">{fmt(r.gunFlowGpm, 2)} GPM</p>
+                    </div>
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Hose loss</p>
+                      <p className="mt-2 text-2xl font-semibold text-slate-950">{fmt(r.hoseLossPsi, 0)} PSI</p>
+                      <p className="mt-1 text-sm text-slate-600">{fmt(lossBar, 1)} bar</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-5 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={handleCopyShareResultLink}
+                  className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                >
+                  Copy share link
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopyResultSummary}
+                  className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                >
+                  Copy result summary
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSharePanelOpen(false)}
+                  className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                >
+                  Close
+                </button>
+              </div>
+
+              {shareMessage ? <p className="mt-3 text-sm font-semibold text-green-700">{shareMessage}</p> : null}
+            </div>
+          ) : null}
 
           <section className="mb-6 rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
             <div className="max-w-4xl">
@@ -1011,315 +890,172 @@ export default function FullRigCalculatorPage() {
                 What this full rig calculator models
               </h2>
               <p className="mt-3 text-sm leading-7 text-slate-600">
-                This full rig pressure washer calculator is designed for operators who want to understand
-                how the whole setup behaves, not just one number at a time. It combines machine pressure,
-                machine flow, hose length, hose internal diameter, nozzle size, and optional engine power
-                so you can estimate the real operating point at the gun.
+                Use this calculator when you want more than a quick conversion or chart. It models machine
+                pressure, machine flow, hose length, hose internal diameter, nozzle size, and optional engine
+                power so you can estimate the real operating point at the gun.
               </p>
               <p className="mt-4 text-sm leading-7 text-slate-600">
-                Use this page when a simple nozzle chart or conversion tool is not enough. It is especially
-                useful when the machine feels weak at the gun, when hose runs are long, when surface cleaner
-                nozzle counts change the required tip size, or when you want to compare rated pump pressure
-                with the pressure you are likely to see while working.
+                It is especially useful when a setup feels weak at the gun, when hose runs are long, when
+                surface cleaner nozzle counts change the required tip size, or when you want to compare rated
+                pump pressure with the pressure you are likely to see while working.
               </p>
               <div className="mt-5 flex flex-wrap gap-3">
-                <Link
-                  to="/nozzle-size-calculator"
-                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                >
+                <Link to="/nozzle-size-calculator" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
                   Nozzle Size Calculator
                 </Link>
-                <Link
-                  to="/hose-pressure-loss-calculator"
-                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                >
+                <Link to="/hose-pressure-loss-calculator" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
                   Hose Pressure Loss Calculator
                 </Link>
-                <Link
-                  to="/nozzle-size-chart"
-                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                >
+                <Link to="/nozzle-size-chart" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
                   Nozzle Size Chart
                 </Link>
-                <Link
-                  to="/psi-bar-calculator"
-                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                >
-                  PSI ↔ BAR Calculator
+                <Link to="/psi-bar-calculator" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+                  PSI ↔ BAR Converter
                 </Link>
-                <Link
-                  to="/lpm-gpm-calculator"
-                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                >
-                  LPM ↔ GPM Calculator
+                <Link to="/lpm-gpm-calculator" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+                  LPM ↔ GPM Converter
                 </Link>
               </div>
             </div>
           </section>
 
-          <main className="grid gap-6 lg:grid-cols-2">
+          <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
             <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
               <div className="border-b border-slate-200 px-5 py-4">
-                <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-900">
-                  Setup inputs
-                </h2>
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Setup inputs</div>
               </div>
 
-              <div className="space-y-5 px-5 py-4">
+              <div className="grid gap-5 px-5 py-5">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">
-                    Rated pressure ({inputs.pumpPressureUnit.toUpperCase()})
-                  </label>
+                  <label className="block text-sm font-semibold text-slate-800">Rated pressure</label>
                   <div className="mt-2 flex gap-3">
                     <input
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900 outline-none focus:border-slate-400"
                       type="number"
                       inputMode="decimal"
                       value={inputs.pumpPressure}
                       onFocus={selectAllOnFocus}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setInputs((s) => {
-                          const nextState: Inputs = {
-                            ...s,
-                            pumpPressure: val === "" ? "" : Number(val),
-                          };
-
-                          if (!maxWasManuallyEditedRef.current) {
-                            nextState.maxPressure = val === "" ? "" : Number(val);
-                            nextState.maxPressureUnit = s.pumpPressureUnit;
-                          }
-
-                          return nextState;
-                        });
+                      onChange={(event) => {
+                        const nextValue = event.target.value === "" ? "" : Number(event.target.value);
+                        updateInput("pumpPressure", nextValue as Inputs["pumpPressure"]);
+                        if (!maxWasManuallyEditedRef.current) {
+                          updateInput("maxPressure", nextValue as Inputs["maxPressure"]);
+                        }
                       }}
+                      className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
                     />
                     <select
-                      className="rounded-lg border border-slate-200 px-3 py-2 text-slate-900 outline-none focus:border-slate-400"
                       value={inputs.pumpPressureUnit}
-                      onChange={(e) => {
-                        const nextUnit = e.target.value as PressureUnit;
-                        setInputs((s) => {
-                          if (s.pumpPressureUnit === nextUnit) return s;
-
-                          const pumpPressurePsi = toPsi(Number(s.pumpPressure || 0), s.pumpPressureUnit);
-                          const nextState: Inputs = {
-                            ...s,
-                            pumpPressure: roundForUnit(fromPsi(pumpPressurePsi, nextUnit), nextUnit === "psi" ? 0 : 1),
-                            pumpPressureUnit: nextUnit,
-                          };
-
-                          if (!maxWasManuallyEditedRef.current) {
-                            nextState.maxPressure = roundForUnit(
-                              fromPsi(pumpPressurePsi, nextUnit),
-                              nextUnit === "psi" ? 0 : 1
-                            );
-                            nextState.maxPressureUnit = nextUnit;
-                          }
-
-                          return nextState;
-                        });
+                      onChange={(event) => {
+                        const nextUnit = event.target.value as PressureUnit;
+                        const currentPressurePsi = toPsi(Number(inputs.pumpPressure || 0), inputs.pumpPressureUnit);
+                        const currentMaxPsi = toPsi(Number(inputs.maxPressure || 0), inputs.maxPressureUnit);
+                        updateInput("pumpPressureUnit", nextUnit);
+                        updateInput("pumpPressure", roundForUnit(fromPsi(currentPressurePsi, nextUnit), nextUnit === "psi" ? 0 : 1));
+                        updateInput("maxPressureUnit", nextUnit);
+                        updateInput("maxPressure", roundForUnit(fromPsi(currentMaxPsi, nextUnit), nextUnit === "psi" ? 0 : 1));
                       }}
+                      className="rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
                     >
-                      <option value="psi">psi</option>
-                      <option value="bar">bar</option>
+                      <option value="psi">PSI</option>
+                      <option value="bar">BAR</option>
                     </select>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">
-                    Rated flow ({inputs.pumpFlowUnit === "lpm" ? "LPM" : "GPM"})
-                  </label>
+                  <label className="block text-sm font-semibold text-slate-800">Rated flow</label>
                   <div className="mt-2 flex gap-3">
                     <input
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900 outline-none focus:border-slate-400"
                       type="number"
                       inputMode="decimal"
                       value={inputs.pumpFlow}
                       onFocus={selectAllOnFocus}
-                      onChange={(e) =>
-                        setInputs((s) => ({
-                          ...s,
-                          pumpFlow: e.target.value === "" ? "" : Number(e.target.value),
-                        }))
+                      onChange={(event) =>
+                        updateInput("pumpFlow", (event.target.value === "" ? "" : Number(event.target.value)) as Inputs["pumpFlow"])
                       }
+                      className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
                     />
                     <select
-                      className="rounded-lg border border-slate-200 px-3 py-2 text-slate-900 outline-none focus:border-slate-400"
                       value={inputs.pumpFlowUnit}
-                      onChange={(e) =>
-                        setInputs((s) => {
-                          const nextUnit = e.target.value as FlowUnit;
-                          if (s.pumpFlowUnit === nextUnit) return s;
-
-                          const flowGpm = toGpm(Number(s.pumpFlow || 0), s.pumpFlowUnit);
-                          return {
-                            ...s,
-                            pumpFlow: roundForUnit(fromGpm(flowGpm, nextUnit), nextUnit === "gpm" ? 2 : 1),
-                            pumpFlowUnit: nextUnit,
-                          };
-                        })
-                      }
+                      onChange={(event) => {
+                        const nextUnit = event.target.value as FlowUnit;
+                        const currentFlowGpm = toGpm(Number(inputs.pumpFlow || 0), inputs.pumpFlowUnit);
+                        updateInput("pumpFlowUnit", nextUnit);
+                        updateInput("pumpFlow", roundForUnit(fromGpm(currentFlowGpm, nextUnit), nextUnit === "gpm" ? 2 : 1));
+                      }}
+                      className="rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
                     >
-                      <option value="lpm">L/min</option>
+                      <option value="lpm">LPM</option>
                       <option value="gpm">GPM</option>
                     </select>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">
-                    Max pressure (unloader) ({inputs.maxPressureUnit.toUpperCase()})
-                  </label>
+                  <label className="block text-sm font-semibold text-slate-800">Max pressure</label>
                   <div className="mt-2 flex gap-3">
                     <input
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900 outline-none focus:border-slate-400"
                       type="number"
                       inputMode="decimal"
                       value={inputs.maxPressure}
                       onFocus={selectAllOnFocus}
-                      onChange={(e) => {
+                      onChange={(event) => {
                         maxWasManuallyEditedRef.current = true;
-                        setInputs((s) => ({
-                          ...s,
-                          maxPressure: e.target.value === "" ? "" : Number(e.target.value),
-                        }));
+                        updateInput("maxPressure", (event.target.value === "" ? "" : Number(event.target.value)) as Inputs["maxPressure"]);
                       }}
+                      className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
                     />
                     <select
-                      className="rounded-lg border border-slate-200 px-3 py-2 text-slate-900 outline-none focus:border-slate-400"
                       value={inputs.maxPressureUnit}
-                      onChange={(e) => {
-                        maxWasManuallyEditedRef.current = true;
-                        setInputs((s) => {
-                          const nextUnit = e.target.value as PressureUnit;
-                          if (s.maxPressureUnit === nextUnit) return s;
-
-                          const maxPressurePsi = toPsi(Number(s.maxPressure || 0), s.maxPressureUnit);
-                          return {
-                            ...s,
-                            maxPressure: roundForUnit(fromPsi(maxPressurePsi, nextUnit), nextUnit === "psi" ? 0 : 1),
-                            maxPressureUnit: nextUnit,
-                          };
-                        });
+                      onChange={(event) => {
+                        const nextUnit = event.target.value as PressureUnit;
+                        const currentMaxPsi = toPsi(Number(inputs.maxPressure || 0), inputs.maxPressureUnit);
+                        updateInput("maxPressureUnit", nextUnit);
+                        updateInput("maxPressure", roundForUnit(fromPsi(currentMaxPsi, nextUnit), nextUnit === "psi" ? 0 : 1));
                       }}
+                      className="rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
                     >
-                      <option value="psi">psi</option>
-                      <option value="bar">bar</option>
+                      <option value="psi">PSI</option>
+                      <option value="bar">BAR</option>
                     </select>
                   </div>
-                  {!maxWasManuallyEditedRef.current && (
-                    <div className="mt-2 text-xs text-slate-500">
-                      Synced to rated pressure. Edit this only if the unloader is intentionally set differently.
-                    </div>
-                  )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">Engine HP</label>
+                  <label className="block text-sm font-semibold text-slate-800">Engine HP</label>
                   <input
-                    className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900 outline-none focus:border-slate-400"
                     type="number"
                     inputMode="decimal"
                     value={inputs.engineHp}
                     onFocus={selectAllOnFocus}
-                    onChange={(e) =>
-                      setInputs((s) => ({
-                        ...s,
-                        engineHp: e.target.value === "" ? "" : Number(e.target.value),
-                      }))
-                    }
+                    onChange={(event) => updateInput("engineHp", (event.target.value === "" ? "" : Number(event.target.value)) as Inputs["engineHp"])}
+                    placeholder="Optional"
+                    className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
                   />
-                  <div className="mt-2 text-xs text-slate-500">
-                    Used to estimate whether the machine can realistically support the setup.
-                  </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">Spray mode</label>
-                  <div className="mt-2 flex gap-2">
-                    {(["wand", "surfaceCleaner"] as const).map((mode) => (
-                      <button
-                        key={mode}
-                        type="button"
-                        onClick={() =>
-                          setInputs((s) => ({
-                            ...s,
-                            sprayMode: mode,
-                            nozzleCount: mode === "surfaceCleaner" ? Math.max(2, s.nozzleCount || 2) : 1,
-                          }))
-                        }
-                        className={`rounded-lg px-4 py-2 text-sm font-semibold border ${
-                          inputs.sprayMode === mode
-                            ? "bg-slate-900 text-white border-slate-900"
-                            : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-                        }`}
-                      >
-                        {mode === "wand" ? "Wand" : "Surface Cleaner"}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {inputs.sprayMode === "surfaceCleaner" && (
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700">Number of nozzles</label>
-                    <div className="mt-2 flex gap-2">
-                      {[2, 3, 4].map((n) => (
-                        <button
-                          key={n}
-                          type="button"
-                          onClick={() => setInputs((s) => ({ ...s, nozzleCount: n }))}
-                          className={`rounded-lg px-3 py-2 text-sm font-semibold border ${
-                            inputs.nozzleCount === n
-                              ? "bg-slate-900 text-white border-slate-900"
-                              : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-                          }`}
-                        >
-                          {n}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div className="h-px bg-slate-200" />
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700">
-                    Hose length (installed) ({inputs.hoseLengthUnit})
-                  </label>
+                  <label className="block text-sm font-semibold text-slate-800">Hose length</label>
                   <div className="mt-2 flex gap-3">
                     <input
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900 outline-none focus:border-slate-400"
                       type="number"
                       inputMode="decimal"
                       value={inputs.hoseLength}
                       onFocus={selectAllOnFocus}
-                      onChange={(e) =>
-                        setInputs((s) => ({
-                          ...s,
-                          hoseLength: e.target.value === "" ? "" : Number(e.target.value),
-                        }))
+                      onChange={(event) =>
+                        updateInput("hoseLength", (event.target.value === "" ? "" : Number(event.target.value)) as Inputs["hoseLength"])
                       }
+                      className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
                     />
                     <select
-                      className="rounded-lg border border-slate-200 px-3 py-2 text-slate-900 outline-none focus:border-slate-400"
                       value={inputs.hoseLengthUnit}
-                      onChange={(e) =>
-                        setInputs((s) => {
-                          const nextUnit = e.target.value as LengthUnit;
-                          if (s.hoseLengthUnit === nextUnit) return s;
-
-                          const hoseLengthMeters = toMeters(Number(s.hoseLength || 0), s.hoseLengthUnit);
-                          return {
-                            ...s,
-                            hoseLength: roundForUnit(fromMeters(hoseLengthMeters, nextUnit), 1),
-                            hoseLengthUnit: nextUnit,
-                          };
-                        })
-                      }
+                      onChange={(event) => {
+                        const nextUnit = event.target.value as LengthUnit;
+                        const currentMeters = toMeters(Number(inputs.hoseLength || 0), inputs.hoseLengthUnit);
+                        updateInput("hoseLengthUnit", nextUnit);
+                        updateInput("hoseLength", roundForUnit(fromMeters(currentMeters, nextUnit), 1));
+                      }}
+                      className="rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
                     >
                       <option value="m">m</option>
                       <option value="ft">ft</option>
@@ -1328,46 +1064,15 @@ export default function FullRigCalculatorPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">
-                    Hose internal diameter ({inputs.hoseIdUnit})
-                  </label>
+                  <label className="block text-sm font-semibold text-slate-800">Hose ID</label>
                   <div className="mt-2 flex gap-3">
-                    <input
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900 outline-none focus:border-slate-400"
-                      type="number"
-                      inputMode="decimal"
-                      value={inputs.hoseId}
-                      onFocus={selectAllOnFocus}
-                      onChange={(e) =>
-                        setInputs((s) => ({
-                          ...s,
-                          hoseId: e.target.value === "" ? "" : Number(e.target.value),
-                        }))
-                      }
-                    />
                     <select
-                      className="rounded-lg border border-slate-200 px-3 py-2 text-slate-900 outline-none focus:border-slate-400"
-                      value={inputs.hoseIdUnit}
-                      onChange={(e) => setInputs((s) => ({ ...s, hoseIdUnit: e.target.value as DiameterUnit }))}
+                      value={String(inputs.hoseId)}
+                      onChange={(event) => updateInput("hoseId", Number(event.target.value) as Inputs["hoseId"])}
+                      className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
                     >
-                      <option value="mm">mm</option>
-                      <option value="in">in</option>
-                    </select>
-                  </div>
-                  <div className="mt-3">
-                    <select
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900 outline-none focus:border-slate-400"
-                      value=""
-                      onChange={(e) => {
-                        const mm = Number(e.target.value);
-                        if (Number.isFinite(mm) && mm > 0) {
-                          setInputs((s) => ({ ...s, hoseId: mm, hoseIdUnit: "mm" }));
-                        }
-                      }}
-                    >
-                      <option value="">Hose preset (optional)…</option>
                       {hosePresets.map((preset) => (
-                        <option key={preset.valueMm} value={preset.valueMm}>
+                        <option key={preset.label} value={preset.valueMm}>
                           {preset.label}
                         </option>
                       ))}
@@ -1375,432 +1080,129 @@ export default function FullRigCalculatorPage() {
                   </div>
                 </div>
 
-                <div className="h-px bg-slate-200" />
+                <div>
+                  <label className="block text-sm font-semibold text-slate-800">Spray mode</label>
+                  <select
+                    value={inputs.sprayMode}
+                    onChange={(event) => {
+                      const nextMode = event.target.value as Inputs["sprayMode"];
+                      updateInput("sprayMode", nextMode);
+                      if (nextMode === "wand") {
+                        updateInput("nozzleCount", 1);
+                      } else if (Number(inputs.nozzleCount || 1) < 2) {
+                        updateInput("nozzleCount", 2);
+                      }
+                    }}
+                    className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                  >
+                    <option value="wand">Wand</option>
+                    <option value="surfaceCleaner">Surface cleaner</option>
+                  </select>
+                </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">
-                    {inputs.sprayMode === "surfaceCleaner"
-                      ? "Selected nozzle tip (per nozzle)"
-                      : "Selected nozzle tip"}
-                  </label>
+                  <label className="block text-sm font-semibold text-slate-800">Nozzle count</label>
                   <input
-                    className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900 outline-none focus:border-slate-400"
-                    placeholder="e.g. 040"
+                    type="number"
+                    inputMode="numeric"
+                    min={inputs.sprayMode === "surfaceCleaner" ? 2 : 1}
+                    value={inputs.nozzleCount}
+                    onChange={(event) =>
+                      updateInput("nozzleCount", Math.max(inputs.sprayMode === "surfaceCleaner" ? 2 : 1, Number(event.target.value || 1)) as Inputs["nozzleCount"])
+                    }
+                    className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                  />
+                </div>
+
+                <div className="lg:col-span-2">
+                  <label className="block text-sm font-semibold text-slate-800">Nozzle size / tip</label>
+                  <input
+                    type="text"
                     value={inputs.nozzleSizeText}
-                    onFocus={selectAllOnFocus}
-                    onChange={(e) => setInputs((s) => ({ ...s, nozzleSizeText: e.target.value }))}
+                    onChange={(event) => updateInput("nozzleSizeText", event.target.value as Inputs["nozzleSizeText"])}
+                    className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
                   />
                 </div>
               </div>
             </section>
 
-            <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <div className="border-b border-slate-200 px-5 py-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-900">
-                      Calculated performance
-                    </h2>
-                    <button
-                      type="button"
-                      onClick={handleOpenSharePanel}
-                      className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
-                    >
-                      Share result
-                    </button>
-                  </div>
-                  <div
-                    className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${systemBadge.cls}`}
-                  >
+            <section className="space-y-6">
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${systemBadge.cls}`}>
                     {systemBadge.text}
+                  </span>
+                  <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${enginePowerBadge.cls}`}>
+                    {enginePowerBadge.text}
+                  </span>
+                </div>
+
+                <h2 className="mt-4 text-2xl font-semibold text-slate-900">Setup performance</h2>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  See nozzle match, hose loss, and real at-gun performance in one place.
+                </p>
+
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="text-xs uppercase tracking-[0.14em] text-slate-500">At-gun pressure</div>
+                    <div className="mt-2 text-2xl font-semibold text-slate-950">{fmt(r.gunPressurePsi, 0)} PSI</div>
+                    <div className="mt-1 text-sm text-slate-600">{fmt(gunBar, 1)} bar</div>
                   </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Flow</div>
+                    <div className="mt-2 text-2xl font-semibold text-slate-950">{fmt(gunLpm, 1)} L/min</div>
+                    <div className="mt-1 text-sm text-slate-600">{fmt(r.gunFlowGpm, 2)} GPM</div>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Hose loss</div>
+                    <div className="mt-2 text-2xl font-semibold text-slate-950">{fmt(r.hoseLossPsi, 0)} PSI</div>
+                    <div className="mt-1 text-sm text-slate-600">{fmt(lossBar, 1)} bar · {efficiencyTier}</div>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Recommended nozzle</div>
+                    <div className="mt-2 text-2xl font-semibold text-slate-950">{calibratedDisplayTipCode}</div>
+                    <div className="mt-1 text-sm text-slate-600">Selected tip {selectedDisplayTipCode}</div>
+                  </div>
+                </div>
+
+                <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-sm font-semibold text-slate-900">Pressure loss guide</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{efficiencyNote}</p>
                 </div>
               </div>
 
-              <div className="space-y-5 px-5 py-4">
-                <div className="rounded-2xl border border-slate-300 bg-slate-100 px-5 py-5">
-                  <div className="text-xs font-medium uppercase tracking-wide text-slate-600">
-                    Estimated at-gun pressure
-                  </div>
-                  <div className="mt-2 text-5xl font-semibold tracking-tight text-slate-900">
-                    {fmt(r.gunPressurePsi, 0)}{" "}
-                    <span className="ml-1 text-sm font-medium text-slate-500">PSI</span>
-                  </div>
-                  <div className="mt-1 text-sm text-slate-600">({fmt(gunBar, 1)} bar)</div>
-                </div>
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <h2 className="text-2xl font-semibold text-slate-900">System details</h2>
 
-                <div
-                  className={`text-xs font-medium ${
-                    Math.abs(pressureVariancePct) > 10
-                      ? "text-red-600"
-                      : Math.abs(pressureVariancePct) > 5
-                        ? "text-amber-600"
-                        : "text-slate-500"
-                  }`}
-                >
-                  Δ from rated pressure: {fmt(pressureVariancePct, 1)}%
-                </div>
-
-                <div className="text-sm text-slate-700">
-                  Pressure loss guide: <strong>{efficiencyTier}</strong> — {efficiencyNote}
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="rounded-xl border border-slate-200 px-4 py-4">
-                    <div className="text-xs font-medium uppercase tracking-wide text-slate-600">
-                      Operating flow rate
-                    </div>
-                    <div className="mt-2 text-xl font-semibold text-slate-900">
-                      {fmt(gunLpm, 1)} <span className="text-sm font-medium text-slate-600">L/min</span>
-                    </div>
-                    <div className="mt-1 text-sm text-slate-600">({fmt(r.gunFlowGpm, 2)} GPM)</div>
-                  </div>
-
-                  <div className="rounded-xl border border-slate-200 px-4 py-4">
-                    <div className="text-xs font-medium uppercase tracking-wide text-slate-600">
-                      Hose pressure loss
-                    </div>
-                    <div className="mt-2 text-xl font-semibold text-slate-900">
-                      {fmt(r.hoseLossPsi, 0)} <span className="text-sm font-medium text-slate-600">PSI</span>
-                    </div>
-                    <div className="mt-1 text-sm text-slate-600">({fmt(lossBar, 1)} bar)</div>
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-slate-200 px-4 py-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="text-sm font-semibold text-slate-900">Engine power check</div>
-                    <div
-                      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${enginePowerBadge.cls}`}
-                    >
-                      {enginePowerBadge.text}
-                    </div>
-                  </div>
-                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                    <div className="rounded-lg border border-slate-200 bg-white px-4 py-4">
-                      <div className="text-xs font-medium uppercase tracking-wide text-slate-600">
-                        Required HP
-                      </div>
-                      <div className="mt-2 text-2xl font-semibold text-slate-900">
-                        {fmt(requiredHp, 1)} <span className="text-sm font-medium text-slate-600">HP</span>
-                      </div>
-                    </div>
-                    <div className="rounded-lg border border-slate-200 bg-white px-4 py-4">
-                      <div className="text-xs font-medium uppercase tracking-wide text-slate-600">
-                        Usable engine HP
-                      </div>
-                      <div className="mt-2 text-2xl font-semibold text-slate-900">
-                        {fmt(usableEngineHp, 1)} <span className="text-sm font-medium text-slate-600">HP</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-slate-200 px-4 py-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="text-xs font-semibold uppercase tracking-wide text-slate-700">
-                        AS/NZS 4233.01 Reference (P × Q)
-                      </div>
-                      <div className="mt-1 text-sm text-slate-600">
-                        Uses <strong>Pressure (bar)</strong> × <strong>Flow (L/min)</strong>, threshold 5600.
-                      </div>
-                    </div>
-                    <span
-                      className={`rounded-full border px-3 py-1 text-xs font-semibold ${
-                        pqClassGun === "Class B"
-                          ? "border-amber-200 bg-amber-50 text-amber-900"
-                          : "border-slate-200 bg-slate-50 text-slate-700"
-                      }`}
-                    >
-                      {pqClassGun}
-                    </span>
-                  </div>
-
-                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                    <div className="rounded-lg border border-slate-200 bg-white px-4 py-4">
-                      <div className="text-xs font-medium uppercase tracking-wide text-slate-600">
-                        Rated (maximum output)
-                      </div>
-                      <div className="mt-2 text-2xl font-semibold text-slate-900">
-                        {fmt(pqRated, 0)} <span className="text-sm font-medium text-slate-600">bar·L/min</span>
-                      </div>
-                      <div className="mt-1 text-xs text-slate-500">
-                        Uses rated pump pressure &amp; rated pump flow. ({pqClassRated})
-                      </div>
-                    </div>
-
-                    <div className="rounded-lg border border-slate-200 bg-white px-4 py-4">
-                      <div className="text-xs font-medium uppercase tracking-wide text-slate-600">
-                        At gun (indicative)
-                      </div>
-                      <div className="mt-2 text-2xl font-semibold text-slate-900">
-                        {fmt(pqAtGun, 0)} <span className="text-sm font-medium text-slate-600">bar·L/min</span>
-                      </div>
-                      <div className="mt-1 text-xs text-slate-500">
-                        Based on the calculated operating point.
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-slate-200 px-4 py-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="text-sm font-semibold text-slate-900">Nozzle match status</div>
-                    <div
-                      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${badge.cls}`}
-                    >
-                      {badge.text}
-                    </div>
-                  </div>
-                  <p className="mt-3 text-sm text-slate-700">{r.statusMessage}</p>
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="rounded-xl border border-slate-200 px-4 py-4">
-                    <div className="text-xs font-medium uppercase tracking-wide text-slate-600">
-                      {inputs.sprayMode === "surfaceCleaner"
-                        ? "Selected nozzle tip (per nozzle)"
-                        : "Selected nozzle tip"}
-                    </div>
-                    <div className="mt-2 text-xl font-semibold text-slate-900">
-                      {selectedDisplayTipCode}
-                    </div>
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Required HP</div>
+                    <div className="mt-2 text-xl font-semibold text-slate-950">{fmt(requiredHp, 1)} HP</div>
                     <div className="mt-1 text-sm text-slate-600">
-                      Orifice {fmt(r.selectedOrificeMm, 2)} mm
+                      Usable engine HP {usableEngineHp > 0 ? fmt(usableEngineHp, 1) : "—"}
                     </div>
                   </div>
-
-                  <div className="rounded-xl border border-slate-200 px-4 py-4">
-                    <div className="text-xs font-medium uppercase tracking-wide text-slate-600">
-                      {inputs.sprayMode === "surfaceCleaner"
-                        ? "Nozzle equivalent for rated pressure (per nozzle)"
-                        : "Nozzle equivalent for rated pressure"}
-                    </div>
-                    <div className="mt-2 text-xl font-semibold text-slate-900">
-                      {calibratedDisplayTipCode}
-                    </div>
-                    <div className="mt-1 text-sm text-slate-600">
-                      ≈ {fmt(lpmFromGpm(r.calibratedNozzleQ4000Gpm), 1)} L/min ({fmt(r.calibratedNozzleQ4000Gpm, 2)} GPM @ 4000 PSI)
-                    </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Pressure variance</div>
+                    <div className="mt-2 text-xl font-semibold text-slate-950">{fmt(pressureVariancePct, 1)}%</div>
+                    <div className="mt-1 text-sm text-slate-600">{r.statusMessage}</div>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Rated P × Q</div>
+                    <div className="mt-2 text-xl font-semibold text-slate-950">{fmt(pqRated, 0)} ({pqClassRated})</div>
+                    <div className="mt-1 text-sm text-slate-600">{fmt(ratedBar, 1)} BAR × {fmt(ratedLpm, 1)} LPM</div>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="text-xs uppercase tracking-[0.14em] text-slate-500">At-gun P × Q</div>
+                    <div className="mt-2 text-xl font-semibold text-slate-950">{fmt(pqAtGun, 0)} ({pqClassGun})</div>
+                    <div className="mt-1 text-sm text-slate-600">{fmt(gunBar, 1)} BAR × {fmt(gunLpm, 1)} LPM</div>
                   </div>
                 </div>
               </div>
             </section>
-          </main>
-        </div>
-      </section>
-
-          <section className="mt-8 rounded-2xl border border-slate-200 bg-white px-5 py-6 shadow-sm">
-            <div className="max-w-4xl">
-              <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-                Full rig calculator FAQ
-              </h2>
-              <p className="mt-3 text-sm leading-7 text-slate-600">
-                These are the most common questions behind nozzle mismatch, hose loss, bypass activity,
-                and real pressure differences at the gun.
-              </p>
-            </div>
-
-            <div className="mt-8 grid gap-5 lg:grid-cols-2">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                <h3 className="text-lg font-semibold text-slate-900">
-                  How is at-gun pressure calculated?
-                </h3>
-                <p className="mt-3 text-sm leading-7 text-slate-600">
-                  PressureCal estimates at-gun pressure by considering the machine output together with
-                  hose length, hose internal diameter, and nozzle size. That gives a more realistic result
-                  than relying only on the rated pump pressure on the spec sheet.
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                <h3 className="text-lg font-semibold text-slate-900">
-                  Why is my gun pressure lower than rated pump pressure?
-                </h3>
-                <p className="mt-3 text-sm leading-7 text-slate-600">
-                  Real pressure drops when hose friction, fittings, reels, bends, and nozzle choice reduce the
-                  available pressure between the pump and the gun. Long hose runs and smaller hose IDs make
-                  that pressure drop worse.
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                <h3 className="text-lg font-semibold text-slate-900">
-                  What does bypass active mean?
-                </h3>
-                <p className="mt-3 text-sm leading-7 text-slate-600">
-                  Bypass active means the selected nozzle and operating conditions are causing the system to hit
-                  the maximum pressure setting before all pump flow is used through the nozzle. In practical
-                  terms, that usually means the selected nozzle is too small for the setup.
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                <h3 className="text-lg font-semibold text-slate-900">
-                  How does hose ID affect pressure?
-                </h3>
-                <p className="mt-3 text-sm leading-7 text-slate-600">
-                  Smaller hose internal diameter increases velocity and friction loss, which increases pressure
-                  drop along the hose. That is why a long 1/4&quot; hose often feels much weaker than a shorter
-                  3/8&quot; hose on the same machine.
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 lg:col-span-2">
-                <h3 className="text-lg font-semibold text-slate-900">
-                  Why does nozzle size change operating pressure?
-                </h3>
-                <p className="mt-3 text-sm leading-7 text-slate-600">
-                  Nozzle size determines how easily the machine can discharge flow at the gun. A smaller nozzle
-                  increases restriction and can raise pressure, while a larger nozzle reduces restriction and can
-                  lower pressure. This is why nozzle match is central to accurate setup modelling.
-                </p>
-              </div>
-            </div>
-          </section>
-
-      {sharePanelOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 py-6">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-slate-200 bg-white shadow-2xl">
-            <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
-              <div>
-                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  Share result
-                </div>
-                <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
-                  Share this PressureCal result
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Copy a clean result summary or share the live calculator link with the exact rig loaded.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleCloseSharePanel}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-300 text-lg font-semibold text-slate-600 transition hover:bg-slate-100"
-                aria-label="Close share result panel"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="space-y-5 px-6 py-6">
-              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
-                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  Export card
-                </div>
-
-                <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                      <div className="text-sm font-semibold text-slate-950">PressureCal result</div>
-                      <div className="mt-1 text-sm text-slate-600">{suggestedSetupName}</div>
-                    </div>
-
-                    <div
-                      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${badge.cls}`}
-                    >
-                      {badge.text}
-                    </div>
-                  </div>
-
-                  <div className="mt-5 grid gap-4 sm:grid-cols-3">
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-                      <div className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">
-                        At-gun pressure
-                      </div>
-                      <div className="mt-2 text-2xl font-semibold text-slate-950">
-                        {fmt(r.gunPressurePsi, 0)} <span className="text-sm font-medium text-slate-500">PSI</span>
-                      </div>
-                      <div className="mt-1 text-sm text-slate-600">{fmt(gunBar, 1)} bar</div>
-                    </div>
-
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-                      <div className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">
-                        Flow
-                      </div>
-                      <div className="mt-2 text-2xl font-semibold text-slate-950">
-                        {fmt(gunLpm, 1)} <span className="text-sm font-medium text-slate-500">L/min</span>
-                      </div>
-                      <div className="mt-1 text-sm text-slate-600">{fmt(r.gunFlowGpm, 2)} GPM</div>
-                    </div>
-
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-                      <div className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">
-                        Hose loss
-                      </div>
-                      <div className="mt-2 text-2xl font-semibold text-slate-950">
-                        {fmt(r.hoseLossPsi, 0)} <span className="text-sm font-medium text-slate-500">PSI</span>
-                      </div>
-                      <div className="mt-1 text-sm text-slate-600">{fmt(lossBar, 1)} bar</div>
-                    </div>
-                  </div>
-
-                  <div className="mt-5 grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
-                    <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                      <span className="font-semibold text-slate-900">Pump:</span>{" "}
-                      {inputs.pumpPressure || "—"} {inputs.pumpPressureUnit.toUpperCase()} · {inputs.pumpFlow || "—"} {inputs.pumpFlowUnit.toUpperCase()}
-                    </div>
-                    <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                      <span className="font-semibold text-slate-900">Hose:</span>{" "}
-                      {inputs.hoseLength || "—"} {inputs.hoseLengthUnit} · {inputs.hoseId || "—"} {inputs.hoseIdUnit}
-                    </div>
-                    <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                      <span className="font-semibold text-slate-900">Nozzle:</span>{" "}
-                      {inputs.nozzleSizeText || "—"}{inputs.sprayMode === "surfaceCleaner" ? ` × ${inputs.nozzleCount}` : ""}
-                    </div>
-                    <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                      <span className="font-semibold text-slate-900">Engine:</span>{" "}
-                      {inputs.engineHp === "" ? "Optional" : `${fmt(Number(inputs.engineHp || 0), 1)} HP`}
-                    </div>
-                  </div>
-
-                  <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-                    <div className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">
-                      Nozzle status
-                    </div>
-                    <div className="mt-2 text-sm font-semibold text-slate-900">{badge.text}</div>
-                    <p className="mt-1 text-sm leading-6 text-slate-600">{r.statusMessage}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-slate-200 bg-white p-5">
-                <div className="text-sm font-semibold text-slate-900">Share actions</div>
-                <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-                  <button
-                    type="button"
-                    onClick={handleCopyShareResultLink}
-                    className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-                  >
-                    {shareLinkCopied ? "Copied ✓" : "Copy share link"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleCopyResultSummary}
-                    className="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                  >
-                    {resultSummaryCopied ? "Copied ✓" : "Copy result summary"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleCloseSharePanel}
-                    className="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                  >
-                    Close
-                  </button>
-                </div>
-
-                <div className="mt-3 text-xs text-slate-500">
-                  {shareMessage || "Copy the live link or a clean text summary for messages, quotes, or job notes."}
-                </div>
-              </div>
-            </div>
           </div>
         </div>
-      ) : null}
+      </section>
 
       <BackToTopButton />
     </PressureCalLayout>
