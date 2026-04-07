@@ -134,6 +134,47 @@ function parseLiveInputsFromSearchParams(searchParams: URLSearchParams): Partial
   return parseRigSearchParams(rigParams.toString());
 }
 
+function diffText(
+  a: number,
+  b: number,
+  decimals: number,
+  unit: string,
+  preferred: "higher" | "lower"
+) {
+  if (!Number.isFinite(a) || !Number.isFinite(b)) {
+    return "—";
+  }
+
+  const delta = a - b;
+
+  if (Math.abs(delta) < 0.0001) {
+    return `No meaningful difference`;
+  }
+
+  const betterForA = preferred === "higher" ? delta > 0 : delta < 0;
+  const absDelta = Math.abs(delta).toFixed(decimals);
+
+  return betterForA
+    ? `Setup A leads by ${absDelta} ${unit}`
+    : `Setup B leads by ${absDelta} ${unit}`;
+}
+
+function badgeClassForStatus(status: string) {
+  if (status.toLowerCase().includes("calibrated")) {
+    return "border-green-200 bg-green-50 text-green-700";
+  }
+
+  if (status.toLowerCase().includes("under")) {
+    return "border-amber-200 bg-amber-50 text-amber-700";
+  }
+
+  if (status.toLowerCase().includes("over")) {
+    return "border-red-200 bg-red-50 text-red-700";
+  }
+
+  return "border-slate-200 bg-slate-50 text-slate-700";
+}
+
 export default function CompareSetupsPage() {
   const [authUserId, setAuthUserId] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -385,6 +426,34 @@ export default function CompareSetupsPage() {
         ]
       : [];
 
+  const differenceCards =
+    comparedA && comparedB
+      ? [
+          {
+            label: "Pressure difference",
+            value: diffText(comparedA.atGunPressurePsi, comparedB.atGunPressurePsi, 0, "PSI", "higher"),
+          },
+          {
+            label: "Hose loss difference",
+            value: diffText(comparedA.hoseLossPsi, comparedB.hoseLossPsi, 0, "PSI", "lower"),
+          },
+          {
+            label: "Efficiency difference",
+            value: diffText(
+              Math.abs(comparedA.pressureVariancePct),
+              Math.abs(comparedB.pressureVariancePct),
+              1,
+              "%",
+              "lower"
+            ),
+          },
+          {
+            label: "Required HP difference",
+            value: diffText(comparedA.requiredHp, comparedB.requiredHp, 1, "HP", "lower"),
+          },
+        ]
+      : [];
+
   return (
     <PressureCalLayout>
       <Helmet>
@@ -465,9 +534,9 @@ export default function CompareSetupsPage() {
               <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                 <div className="grid flex-1 gap-5 md:grid-cols-2">
                   {liveMode ? (
-                    <div className="rounded-2xl border border-slate-300 bg-slate-50 px-4 py-4">
-                      <span className="text-sm font-semibold text-slate-800">Setup A</span>
-                      <div className="mt-2 rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                    <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4">
+                      <span className="text-sm font-semibold text-blue-900">Setup A · Live current calculator</span>
+                      <div className="mt-2 rounded-2xl border border-blue-200 bg-white px-4 py-3">
                         <div className="text-sm font-semibold text-slate-950">{liveName}</div>
                         <div className="mt-1 text-sm text-slate-600">
                           Live calculator snapshot loaded from the compare link.
@@ -495,7 +564,7 @@ export default function CompareSetupsPage() {
 
                   <label className="block">
                     <span className="text-sm font-semibold text-slate-800">
-                      {liveMode ? "Saved setup" : "Setup B"}
+                      {liveMode ? "Setup B · Saved setup" : "Setup B"}
                     </span>
                     <select
                       value={setupBId}
@@ -564,6 +633,29 @@ export default function CompareSetupsPage() {
 
             {comparedA && comparedB ? (
               <>
+                <div className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+                  <div>
+                    <h2 className="text-2xl font-bold text-slate-950">What changed most</h2>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                      A quick summary of the most important measurable differences between these two setups.
+                    </p>
+                  </div>
+
+                  <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    {differenceCards.map((card) => (
+                      <div
+                        key={card.label}
+                        className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                      >
+                        <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
+                          {card.label}
+                        </p>
+                        <p className="mt-2 text-base font-semibold text-slate-950">{card.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="mt-6 grid gap-6 lg:grid-cols-2">
                   {[comparedA, comparedB].map((item, index) => (
                     <article
@@ -582,12 +674,14 @@ export default function CompareSetupsPage() {
                         </div>
 
                         <div className="flex flex-wrap gap-2">
-                          <Link
-                            to={openCalculatorHref(item)}
-                            className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
-                          >
-                            Open in calculator
-                          </Link>
+                          <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${badgeClassForStatus(item.nozzleStatus)}`}>
+                            {item.nozzleStatus}
+                          </span>
+                          {item.isPressureLimited ? (
+                            <span className="inline-flex rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">
+                              Pressure limited
+                            </span>
+                          ) : null}
                         </div>
                       </div>
 
@@ -608,6 +702,22 @@ export default function CompareSetupsPage() {
                             {item.setup.hoseLengthM ?? "—"} m · {item.setup.hoseIdMm ?? "—"} mm
                           </dd>
                         </div>
+                        <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                          <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
+                            At-gun pressure
+                          </dt>
+                          <dd className="mt-1">
+                            {fmt(item.atGunPressurePsi, 0)} PSI · {fmt(item.atGunPressureBar, 1)} bar
+                          </dd>
+                        </div>
+                        <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                          <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
+                            Hose loss
+                          </dt>
+                          <dd className="mt-1">
+                            {fmt(item.hoseLossPsi, 0)} PSI · {fmt(item.hoseLossBar, 1)} bar
+                          </dd>
+                        </div>
                         <div className="rounded-2xl bg-slate-50 px-4 py-3 sm:col-span-2">
                           <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
                             Nozzle
@@ -615,6 +725,33 @@ export default function CompareSetupsPage() {
                           <dd className="mt-1">{item.setup.nozzleSize ?? "—"}</dd>
                         </div>
                       </dl>
+
+                      <div className="mt-5 rounded-2xl border border-slate-200 p-4">
+                        <p className="text-sm font-semibold text-slate-900">PressureCal summary</p>
+                        <p className="mt-2 text-sm leading-6 text-slate-600">{item.statusText}</p>
+                        {!item.hasEngineHp ? (
+                          <div className="mt-3 inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
+                            Engine HP not provided
+                          </div>
+                        ) : null}
+                      </div>
+
+                      <div className="mt-5 flex flex-wrap gap-3">
+                        <Link
+                          to={openCalculatorHref(item)}
+                          className="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                        >
+                          Open in calculator
+                        </Link>
+                        {index === 1 && liveMode ? (
+                          <Link
+                            to="/saved-setups"
+                            className="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                          >
+                            Manage saved setups
+                          </Link>
+                        ) : null}
+                      </div>
                     </article>
                   ))}
                 </div>
@@ -682,38 +819,6 @@ export default function CompareSetupsPage() {
                         ))}
                       </tbody>
                     </table>
-                  </div>
-
-                  <div className="mt-6 grid gap-4 lg:grid-cols-2">
-                    <div className="rounded-2xl border border-slate-200 p-5">
-                      <p className="text-sm font-semibold text-slate-950">{comparedA.setup.name}</p>
-                      <p className="mt-2 text-sm leading-6 text-slate-600">{comparedA.statusText}</p>
-                      {comparedA.isPressureLimited ? (
-                        <div className="mt-3 inline-flex rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">
-                          Pressure limited
-                        </div>
-                      ) : null}
-                      {!comparedA.hasEngineHp ? (
-                        <div className="mt-3 inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
-                          Engine HP not provided
-                        </div>
-                      ) : null}
-                    </div>
-
-                    <div className="rounded-2xl border border-slate-200 p-5">
-                      <p className="text-sm font-semibold text-slate-950">{comparedB.setup.name}</p>
-                      <p className="mt-2 text-sm leading-6 text-slate-600">{comparedB.statusText}</p>
-                      {comparedB.isPressureLimited ? (
-                        <div className="mt-3 inline-flex rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">
-                          Pressure limited
-                        </div>
-                      ) : null}
-                      {!comparedB.hasEngineHp ? (
-                        <div className="mt-3 inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
-                          Engine HP not provided
-                        </div>
-                      ) : null}
-                    </div>
                   </div>
                 </div>
               </>
