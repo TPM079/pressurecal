@@ -193,7 +193,11 @@ export default function PressureCalLayout({ children }: PressureCalLayoutProps) 
               <p className="text-base font-semibold text-slate-900">PressureCal</p>
               <p className="mt-2 text-sm leading-6 text-slate-500">
                 Practical pressure washer setup modelling for nozzle sizing, hose pressure
-                loss, and at-gun performance.
+                loss, and real at-gun performance.
+              </p>
+              <p className="mt-4 text-sm leading-6 text-slate-500">
+                PressureCal acknowledges the Traditional Owners of Country throughout Australia and recognises their
+                continuing connection to land, waters and community. We pay our respects to Elders past and present.
               </p>
               <p className="mt-4 text-sm text-slate-500">
                 © {new Date().getFullYear()} PressureCal
