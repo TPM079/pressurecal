@@ -123,10 +123,10 @@ export default function PsiBarCalculatorPage() {
     <PressureCalLayout>
       <>
         <Helmet>
-          <title>PSI to BAR Calculator | PressureCal</title>
+          <title>PSI ↔ BAR Converter | PressureCal</title>
           <meta
             name="description"
-            content="Convert PSI to BAR and BAR to PSI instantly. Accurate pressure conversion calculator for pressure washing equipment, pumps, and system setup."
+            content="Convert PSI to BAR and BAR to PSI instantly. Accurate pressure conversion for pressure washing equipment, pumps, and setup checks."
           />
           <link
             rel="canonical"
@@ -134,11 +134,11 @@ export default function PsiBarCalculatorPage() {
           />
           <meta
             property="og:title"
-            content="PSI to BAR Calculator | PressureCal"
+            content="PSI ↔ BAR Converter | PressureCal"
           />
           <meta
             property="og:description"
-            content="Convert PSI to BAR and BAR to PSI instantly. Accurate pressure conversion calculator for pressure washing equipment, pumps, and system setup."
+            content="Convert PSI to BAR and BAR to PSI instantly. Accurate pressure conversion for pressure washing equipment, pumps, and setup checks."
           />
           <meta
             property="og:url"
@@ -147,22 +147,22 @@ export default function PsiBarCalculatorPage() {
           <meta property="og:type" content="website" />
           <meta
             name="twitter:title"
-            content="PSI to BAR Calculator | PressureCal"
+            content="PSI ↔ BAR Converter | PressureCal"
           />
           <meta
             name="twitter:description"
-            content="Convert PSI to BAR and BAR to PSI instantly. Accurate pressure conversion calculator for pressure washing equipment, pumps, and system setup."
+            content="Convert PSI to BAR and BAR to PSI instantly. Accurate pressure conversion for pressure washing equipment, pumps, and setup checks."
           />
           <script type="application/ld+json">
             {JSON.stringify({
               "@context": "https://schema.org",
               "@type": "WebApplication",
-              name: "PSI to BAR Calculator",
+              name: "PSI ↔ BAR Converter",
               url: "https://www.pressurecal.com/psi-bar-calculator",
-              applicationCategory: "Calculator",
+              applicationCategory: "Converter",
               operatingSystem: "Web",
               description:
-                "Convert PSI to BAR and BAR to PSI instantly. Accurate pressure conversion calculator for pressure washing equipment, pumps, and system setup.",
+                "Convert PSI to BAR and BAR to PSI instantly. Accurate pressure conversion for pressure washing equipment, pumps, and setup checks.",
             })}
           </script>
         </Helmet>
@@ -174,7 +174,7 @@ export default function PsiBarCalculatorPage() {
                 Pressure Conversion
               </p>
               <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
-                PSI ↔ BAR Calculator
+                PSI ↔ BAR Converter
               </h1>
               <p className="mt-3 text-base text-slate-600">
                 Convert pressure instantly between PSI and BAR for pressure

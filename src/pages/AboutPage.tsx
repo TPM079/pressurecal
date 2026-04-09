@@ -2,9 +2,9 @@ import { Link } from "react-router-dom";
 
 const differentiators = [
   {
-    title: "Built for real operator decisions",
+    title: "Built for pressure washing operators",
     body:
-      "PressureCal is designed around practical setup questions operators actually ask in the field — nozzle size, hose loss, and what pressure and flow you are likely to see at the gun.",
+      "PressureCal is designed around practical setup questions pressure washing operators actually ask in the field — nozzle size, hose loss, and what pressure and flow you are likely to see at the gun.",
   },
   {
     title: "More than a simple converter",
@@ -21,7 +21,7 @@ const differentiators = [
 const audiences = [
   "Pressure washing operators",
   "Contractors and small business owners",
-  "Technicians building or checking rigs",
+  "Technicians building or checking setups",
   "Dealers and equipment specialists",
   "Anyone who wants a clearer picture of real-world setup performance",
 ];
@@ -37,12 +37,10 @@ export default function AboutPage() {
                 About PressureCal
               </p>
               <h1 className="text-4xl font-semibold tracking-tight text-white md:text-6xl">
-                A pressure washer calculator built for real operators.
+                Pressure washer setup modelling built for pressure washing operators.
               </h1>
               <p className="mt-6 text-lg leading-8 text-slate-300">
-                PressureCal is a practical pressure washing calculator and modelling tool
-                built to help users estimate nozzle sizing, hose pressure loss, and
-                real at-gun performance more clearly.
+                PressureCal is a practical pressure washer setup tool built to help users check nozzle sizing, hose pressure loss, and real at-gun performance more clearly.
               </p>
               <p className="mt-4 text-base leading-7 text-slate-300">
                 It exists because too many setup decisions are still made with rough
@@ -55,7 +53,7 @@ export default function AboutPage() {
                   to="/"
                   className="inline-flex items-center rounded-xl bg-sky-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-sky-300"
                 >
-                  Open PressureCal
+                  Open Full Setup Calculator
                 </Link>
                 <Link
                   to="/terms"
@@ -71,13 +69,13 @@ export default function AboutPage() {
                 <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-4">
                   <p className="text-sm text-slate-400">Primary use</p>
                   <p className="mt-2 text-lg font-semibold text-white">
-                    Pressure washer modelling
+                    Pressure washer setup modelling
                   </p>
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-4">
                   <p className="text-sm text-slate-400">Built for</p>
                   <p className="mt-2 text-lg font-semibold text-white">
-                    Practical field use
+                    Pressure washing operators
                   </p>
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-4">
@@ -122,7 +120,7 @@ export default function AboutPage() {
               Better setup decisions start with better visibility.
             </h2>
             <p className="mt-5 text-base leading-7 text-slate-300">
-              PressureCal was created to make pressure washing calculations more useful,
+              PressureCal was created to make pressure washer setup checks more useful,
               more understandable, and more relevant to real operating conditions.
             </p>
             <p className="mt-4 text-base leading-7 text-slate-300">
@@ -182,7 +180,7 @@ export default function AboutPage() {
               operating practices, or trained technical judgment.
             </p>
             <p className="mt-4 text-base leading-7 text-slate-300">
-              That balance matters. A good calculator should be useful without pretending
+              That balance matters. A good setup tool should be useful without pretending
               to remove responsibility from the operator.
             </p>
           </div>

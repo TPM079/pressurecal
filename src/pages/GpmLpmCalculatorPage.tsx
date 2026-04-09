@@ -123,10 +123,10 @@ export default function GpmLpmCalculatorPage() {
     <PressureCalLayout>
       <>
         <Helmet>
-          <title>LPM to GPM Calculator | PressureCal</title>
+          <title>LPM ↔ GPM Converter | PressureCal</title>
           <meta
             name="description"
-            content="Convert LPM to GPM and GPM to LPM instantly. Accurate flow rate calculator for pressure washers, pumps, and equipment sizing."
+            content="Convert LPM to GPM and GPM to LPM instantly. Accurate flow conversion for pressure washers, pumps, and equipment sizing."
           />
           <link
             rel="canonical"
@@ -134,11 +134,11 @@ export default function GpmLpmCalculatorPage() {
           />
           <meta
             property="og:title"
-            content="LPM to GPM Calculator | PressureCal"
+            content="LPM ↔ GPM Converter | PressureCal"
           />
           <meta
             property="og:description"
-            content="Convert LPM to GPM and GPM to LPM instantly. Accurate flow rate calculator for pressure washers, pumps, and equipment sizing."
+            content="Convert LPM to GPM and GPM to LPM instantly. Accurate flow conversion for pressure washers, pumps, and equipment sizing."
           />
           <meta
             property="og:url"
@@ -147,22 +147,22 @@ export default function GpmLpmCalculatorPage() {
           <meta property="og:type" content="website" />
           <meta
             name="twitter:title"
-            content="LPM to GPM Calculator | PressureCal"
+            content="LPM ↔ GPM Converter | PressureCal"
           />
           <meta
             name="twitter:description"
-            content="Convert LPM to GPM and GPM to LPM instantly. Accurate flow rate calculator for pressure washers, pumps, and equipment sizing."
+            content="Convert LPM to GPM and GPM to LPM instantly. Accurate flow conversion for pressure washers, pumps, and equipment sizing."
           />
           <script type="application/ld+json">
             {JSON.stringify({
               "@context": "https://schema.org",
               "@type": "WebApplication",
-              name: "LPM to GPM Calculator",
+              name: "LPM ↔ GPM Converter",
               url: "https://www.pressurecal.com/lpm-gpm-calculator",
-              applicationCategory: "Calculator",
+              applicationCategory: "Converter",
               operatingSystem: "Web",
               description:
-                "Convert LPM to GPM and GPM to LPM instantly. Accurate flow rate calculator for pressure washers, pumps, and equipment sizing.",
+                "Convert LPM to GPM and GPM to LPM instantly. Accurate flow conversion for pressure washers, pumps, and equipment sizing.",
             })}
           </script>
         </Helmet>
@@ -174,7 +174,7 @@ export default function GpmLpmCalculatorPage() {
                 Flow Conversion
               </p>
               <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
-                LPM ↔ GPM Calculator
+                LPM ↔ GPM Converter
               </h1>
               <p className="mt-3 text-base text-slate-600">
                 Convert flow instantly between LPM and GPM for pressure washing,
