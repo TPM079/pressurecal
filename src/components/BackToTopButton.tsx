@@ -42,7 +42,7 @@ export default function BackToTopButton() {
       aria-label="Back to top"
       title="Back to top"
       className={[
-        "fixed bottom-24 right-6 z-40 h-14 w-14 rounded-full",
+        "hidden md:block fixed bottom-24 right-6 z-40 h-14 w-14 rounded-full",
         "transition-all duration-300 ease-out",
         isVisible
           ? "pointer-events-auto translate-y-0 opacity-100"
