@@ -142,7 +142,7 @@ export default function FeedbackWidget() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.96 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="group inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/95 px-4 py-3 text-sm font-semibold text-slate-900 shadow-lg backdrop-blur transition hover:-translate-y-0.5 hover:shadow-xl"
+            className="group inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/95 px-3 py-2.5 text-xs font-semibold text-slate-900 shadow-lg backdrop-blur transition hover:-translate-y-0.5 hover:shadow-xl sm:px-4 sm:py-3 sm:text-sm"
             aria-label="Open feedback form"
           >
             <span className="inline-flex h-2.5 w-2.5 rounded-full bg-slate-900" />
@@ -155,7 +155,7 @@ export default function FeedbackWidget() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 14, scale: 0.97 }}
             transition={{ duration: 0.22, ease: "easeOut" }}
-            className="w-[340px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl"
+            className="w-[min(340px,calc(100vw-1.5rem))] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl"
           >
             <div className="border-b border-slate-200 bg-slate-50 px-4 py-4">
               <div className="flex items-start justify-between gap-3">

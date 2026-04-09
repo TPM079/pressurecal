@@ -113,7 +113,7 @@ export default function PressureCalLayout({ children }: PressureCalLayoutProps) 
               to="/calculator"
               className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
             >
-              Open Full Rig Calculator
+              Open Full Setup Calculator
             </Link>
 
             {isAuthenticated ? (
@@ -184,7 +184,7 @@ export default function PressureCalLayout({ children }: PressureCalLayoutProps) 
         </div>
       </header>
 
-      <main className="px-4 py-8 sm:py-10">{children}</main>
+      <main className="px-4 py-8 pb-24 sm:py-10 sm:pb-10">{children}</main>
 
       <footer className="border-t border-slate-200 bg-white">
         <div className="mx-auto max-w-6xl px-4 py-6">
@@ -204,9 +204,6 @@ export default function PressureCalLayout({ children }: PressureCalLayoutProps) 
               <div>
                 <p className="text-sm font-semibold text-slate-900">Tools</p>
                 <div className="mt-3 flex flex-col gap-2 text-sm text-slate-500">
-                  <Link to="/" className="transition hover:text-slate-700">
-                    Home
-                  </Link>
                   {navLinks.map((link) => (
                     <Link
                       key={link.to}

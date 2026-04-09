@@ -468,27 +468,12 @@ export default function HomePage() {
               </button>
             </div>
 
-            <div className="mt-8 grid gap-4 sm:grid-cols-2">
-              {[
-                {
-                  title: "Nozzle match",
-                  description:
-                    "Check whether the nozzle is actually matched to the machine.",
-                },
-                {
-                  title: "Hose loss",
-                  description:
-                    "See what hose length and hose size are taking away before the water reaches the gun.",
-                },
-              ].map((item) => (
-                <div
-                  key={item.title}
-                  className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
-                >
-                  <p className="text-sm font-semibold text-slate-950">{item.title}</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
-                </div>
-              ))}
+            <div className="mt-8 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm font-medium text-slate-600">
+              <span>Nozzle match</span>
+              <span className="text-slate-300">•</span>
+              <span>Hose loss</span>
+              <span className="text-slate-300">•</span>
+              <span>At-gun performance</span>
             </div>
           </div>
 
