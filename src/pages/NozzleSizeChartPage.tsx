@@ -448,7 +448,7 @@ function TechnicalNotesPanel() {
         <p>
           For <strong className="text-slate-900">surface cleaners</strong> or
           other multi-nozzle assemblies, divide total machine flow by the number
-          of nozzles before selecting the tip size.
+          of nozzles before selecting the nozzle size.
         </p>
 
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900">
@@ -504,7 +504,7 @@ function ExamplePanel() {
 
         <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-5">
           <div className="text-xs font-semibold uppercase tracking-wide text-blue-800">
-            Recommended Tip Code
+            Recommended Nozzle Code
           </div>
           <div className="mt-2 text-4xl font-bold tracking-tight text-blue-950">
             040
@@ -512,7 +512,7 @@ function ExamplePanel() {
           <p className="mt-3 text-sm leading-6 text-blue-900">
             Locate <strong>4000 (276)</strong> on the left-hand pressure column,
             then move across to <strong>15.1 (4)</strong>. The intersection
-            gives a recommended nozzle code of <strong>040</strong>.
+            gives a recommended tip code of <strong>040</strong>.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
             <Link
@@ -663,7 +663,7 @@ function SurfaceCleanerHelper() {
         <p className="text-sm leading-6 text-slate-600">
           For surface cleaners and other multi-nozzle tools, divide the total
           machine flow by the number of nozzles. PressureCal then uses the
-          per-nozzle flow to determine the correct chart column and nozzle code.
+          per-nozzle flow to determine the correct chart column and tip code.
         </p>
 
         <div className="grid gap-4 md:grid-cols-3">
@@ -747,7 +747,7 @@ function SurfaceCleanerHelper() {
 
             <div className="mt-4 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4">
               <div className="text-xs font-semibold uppercase tracking-wide text-blue-800">
-                Estimated Tip Code
+                Estimated Nozzle Code
               </div>
               <div className="mt-2 text-3xl font-bold tracking-tight text-blue-950">
                 {estimatedTipCode}
@@ -904,7 +904,7 @@ function SEOContentBlocks() {
           <p>
             This pressure washer nozzle size chart helps operators match machine
             pressure and flow to the correct tip code. PressureCal uses the same
-            live sizing logic as the nozzle size calculator, so the chart is not just
+            live sizing logic as the nozzle calculator, so the chart is not just
             a static reference — it is directly aligned with the calculator
             itself.
           </p>
@@ -913,7 +913,7 @@ function SEOContentBlocks() {
             If you know your machine’s operating pressure and flow rate, you can
             use the chart for a fast field lookup. If you need more detail, such
             as hose loss, real at-gun pressure, or bypass behaviour, you can
-            continue into the Full Setup Calculator.
+            continue into the full PressureCal calculator.
           </p>
         </div>
       </section>
@@ -929,7 +929,7 @@ function SEOContentBlocks() {
           <p>
             The correct nozzle size depends on both <strong>pressure</strong>{" "}
             and <strong>flow</strong>. Pressure affects impact force, while flow
-            affects rinsing ability and overall cleaning speed. Selecting a nozzle
+            affects rinsing ability and overall cleaning speed. Selecting a tip
             based on only one of these values can lead to poor performance.
           </p>
 
@@ -974,7 +974,7 @@ function SEOContentBlocks() {
               to="/nozzle-size-calculator?p=276&pu=bar&f=15.1&fu=lpm"
               className="inline-flex rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
             >
-              Open 4000 PSI / 15.1 LPM in Calculator
+              Open 15.1 LPM / 4000 PSI in Nozzle Size Calculator
             </Link>
           </div>
         </div>
@@ -991,19 +991,19 @@ function SEOContentBlocks() {
           <p>
             For surface cleaners and other multiple-nozzle tools, the chart must
             be used on a <strong>per-nozzle basis</strong>. Divide the total
-            machine flow by the number of nozzles before selecting the tip code.
+            machine flow by the number of nozzles before selecting the nozzle code.
           </p>
 
           <p>
             Example: if a 30.3 LPM machine is running a 2-nozzle surface cleaner,
             each nozzle receives 15.1 LPM. The chart should therefore be read using
-            the 15.1 LPM column, not the full 30.3 LPM machine flow.
+            the 15 LPM column, not the full 30.3 LPM machine flow.
           </p>
 
           <p>
             This is one of the most common mistakes operators make when sizing
             surface cleaner nozzles, and it can easily lead to over-sizing or
-            under-sizing the tips.
+            under-sizing the nozzles.
           </p>
         </div>
       </section>
@@ -1119,7 +1119,7 @@ export default function NozzleSizeChartPage() {
             name: "Pressure Washer Nozzle Size Chart",
             url: "https://www.pressurecal.com/nozzle-size-chart",
             description:
-              "Pressure washer nozzle size chart for matching machine pressure and flow to the correct nozzle code.",
+              "Pressure washer nozzle size chart for matching machine pressure and flow to the correct tip code.",
           })}
         </script>
       </Helmet>
@@ -1139,8 +1139,8 @@ export default function NozzleSizeChartPage() {
 
                 <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">
                   A technical reference chart for selecting pressure washer
-                  nozzle codes from machine pressure and flow rate, with LPM shown first for Australian operators. Built
-                  with the same sizing logic as the PressureCal live nozzle size
+                  nozzle tip codes from machine pressure and flow rate, with LPM shown first for Australian operators. Built
+                  with the same sizing logic as the PressureCal live nozzle
                   calculator.
                 </p>
 
@@ -1149,7 +1149,7 @@ export default function NozzleSizeChartPage() {
                     to="/nozzle-size-calculator"
                     className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
                   >
-                    Open Nozzle Size Calculator
+                    Open Nozzle Calculator
                   </Link>
                   <a
                     href="#standard-chart"
