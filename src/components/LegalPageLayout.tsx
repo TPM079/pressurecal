@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
+import PressureCalLayout from "./PressureCalLayout";
 
 type LegalPageLayoutProps = {
   eyebrow: string;
@@ -15,40 +16,40 @@ export default function LegalPageLayout({
   children,
 }: LegalPageLayoutProps) {
   return (
-    <div className="bg-slate-950 text-slate-100">
-      <section className="border-b border-white/10 bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950">
-        <div className="mx-auto max-w-5xl px-6 py-16 md:px-8 md:py-20">
+    <PressureCalLayout>
+      <section className="-mx-4 border-b border-slate-200 bg-slate-100 px-4">
+        <div className="mx-auto max-w-5xl py-14 sm:py-16">
           <div className="max-w-3xl">
-            <p className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-sky-300">
+            <p className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-sky-700">
               {eyebrow}
             </p>
 
-            <h1 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">
+            <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
               {title}
             </h1>
 
-            <p className="mt-5 text-base leading-7 text-slate-300 md:text-lg">
+            <p className="mt-5 text-base leading-7 text-slate-700 sm:text-lg">
               {intro}
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
                 to="/"
-                className="inline-flex items-center rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-100 transition hover:border-white/20 hover:bg-white/10"
+                className="inline-flex items-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
               >
                 Back to home
               </Link>
 
               <Link
                 to="/terms"
-                className="inline-flex items-center rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-slate-300 transition hover:border-white/20 hover:bg-white/5 hover:text-white"
+                className="inline-flex items-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
               >
                 Terms
               </Link>
 
               <Link
                 to="/privacy"
-                className="inline-flex items-center rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-slate-300 transition hover:border-white/20 hover:bg-white/5 hover:text-white"
+                className="inline-flex items-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
               >
                 Privacy
               </Link>
@@ -57,19 +58,19 @@ export default function LegalPageLayout({
         </div>
       </section>
 
-      <section>
-        <div className="mx-auto max-w-5xl px-6 py-12 md:px-8 md:py-16">
-          <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 shadow-2xl shadow-black/20 backdrop-blur md:p-10">
+      <section className="-mx-4 bg-white px-4">
+        <div className="mx-auto max-w-5xl py-12 sm:py-16">
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-10">
             <div
               className="
-                prose prose-invert prose-slate max-w-none
-                prose-headings:scroll-mt-24 prose-headings:font-semibold
-                prose-p:text-slate-300
-                prose-strong:text-white
-                prose-a:text-sky-300 hover:prose-a:text-sky-200
+                prose prose-slate max-w-none
+                prose-headings:scroll-mt-24 prose-headings:font-semibold prose-headings:text-slate-950
+                prose-p:text-slate-700
+                prose-strong:text-slate-950
+                prose-a:text-sky-700 hover:prose-a:text-sky-800
                 prose-ul:my-5 prose-ul:ml-6 prose-ul:list-disc
                 prose-ol:my-5 prose-ol:ml-6 prose-ol:list-decimal
-                prose-li:my-2 prose-li:text-slate-300
+                prose-li:my-2 prose-li:text-slate-700
                 prose-li:[display:list-item]
                 prose-ul:[list-style-type:disc]
                 prose-ol:[list-style-type:decimal]
@@ -80,6 +81,6 @@ export default function LegalPageLayout({
           </div>
         </div>
       </section>
-    </div>
+    </PressureCalLayout>
   );
 }
