@@ -147,7 +147,7 @@ function buildSuggestedSetupName(inputs: Inputs) {
   ];
 
   if (nozzleText) {
-    parts.push(`tip ${nozzleText}`);
+    parts.push(`nozzle ${nozzleText}`);
   }
 
   parts.push(modeText);
@@ -525,10 +525,10 @@ export default function FullRigCalculatorPage() {
   return (
     <PressureCalLayout>
       <Helmet>
-        <title>Full Rig Pressure Washer Calculator | PressureCal</title>
+        <title>Full Pressure Washer Setup Calculator | PressureCal</title>
         <meta
           name="description"
-          content="Full rig calculator for pressure washer setup, including hose loss, nozzle calibration, operating pressure, and power requirement."
+          content="Full setup calculator for pressure washer systems, including hose loss, nozzle sizing, operating pressure, flow, and power requirement."
         />
         <link rel="canonical" href="https://www.pressurecal.com/calculator" />
       </Helmet>
@@ -540,10 +540,10 @@ export default function FullRigCalculatorPage() {
               Full setup calculator
             </div>
             <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
-              Full Rig Pressure Washer Calculator
+              Full Pressure Washer Setup Calculator
             </h1>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              Model hose loss, nozzle match, at-gun pressure, flow, and power requirement in one real-world setup view.
+              Model hose loss, nozzle match, at-gun pressure, flow, and power requirement in one setup view.
             </p>
           </div>
 
@@ -556,10 +556,10 @@ export default function FullRigCalculatorPage() {
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    Your setup
+                    Current setup
                   </div>
                   <div className="mt-1 text-sm text-slate-600">
-                    Live summary of what PressureCal is modelling right now.
+                    Everything PressureCal is modelling right now.
                   </div>
 
                   {loadedFromLink ? (
@@ -630,8 +630,8 @@ export default function FullRigCalculatorPage() {
 
               <div className="text-xs text-slate-500">
                 {isAuthenticated && isPro
-                  ? "Save, share, or compare this exact rig setup."
-                  : "Share this exact rig setup."}
+                  ? "Save, share, or compare this exact setup."
+                  : "Share this exact setup."}
               </div>
             </div>
 
@@ -796,7 +796,7 @@ export default function FullRigCalculatorPage() {
                   </div>
                   <h2 className="mt-2 text-2xl font-semibold text-slate-900">Share this PressureCal result</h2>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
-                    Copy a clean result summary or share the live calculator link with the exact rig loaded.
+                    Copy a clean result summary or share the live calculator link with the exact setup loaded.
                   </p>
                 </div>
 
@@ -880,10 +880,10 @@ export default function FullRigCalculatorPage() {
           <section className="mb-6 rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
             <div className="max-w-4xl">
               <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-                What this full rig calculator models
+                What this full setup calculator checks
               </h2>
               <p className="mt-3 text-sm leading-7 text-slate-600">
-                This full rig pressure washer calculator is designed for operators who want to understand
+                This full pressure washer setup calculator is designed for operators who want to understand
                 how the whole setup behaves, not just one number at a time. It combines machine pressure,
                 machine flow, hose length, hose internal diameter, nozzle size, and optional engine power
                 so you can estimate the real operating point at the gun.
@@ -891,7 +891,7 @@ export default function FullRigCalculatorPage() {
               <p className="mt-4 text-sm leading-7 text-slate-600">
                 Use this page when a simple nozzle chart or conversion tool is not enough. It is especially
                 useful when the machine feels weak at the gun, when hose runs are long, when surface cleaner
-                nozzle counts change the required tip size, or when you want to compare rated pump pressure
+                nozzle counts change the required nozzle size, or when you want to compare rated pump pressure
                 with the pressure you are likely to see while working.
               </p>
               <div className="mt-5 flex flex-wrap gap-3">
@@ -1121,7 +1121,7 @@ export default function FullRigCalculatorPage() {
                 ) : null}
 
                 <div className="lg:col-span-2">
-                  <label className="block text-sm font-semibold text-slate-800">Nozzle size / tip</label>
+                  <label className="block text-sm font-semibold text-slate-800">Nozzle size</label>
                   <input
                     type="text"
                     value={inputs.nozzleSizeText}
@@ -1167,7 +1167,7 @@ export default function FullRigCalculatorPage() {
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Recommended nozzle</div>
                     <div className="mt-2 text-2xl font-semibold text-slate-950">{calibratedDisplayTipCode}</div>
-                    <div className="mt-1 text-sm text-slate-600">Selected tip {selectedDisplayTipCode}</div>
+                    <div className="mt-1 text-sm text-slate-600">Selected nozzle {selectedDisplayTipCode}</div>
                   </div>
                 </div>
 
