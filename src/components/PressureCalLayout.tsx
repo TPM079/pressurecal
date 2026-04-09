@@ -187,23 +187,20 @@ export default function PressureCalLayout({ children }: PressureCalLayoutProps) 
       <main className="px-4 py-8 pb-24 sm:py-10 sm:pb-10">{children}</main>
 
       <footer className="border-t border-slate-200 bg-white">
-        <div className="mx-auto max-w-6xl px-4 py-6 sm:py-8">
+        <div className="mx-auto max-w-6xl px-4 py-6">
           <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
             <div className="max-w-xl">
               <p className="text-base font-semibold text-slate-900">PressureCal</p>
-              <p className="mt-2 text-sm leading-7 text-slate-500">
+              <p className="mt-2 text-sm leading-6 text-slate-500">
                 Practical pressure washer setup modelling for nozzle sizing, hose pressure
-                loss, and real at-gun performance.
+                loss, and at-gun performance.
               </p>
-              <p className="mt-5 text-sm leading-7 text-slate-500">
-                PressureCal acknowledges the Traditional Owners of Country throughout Australia and
-                recognises their continuing connection to land, waters and community. We pay our
-                respects to Elders past and present.
+              <p className="mt-4 text-sm text-slate-500">
+                © {new Date().getFullYear()} PressureCal
               </p>
-              <p className="mt-5 text-sm text-slate-500">© {new Date().getFullYear()} PressureCal</p>
             </div>
 
-            <div className="hidden gap-6 sm:grid sm:grid-cols-2">
+            <div className="grid gap-6 sm:grid-cols-2">
               <div>
                 <p className="text-sm font-semibold text-slate-900">Tools</p>
                 <div className="mt-3 flex flex-col gap-2 text-sm text-slate-500">
@@ -233,52 +230,6 @@ export default function PressureCalLayout({ children }: PressureCalLayoutProps) 
                   ))}
                 </div>
               </div>
-            </div>
-
-            <div className="sm:hidden">
-              <details className="rounded-2xl border border-slate-200 bg-slate-50">
-                <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-slate-900 [&::-webkit-details-marker]:hidden">
-                  <div className="flex items-center justify-between">
-                    <span>Tools</span>
-                    <span className="text-slate-400">+</span>
-                  </div>
-                </summary>
-                <div className="border-t border-slate-200 px-4 py-3">
-                  <div className="flex flex-col gap-2 text-sm text-slate-500">
-                    {navLinks.map((link) => (
-                      <Link
-                        key={link.to}
-                        to={link.to}
-                        className="transition hover:text-slate-700"
-                      >
-                        {link.label}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              </details>
-
-              <details className="mt-3 rounded-2xl border border-slate-200 bg-slate-50">
-                <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-slate-900 [&::-webkit-details-marker]:hidden">
-                  <div className="flex items-center justify-between">
-                    <span>Company</span>
-                    <span className="text-slate-400">+</span>
-                  </div>
-                </summary>
-                <div className="border-t border-slate-200 px-4 py-3">
-                  <div className="flex flex-col gap-2 text-sm text-slate-500">
-                    {legalLinks.map((link) => (
-                      <Link
-                        key={link.to}
-                        to={link.to}
-                        className="transition hover:text-slate-700"
-                      >
-                        {link.label}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              </details>
             </div>
           </div>
         </div>
