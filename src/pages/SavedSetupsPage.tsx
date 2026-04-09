@@ -265,7 +265,7 @@ export default function SavedSetupsPage() {
         setCopiedSetupId((current) => (current === setupId ? null : current));
       }, 1800);
     } catch {
-      window.prompt("Copy this share link:", url);
+      window.prompt("Copy this setup link:", url);
     }
   }
 
@@ -275,7 +275,7 @@ export default function SavedSetupsPage() {
         <title>Saved Setups | PressureCal Pro</title>
         <meta
           name="description"
-          content="Save, organise, and reuse your full machine configuration with PressureCal Pro."
+          content="Save, organise, and reuse the setups you trust with PressureCal Pro."
         />
       </Helmet>
 
@@ -289,8 +289,7 @@ export default function SavedSetupsPage() {
               Saved Setups
             </h1>
             <p className="mt-5 text-lg leading-8 text-slate-300">
-              Save the full calculator snapshot so your pressure, flow, hose, engine,
-              nozzle, and spray-mode assumptions stay accurate when you compare or reopen a setup.
+              Save your pressure, flow, hose, engine, nozzle, and spray-mode assumptions in one place so you can reopen, compare, and reuse setups without re-entering everything.
             </p>
           </div>
         </div>
@@ -329,7 +328,7 @@ export default function SavedSetupsPage() {
               <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
                 <h2 className="text-2xl font-bold text-slate-950">Saved Setups is a Pro feature</h2>
                 <p className="mt-3 text-base leading-7 text-slate-600">
-                  Upgrade to PressureCal Pro to save full rig snapshots and compare them accurately.
+                  Upgrade to PressureCal Pro to save full setups and compare them accurately.
                 </p>
                 <div className="mt-6">
                   <Link
@@ -351,7 +350,7 @@ export default function SavedSetupsPage() {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <h2 className="text-2xl font-bold text-slate-950">
-                      {selectedSetupId ? "Edit setup" : "Create a saved setup"}
+                      {selectedSetupId ? "Edit saved setup" : "Create saved setup"}
                     </h2>
                     <p className="mt-2 text-sm leading-6 text-slate-600">
                       Engine HP is optional. Leave it blank if you do not want engine-load checks.
@@ -376,7 +375,7 @@ export default function SavedSetupsPage() {
                       type="text"
                       value={form.name}
                       onChange={(event) => updateField("name", event.target.value)}
-                      placeholder="Example: 21 LPM trailer rig"
+                      placeholder="Example: 21 LPM trailer setup"
                       className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
                     />
                   </label>
@@ -535,7 +534,7 @@ export default function SavedSetupsPage() {
                   </label>
 
                   <label className="block sm:col-span-2">
-                    <span className="text-sm font-semibold text-slate-800">Nozzle size / tip</span>
+                    <span className="text-sm font-semibold text-slate-800">Nozzle size</span>
                     <input
                       type="text"
                       value={form.nozzleSizeText}
@@ -604,7 +603,7 @@ export default function SavedSetupsPage() {
                   <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6">
                     <p className="text-sm font-semibold text-slate-900">No saved setups yet</p>
                     <p className="mt-2 text-sm leading-6 text-slate-600">
-                      Create your first setup on the left to start building your Pro library.
+                      Create your first saved setup on the left to start building your Pro library.
                     </p>
                   </div>
                 ) : (
@@ -638,7 +637,7 @@ export default function SavedSetupsPage() {
                               onClick={() => copyShareLink(setup.id)}
                               className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
                             >
-                              {copiedSetupId === setup.id ? "Copied ✓" : "Copy share link"}
+                              {copiedSetupId === setup.id ? "Copied ✓" : "Copy setup link"}
                             </button>
                             <Link
                               to={compareHref(setup.id)}
