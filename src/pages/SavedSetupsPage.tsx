@@ -630,7 +630,7 @@ export default function SavedSetupsPage() {
                               to={openInCalculatorHref(setup.id)}
                               className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
                             >
-                              Open in calculator
+                              Open in Full Setup Calculator
                             </Link>
                             <button
                               type="button"

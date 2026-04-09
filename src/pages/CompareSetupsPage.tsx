@@ -369,14 +369,14 @@ export default function CompareSetupsPage() {
             bClass: valueClass(comparedA, comparedB, (item) => Math.abs(item.pressureVariancePct), "lower", "b"),
           },
           {
-            label: "Selected tip",
+            label: "Selected nozzle",
             aValue: comparedA.selectedTipCode,
             bValue: comparedB.selectedTipCode,
             aClass: "text-slate-900",
             bClass: "text-slate-900",
           },
           {
-            label: "Calibrated tip",
+            label: "Calibrated nozzle",
             aValue: comparedA.calibratedTipCode,
             bValue: comparedB.calibratedTipCode,
             aClass: "text-slate-900",
@@ -460,7 +460,7 @@ export default function CompareSetupsPage() {
         <title>Compare Setups | PressureCal Pro</title>
         <meta
           name="description"
-          content="Compare two pressure washer setups side by side with PressureCal Pro."
+          content="Compare two saved setups side by side with PressureCal Pro, or compare a saved setup against your current calculator."
         />
       </Helmet>
 
@@ -474,7 +474,7 @@ export default function CompareSetupsPage() {
               Compare Setups
             </h1>
             <p className="mt-5 text-lg leading-8 text-slate-300">
-              Compare a live calculator snapshot against a saved setup, or compare two saved setups side by side.
+              Compare your current calculator state against a saved setup, or compare two saved setups side by side.
             </p>
           </div>
         </div>
@@ -487,7 +487,7 @@ export default function CompareSetupsPage() {
               <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
                 <h2 className="text-2xl font-bold text-slate-950">Sign in to compare setups</h2>
                 <p className="mt-3 text-base leading-7 text-slate-600">
-                  Compare Setups are linked to your PressureCal account. Sign in to access your saved setups and Pro tools.
+                  Setup comparisons are linked to your PressureCal account. Sign in to access your saved setups and Pro tools.
                 </p>
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                   <Link
@@ -513,14 +513,14 @@ export default function CompareSetupsPage() {
               <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
                 <h2 className="text-2xl font-bold text-slate-950">Compare Setups is a Pro feature</h2>
                 <p className="mt-3 text-base leading-7 text-slate-600">
-                  Upgrade to PressureCal Pro to compare saved setups side by side.
+                  Upgrade to PressureCal Pro to compare saved setups side by side and see what changed.
                 </p>
                 <div className="mt-6">
                   <Link
                     to="/pro"
                     className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
                   >
-                    View PressureCal Pro plans
+                    See PressureCal Pro
                   </Link>
                 </div>
               </div>
@@ -535,11 +535,11 @@ export default function CompareSetupsPage() {
                 <div className="grid flex-1 gap-5 md:grid-cols-2">
                   {liveMode ? (
                     <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4">
-                      <span className="text-sm font-semibold text-blue-900">Setup A · Live current calculator</span>
+                      <span className="text-sm font-semibold text-blue-900">Setup A · Current calculator</span>
                       <div className="mt-2 rounded-2xl border border-blue-200 bg-white px-4 py-3">
                         <div className="text-sm font-semibold text-slate-950">{liveName}</div>
                         <div className="mt-1 text-sm text-slate-600">
-                          Live calculator snapshot loaded from the compare link.
+                          Current calculator state loaded from the compare link.
                         </div>
                       </div>
                     </div>
@@ -605,7 +605,7 @@ export default function CompareSetupsPage() {
                     to={liveMode ? "/calculator" : "/saved-setups"}
                     className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
                   >
-                    {liveMode ? "Back to calculator" : "Back to Saved Setups"}
+                    {liveMode ? "Back to Full Setup Calculator" : "Back to Saved Setups"}
                   </Link>
                 </div>
               </div>
@@ -741,7 +741,7 @@ export default function CompareSetupsPage() {
                           to={openCalculatorHref(item)}
                           className="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
                         >
-                          Open in calculator
+                          Open in Full Setup Calculator
                         </Link>
                         {index === 1 && liveMode ? (
                           <Link
