@@ -376,7 +376,7 @@ function ReferenceTable({
                             );
                           }}
                           className="w-full px-2 py-2"
-                          title="Copy nozzle code and open nozzle size calculator"
+                          title="Copy tip code and open calculator"
                         >
                           {value}
                         </button>
@@ -407,9 +407,9 @@ function ReferenceTable({
           </p>
           <p>
             <span className="font-semibold text-slate-800">
-              Nozzle code convention:
+              Tip code convention:
             </span>{" "}
-            PressureCal displays nozzle size using the common pressure-washer
+            PressureCal displays tip size using the common pressure-washer
             nozzle code style.
           </p>
         </div>
@@ -448,13 +448,13 @@ function TechnicalNotesPanel() {
         <p>
           For <strong className="text-slate-900">surface cleaners</strong> or
           other multi-nozzle assemblies, divide total machine flow by the number
-          of nozzles before selecting the nozzle size.
+          of nozzles before selecting the tip size.
         </p>
 
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900">
-          <span className="font-semibold">Example:</span> An 8 GPM machine with
-          a 2-nozzle surface cleaner delivers 4 GPM per nozzle, so each nozzle
-          should be selected from the 4 GPM column.
+          <span className="font-semibold">Example:</span> A 30 LPM (8 GPM) machine with
+          a 2-nozzle surface cleaner delivers 15 LPM (4 GPM) per nozzle, so each nozzle
+          should be selected from the 15 LPM column.
         </div>
 
         <p className="text-xs text-slate-500">
@@ -504,7 +504,7 @@ function ExamplePanel() {
 
         <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-5">
           <div className="text-xs font-semibold uppercase tracking-wide text-blue-800">
-            Recommended Nozzle Code
+            Recommended Tip Code
           </div>
           <div className="mt-2 text-4xl font-bold tracking-tight text-blue-950">
             040
@@ -519,7 +519,7 @@ function ExamplePanel() {
               to="/nozzle-size-calculator?p=276&pu=bar&f=15.1&fu=lpm"
               className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
             >
-              Open in Nozzle Size Calculator
+              Open in Calculator
             </Link>
             <Link
               to={buildChartHref(276, "15.1")}
@@ -747,7 +747,7 @@ function SurfaceCleanerHelper() {
 
             <div className="mt-4 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4">
               <div className="text-xs font-semibold uppercase tracking-wide text-blue-800">
-                Estimated Nozzle Code
+                Estimated Tip Code
               </div>
               <div className="mt-2 text-3xl font-bold tracking-tight text-blue-950">
                 {estimatedTipCode}
@@ -787,7 +787,7 @@ function SurfaceCleanerHelper() {
                 to={calculatorHref}
                 className="flex w-full items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
               >
-                Open in Nozzle Size Calculator
+                Open in Calculator
               </Link>
             </div>
 
@@ -974,7 +974,7 @@ function SEOContentBlocks() {
               to="/nozzle-size-calculator?p=276&pu=bar&f=15.1&fu=lpm"
               className="inline-flex rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
             >
-              Open 15.1 LPM / 4000 PSI in Nozzle Size Calculator
+              Open 4000 PSI / 15.1 LPM in Calculator
             </Link>
           </div>
         </div>
@@ -991,19 +991,19 @@ function SEOContentBlocks() {
           <p>
             For surface cleaners and other multiple-nozzle tools, the chart must
             be used on a <strong>per-nozzle basis</strong>. Divide the total
-            machine flow by the number of nozzles before selecting the nozzle code.
+            machine flow by the number of nozzles before selecting the tip code.
           </p>
 
           <p>
             Example: if a 30.3 LPM machine is running a 2-nozzle surface cleaner,
             each nozzle receives 15.1 LPM. The chart should therefore be read using
-            the 15 LPM column, not the full 30.3 LPM machine flow.
+            the 15.1 LPM column, not the full 30.3 LPM machine flow.
           </p>
 
           <p>
             This is one of the most common mistakes operators make when sizing
             surface cleaner nozzles, and it can easily lead to over-sizing or
-            under-sizing the nozzles.
+            under-sizing the tips.
           </p>
         </div>
       </section>
@@ -1075,7 +1075,7 @@ export default function NozzleSizeChartPage() {
         setCopiedTipCode("");
       }, 1600);
     } catch {
-      window.prompt("Copy this nozzle code:", tipCode);
+      window.prompt("Copy this tip code:", tipCode);
     }
   }
 
