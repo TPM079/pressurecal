@@ -8,12 +8,12 @@ type PressureCalLayoutProps = {
 };
 
 const navLinks = [
-  { to: "/calculator", label: "Calculator" },
-  { to: "/psi-bar-calculator", label: "PSI ↔ BAR" },
-  { to: "/lpm-gpm-calculator", label: "LPM ↔ GPM" },
-  { to: "/nozzle-size-calculator", label: "Nozzle Size" },
-  { to: "/hose-pressure-loss-calculator", label: "Hose Loss" },
-  { to: "/nozzle-size-chart", label: "Nozzle Chart" },
+  { to: "/calculator", label: "Full Setup Calculator" },
+  { to: "/psi-bar-calculator", label: "PSI ↔ BAR Converter" },
+  { to: "/lpm-gpm-calculator", label: "LPM ↔ GPM Converter" },
+  { to: "/nozzle-size-calculator", label: "Nozzle Size Calculator" },
+  { to: "/hose-pressure-loss-calculator", label: "Hose Pressure Loss Calculator" },
+  { to: "/nozzle-size-chart", label: "Nozzle Size Chart" },
 ];
 
 const legalLinks = [
@@ -192,8 +192,8 @@ export default function PressureCalLayout({ children }: PressureCalLayoutProps) 
             <div className="max-w-xl">
               <p className="text-base font-semibold text-slate-900">PressureCal</p>
               <p className="mt-2 text-sm leading-6 text-slate-500">
-                Practical pressure washer modelling for nozzle sizing, hose pressure
-                loss, and real at-gun performance.
+                Practical pressure washer setup modelling for nozzle sizing, hose pressure
+                loss, and at-gun performance.
               </p>
               <p className="mt-4 text-sm text-slate-500">
                 © {new Date().getFullYear()} PressureCal
