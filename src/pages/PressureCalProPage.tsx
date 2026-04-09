@@ -610,14 +610,14 @@ export default function PressureCalProPage() {
                   type="button"
                   onClick={openCustomerPortal}
                   disabled={portalBusy}
-                  className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="hidden sm:inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {portalBusy ? "Opening billing…" : "Manage subscription"}
                 </button>
               ) : (
                 <Link
                   to="/account"
-                  className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+                  className="hidden sm:inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
                 >
                   {authState === "signed_in" ? "Manage account" : "Account"}
                 </Link>
@@ -631,12 +631,14 @@ export default function PressureCalProPage() {
         </div>
       </section>
 
-      <PricingComparisonSectionPressureCal
-        alreadyPro={alreadyPro}
-        freeCalculatorHref={FREE_CALCULATOR_HREF}
-        proHref={alreadyPro ? "/saved-setups" : "#plans"}
-        freeSaveSetupsLabel="—"
-      />
+      <div className="hidden md:block">
+        <PricingComparisonSectionPressureCal
+          alreadyPro={alreadyPro}
+          freeCalculatorHref={FREE_CALCULATOR_HREF}
+          proHref={alreadyPro ? "/saved-setups" : "#plans"}
+          freeSaveSetupsLabel="—"
+        />
+      </div>
 
       <section id="plans" className="border-b border-slate-200 bg-slate-50/70">
         <div className="mx-auto max-w-6xl px-4 py-16">
@@ -825,7 +827,7 @@ export default function PressureCalProPage() {
         </div>
       </section>
 
-      <section className="bg-slate-950 text-white">
+      <section className="hidden md:block bg-slate-950 text-white">
         <div className="mx-auto max-w-6xl px-4 py-16">
           <div className="max-w-3xl">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
