@@ -6,7 +6,7 @@ export default function PrivacyPolicyPage() {
     <LegalPageLayout
       eyebrow="Privacy Policy"
       title="Privacy Policy"
-      intro={`This Privacy Policy explains how ${siteLegal.brandName} collects, uses, stores, and discloses personal information in connection with the website, calculator tools, accounts, and subscription services.`}
+      intro={`This Privacy Policy explains how ${siteLegal.brandName} collects, uses, stores, and discloses personal information in connection with the website, calculator and modelling tools, accounts, saved setups, and subscription services.`}
     >
       <p>
         <strong>Effective date:</strong> {siteLegal.effectiveDate}
@@ -16,7 +16,7 @@ export default function PrivacyPolicyPage() {
 
       <p>
         This policy applies to {siteLegal.brandName} and its related website, calculator
-        tools, account features, support communications, and subscription services.
+        and modelling tools, account features, support communications, saved setups, and subscription services.
       </p>
 
       <h2>1. Contact details</h2>
@@ -28,8 +28,8 @@ export default function PrivacyPolicyPage() {
       <h2>2. What this policy covers</h2>
       <p>
         This policy applies to personal information collected through our website,
-        calculator and modelling tools, contact forms, account features, subscription
-        features, customer support communications, and related services.
+        calculator and modelling tools, contact forms, account features, saved setups,
+        subscription features, customer support communications, and related services.
       </p>
 
       <h2>3. What information we may collect</h2>

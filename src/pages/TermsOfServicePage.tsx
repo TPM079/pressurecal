@@ -6,7 +6,7 @@ export default function TermsOfServicePage() {
     <LegalPageLayout
       eyebrow="Terms of Service"
       title="Terms of Service"
-      intro={`These Terms of Service govern your use of ${siteLegal.brandName}, including the website, calculator and modelling tools, account features, and subscription services.`}
+      intro={`These Terms of Service govern your use of ${siteLegal.brandName}, including the website, calculator and modelling tools, account features, saved setups, and subscription services.`}
     >
       <p>
         <strong>Effective date:</strong> {siteLegal.effectiveDate}
@@ -22,7 +22,7 @@ export default function TermsOfServicePage() {
       <h2>1. What the service is</h2>
       <p>
         {siteLegal.brandName} provides calculator and modelling tools intended to help
-        users estimate pressure washing variables such as nozzle sizing, hose pressure
+        users estimate pressure washer setup variables such as nozzle sizing, hose pressure
         loss, and likely at-gun performance. The service may also include accounts, saved
         setups, subscriptions, and related educational or support content.
       </p>
