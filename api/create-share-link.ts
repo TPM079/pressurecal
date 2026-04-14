@@ -1,44 +1,42 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import {
-  getRequestOrigin,
-  insertSharedResult,
-  normalizeQueryString,
-} from "./_sharedResults";
-
-type CreateShareLinkBody = {
-  queryString?: string;
-  title?: string | null;
-  summary?: string | null;
-};
+import { createSharedResult } from "./_sharedResults.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
-    res.setHeader("Allow", "POST");
     return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
-    const body = (req.body ?? {}) as CreateShareLinkBody;
-    const queryString = normalizeQueryString(body.queryString ?? "");
+    const { queryString, title, summary } = req.body ?? {};
 
-    if (!queryString) {
+    if (!queryString || typeof queryString !== "string") {
       return res.status(400).json({ error: "Missing queryString" });
     }
 
-    const { code } = await insertSharedResult({
+    const result = await createSharedResult({
       queryString,
-      title: body.title,
-      summary: body.summary,
+      title: typeof title === "string" && title.trim() ? title.trim() : "PressureCal result",
+      summary: typeof summary === "string" && summary.trim() ? summary.trim() : null,
+      origin:
+        typeof req.headers.origin === "string" && req.headers.origin.trim()
+          ? req.headers.origin.trim()
+          : `https://${req.headers.host ?? "www.pressurecal.com"}`,
     });
 
-    const origin = getRequestOrigin(req);
-
-    return res.status(200).json({
-      code,
-      shortUrl: `${origin}/s/${code}`,
-    });
+    return res.status(200).json(result);
   } catch (error) {
     console.error("Failed to create share link:", error);
-    return res.status(500).json({ error: "Unable to create share link" });
+
+    const detail =
+      error instanceof Error
+        ? error.message
+        : typeof error === "string"
+          ? error
+          : JSON.stringify(error);
+
+    return res.status(500).json({
+      error: "Unable to create share link",
+      detail,
+    });
   }
 }
