@@ -7,6 +7,11 @@ import PressureCalLayout from "../components/PressureCalLayout";
 import { useProAccess } from "../hooks/useProAccess";
 import { useSavedSetups } from "../hooks/useSavedSetups";
 import { buildFullRigSearchParams, parseRigSearchParams } from "../lib/rigUrlState";
+import {
+  copyTextToClipboard,
+  createShortShareLink,
+  shareUrlWithNavigator,
+} from "../lib/shareLinks";
 import { solvePressureCal, barFromPsi, lpmFromGpm, roundTipCodeToFive } from "../pressurecal";
 import type { Inputs, PressureUnit, FlowUnit, LengthUnit } from "../pressurecal";
 
@@ -180,8 +185,8 @@ function buildShareSummaryText(args: {
   } = args;
 
   const setupLine = [
-    `${fmt(Number(inputs.pumpPressure || 0), 0)} ${inputs.pumpPressureUnit.toUpperCase()}`,
     `${fmt(Number(inputs.pumpFlow || 0), inputs.pumpFlowUnit === "gpm" ? 2 : 1)} ${inputs.pumpFlowUnit.toUpperCase()}`,
+    `${fmt(Number(inputs.pumpPressure || 0), 0)} ${inputs.pumpPressureUnit.toUpperCase()}`,
     `${fmt(Number(inputs.hoseLength || 0), 0)} ${inputs.hoseLengthUnit}`,
     `${fmt(Number(inputs.hoseId || 0), inputs.hoseIdUnit === "in" ? 2 : 1)} ${inputs.hoseIdUnit}`,
     inputs.sprayMode === "surfaceCleaner"
@@ -231,6 +236,8 @@ export default function FullRigCalculatorPage() {
   const [saveMessage, setSaveMessage] = useState("");
   const [sharePanelOpen, setSharePanelOpen] = useState(false);
   const [shareMessage, setShareMessage] = useState("");
+  const [shareBusy, setShareBusy] = useState(false);
+  const [shortShareUrl, setShortShareUrl] = useState("");
   const [comparePanelOpen, setComparePanelOpen] = useState(false);
   const [compareTargetSetupId, setCompareTargetSetupId] = useState("");
   const maxWasManuallyEditedRef = useRef(false);
@@ -413,9 +420,18 @@ export default function FullRigCalculatorPage() {
     },
   ];
 
+  useEffect(() => {
+    setShortShareUrl("");
+  }, [shareUrl]);
+
+  function getShareQueryString() {
+    const fromShareUrl = shareUrl.includes("?") ? shareUrl.split("?")[1] ?? "" : "";
+    return fromShareUrl || window.location.search.replace(/^\?/, "");
+  }
+
   async function copySetupLink() {
     try {
-      await navigator.clipboard.writeText(shareUrl);
+      await copyTextToClipboard(shareUrl);
       setCopyMessage("Setup link copied");
       window.setTimeout(() => setCopyMessage(""), 2000);
     } catch {
@@ -444,19 +460,74 @@ export default function FullRigCalculatorPage() {
     setSaveMessage("");
   }
 
+  function handleOpenSharePanel() {
+    setSharePanelOpen(true);
+    setShareMessage("");
+  }
+
+  function handleCloseSharePanel() {
+    setSharePanelOpen(false);
+    setShareMessage("");
+    setShareBusy(false);
+    setShortShareUrl("");
+  }
+
+  async function getOrCreateShortShareUrl() {
+    const cachedUrl = shortShareUrl.trim();
+    if (cachedUrl) {
+      return cachedUrl;
+    }
+
+    const { shortUrl } = await createShortShareLink({
+      queryString: getShareQueryString(),
+      title: "PressureCal result",
+      summary: shareSummaryText,
+    });
+
+    setShortShareUrl(shortUrl);
+    return shortUrl;
+  }
+
   async function handleCopyShareResultLink() {
     try {
-      await navigator.clipboard.writeText(shareUrl);
+      setShareBusy(true);
+      const shortUrl = await getOrCreateShortShareUrl();
+      await copyTextToClipboard(shortUrl);
       setShareMessage("Share link copied");
       window.setTimeout(() => setShareMessage(""), 2000);
     } catch {
-      window.prompt("Copy this link:", shareUrl);
+      window.alert("Unable to create a short share link right now.");
+    } finally {
+      setShareBusy(false);
+    }
+  }
+
+  async function handleNativeShareResult() {
+    try {
+      setShareBusy(true);
+      const shortUrl = await getOrCreateShortShareUrl();
+
+      const didShare = await shareUrlWithNavigator({
+        url: shortUrl,
+        title: "PressureCal result",
+        text: shareSummaryText,
+      });
+
+      if (!didShare) {
+        await copyTextToClipboard(shortUrl);
+        setShareMessage("Share link copied");
+        window.setTimeout(() => setShareMessage(""), 2000);
+      }
+    } catch {
+      // user cancelled or share failed
+    } finally {
+      setShareBusy(false);
     }
   }
 
   async function handleCopyResultSummary() {
     try {
-      await navigator.clipboard.writeText(shareSummaryText);
+      await copyTextToClipboard(shareSummaryText);
       setShareMessage("Result summary copied");
       window.setTimeout(() => setShareMessage(""), 2000);
     } catch {
@@ -586,7 +657,7 @@ export default function FullRigCalculatorPage() {
 
                   <button
                     type="button"
-                    onClick={() => setSharePanelOpen(true)}
+                    onClick={handleOpenSharePanel}
                     className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
                   >
                     Share result
@@ -796,16 +867,13 @@ export default function FullRigCalculatorPage() {
                   </div>
                   <h2 className="mt-2 text-2xl font-semibold text-slate-900">Share this PressureCal result</h2>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
-                    Copy a clean result summary or share the live calculator link with the exact setup loaded.
+                    Copy a clean result summary or share a short branded link with the exact setup loaded.
                   </p>
                 </div>
 
                 <button
                   type="button"
-                  onClick={() => {
-                    setSharePanelOpen(false);
-                    setShareMessage("");
-                  }}
+                  onClick={handleCloseSharePanel}
                   className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-100"
                 >
                   ×
@@ -852,21 +920,34 @@ export default function FullRigCalculatorPage() {
               <div className="mt-5 flex flex-wrap gap-3">
                 <button
                   type="button"
+                  onClick={handleNativeShareResult}
+                  disabled={shareBusy}
+                  className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {shareBusy ? "Preparing share link..." : "Share result"}
+                </button>
+
+                <button
+                  type="button"
                   onClick={handleCopyShareResultLink}
-                  className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                  disabled={shareBusy}
+                  className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Copy share link
                 </button>
+
                 <button
                   type="button"
                   onClick={handleCopyResultSummary}
-                  className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                  disabled={shareBusy}
+                  className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Copy result summary
                 </button>
+
                 <button
                   type="button"
-                  onClick={() => setSharePanelOpen(false)}
+                  onClick={handleCloseSharePanel}
                   className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
                 >
                   Close

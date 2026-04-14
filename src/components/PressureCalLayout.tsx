@@ -2,7 +2,7 @@ import { type ReactNode, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabase-browser";
 import FeedbackWidget from "./FeedbackWidget";
-
+import pressureCalPrimaryLogo from "../assets/PressureCal_primary_logo.png";
 type PressureCalLayoutProps = {
   children: ReactNode;
 };
@@ -87,10 +87,10 @@ export default function PressureCalLayout({ children }: PressureCalLayoutProps) 
             }}
           >
             <img
-              src="/PressureCal_primary_logo.png"
-              alt="PressureCal"
-              className="h-12 w-auto sm:h-14"
-            />
+  src={pressureCalPrimaryLogo}
+  alt="PressureCal"
+  className="h-12 w-auto sm:h-14"
+/>
           </Link>
 
           <nav className="hidden items-center gap-5 md:flex">
