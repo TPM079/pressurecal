@@ -15,6 +15,10 @@ type SubscriptionWriteInput = {
   metadata?: Record<string, unknown>;
 };
 
+type InvoiceWithSubscription = Stripe.Invoice & {
+  subscription?: string | Stripe.Subscription | null;
+};
+
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -72,7 +76,9 @@ function pickBestEmail(...candidates: Array<unknown>): string | null {
   return null;
 }
 
-function getCustomerId(customer: string | Stripe.Customer | Stripe.DeletedCustomer | null): string | null {
+function getCustomerId(
+  customer: string | Stripe.Customer | Stripe.DeletedCustomer | null
+): string | null {
   if (!customer) {
     return null;
   }
@@ -86,6 +92,16 @@ function getUserIdFromMetadata(
 ): string | null {
   const metadataUserId = nonEmptyString(metadata?.["supabase_user_id"]);
   return metadataUserId || nonEmptyString(clientReferenceId) || null;
+}
+
+function getInvoiceSubscriptionId(invoice: InvoiceWithSubscription): string | null {
+  const subscription = invoice.subscription;
+
+  if (!subscription) {
+    return null;
+  }
+
+  return typeof subscription === "string" ? subscription : subscription.id;
 }
 
 async function getExistingSubscriptionRow(subscriptionId: string) {
@@ -152,12 +168,19 @@ async function buildSubscriptionWriteInput(
   const customerId = getCustomerId(subscription.customer);
 
   let customerEmail: string | null = null;
-  if (subscription.customer && typeof subscription.customer !== "string" && !("deleted" in subscription.customer)) {
+  if (
+    subscription.customer &&
+    typeof subscription.customer !== "string" &&
+    !("deleted" in subscription.customer)
+  ) {
     customerEmail = pickBestEmail(subscription.customer.email);
   }
 
   return {
-    user_id: getUserIdFromMetadata(subscription.metadata, checkoutSession?.client_reference_id ?? null),
+    user_id: getUserIdFromMetadata(
+      subscription.metadata,
+      checkoutSession?.client_reference_id ?? null
+    ),
     stripe_customer_id: customerId,
     stripe_subscription_id: subscription.id,
     stripe_checkout_session_id: checkoutSession?.id ?? null,
@@ -171,7 +194,9 @@ async function buildSubscriptionWriteInput(
     price_id: subscription.items.data[0]?.price?.id ?? null,
     plan_interval: subscription.items.data[0]?.price?.recurring?.interval ?? null,
     current_period_end: toIsoOrNull(
-      (subscription as any).current_period_end ?? subscription.items.data[0]?.current_period_end ?? null
+      (subscription as any).current_period_end ??
+        subscription.items.data[0]?.current_period_end ??
+        null
     ),
     cancel_at_period_end: subscription.cancel_at_period_end,
     metadata: {
@@ -247,11 +272,8 @@ export default async function handler(req: any, res: any) {
 
       case "invoice.paid":
       case "invoice.payment_failed": {
-        const invoice = event.data.object as Stripe.Invoice;
-        const subscriptionId =
-          typeof invoice.subscription === "string"
-            ? invoice.subscription
-            : invoice.subscription?.id ?? null;
+        const invoice = event.data.object as InvoiceWithSubscription;
+        const subscriptionId = getInvoiceSubscriptionId(invoice);
 
         if (subscriptionId) {
           const subscription = await retrieveSubscription(subscriptionId);
