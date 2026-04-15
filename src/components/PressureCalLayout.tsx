@@ -3,8 +3,10 @@ import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabase-browser";
 import FeedbackWidget from "./FeedbackWidget";
 import pressureCalPrimaryLogo from "../assets/PressureCal_primary_logo.png";
+
 type PressureCalLayoutProps = {
   children: ReactNode;
+  hideFeedbackWidget?: boolean;
 };
 
 const navLinks = [
@@ -22,7 +24,10 @@ const legalLinks = [
   { to: "/terms", label: "Terms" },
 ];
 
-export default function PressureCalLayout({ children }: PressureCalLayoutProps) {
+export default function PressureCalLayout({
+  children,
+  hideFeedbackWidget = false,
+}: PressureCalLayoutProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
@@ -87,10 +92,10 @@ export default function PressureCalLayout({ children }: PressureCalLayoutProps) 
             }}
           >
             <img
-  src={pressureCalPrimaryLogo}
-  alt="PressureCal"
-  className="h-12 w-auto sm:h-14"
-/>
+              src={pressureCalPrimaryLogo}
+              alt="PressureCal"
+              className="h-12 w-auto sm:h-14"
+            />
           </Link>
 
           <nav className="hidden items-center gap-5 md:flex">
@@ -298,7 +303,7 @@ export default function PressureCalLayout({ children }: PressureCalLayoutProps) 
         </div>
       </footer>
 
-      <FeedbackWidget />
+      {!hideFeedbackWidget ? <FeedbackWidget /> : null}
     </div>
   );
 }

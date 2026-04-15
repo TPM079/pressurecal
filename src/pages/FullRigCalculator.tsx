@@ -44,6 +44,14 @@ const defaultInputs: Inputs = {
   hoseRoughnessMm: 0.0015,
 };
 
+const EXPORT_CARD = {
+  width: 1600,
+  height: 1040,
+  padding: 80,
+  radius: 36,
+  fontFamily: 'Inter, Arial, sans-serif',
+};
+
 function fmt(n: number, dp: number) {
   if (!Number.isFinite(n)) return "—";
   return n.toFixed(dp);
@@ -222,6 +230,171 @@ function buildLiveCompareHref(inputs: Inputs, savedSetupId: string, liveName: st
   return `/compare-setups?${params.toString()}`;
 }
 
+function buildExportSetupLine(inputs: Inputs) {
+  const nozzlePart =
+    inputs.sprayMode === "surfaceCleaner"
+      ? `Nozzle ${inputs.nozzleSizeText || "—"} × ${inputs.nozzleCount}`
+      : `Nozzle ${inputs.nozzleSizeText || "—"}`;
+
+  const enginePart =
+    inputs.engineHp === "" ? "Engine HP optional" : `Engine ${fmt(Number(inputs.engineHp || 0), 1)} HP`;
+
+  return [
+    `${fmt(Number(inputs.pumpFlow || 0), inputs.pumpFlowUnit === "gpm" ? 2 : 1)} ${inputs.pumpFlowUnit.toUpperCase()}`,
+    `${fmt(Number(inputs.pumpPressure || 0), 0)} ${inputs.pumpPressureUnit.toUpperCase()}`,
+    `${fmt(Number(inputs.hoseLength || 0), 0)} ${inputs.hoseLengthUnit}`,
+    `${fmt(Number(inputs.hoseId || 0), inputs.hoseIdUnit === "in" ? 2 : 1)} ${inputs.hoseIdUnit}`,
+    nozzlePart,
+    enginePart,
+  ].join(" · ");
+}
+
+function roundedRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number
+) {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + width - radius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+  ctx.lineTo(x + width, y + height - radius);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  ctx.lineTo(x + radius, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+}
+
+function wrapCanvasText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number
+) {
+  const words = text.split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let currentLine = "";
+
+  for (const word of words) {
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    if (ctx.measureText(testLine).width <= maxWidth) {
+      currentLine = testLine;
+    } else {
+      if (currentLine) {
+        lines.push(currentLine);
+      }
+      currentLine = word;
+    }
+  }
+
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+
+  return lines;
+}
+
+function fillRoundedCard(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+  fillStyle: string,
+  strokeStyle?: string
+) {
+  roundedRect(ctx, x, y, width, height, radius);
+  ctx.fillStyle = fillStyle;
+  ctx.fill();
+  if (strokeStyle) {
+    ctx.strokeStyle = strokeStyle;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+}
+
+function drawMetricCard(args: {
+  ctx: CanvasRenderingContext2D;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  label: string;
+  value: string;
+  secondary: string;
+}) {
+  const { ctx, x, y, width, height, label, value, secondary } = args;
+
+  fillRoundedCard(ctx, x, y, width, height, 28, "#F8FAFC", "#E2E8F0");
+
+  ctx.fillStyle = "#64748B";
+  ctx.font = `600 22px ${EXPORT_CARD.fontFamily}`;
+  ctx.textBaseline = "top";
+  ctx.fillText(label.toUpperCase(), x + 28, y + 26);
+
+  ctx.fillStyle = "#0F172A";
+  ctx.font = `700 50px ${EXPORT_CARD.fontFamily}`;
+  ctx.fillText(value, x + 28, y + 74);
+
+  ctx.fillStyle = "#475569";
+  ctx.font = `500 24px ${EXPORT_CARD.fontFamily}`;
+  ctx.fillText(secondary, x + 28, y + 144);
+}
+
+function drawBadge(args: {
+  ctx: CanvasRenderingContext2D;
+  x: number;
+  y: number;
+  text: string;
+  variant: "green" | "amber" | "red";
+}) {
+  const { ctx, x, y, text, variant } = args;
+
+  const styles = {
+    green: { bg: "#ECFDF5", border: "#BBF7D0", fg: "#166534" },
+    amber: { bg: "#FFFBEB", border: "#FDE68A", fg: "#92400E" },
+    red: { bg: "#FEF2F2", border: "#FECACA", fg: "#991B1B" },
+  }[variant];
+
+  ctx.font = `700 24px ${EXPORT_CARD.fontFamily}`;
+  const width = ctx.measureText(text).width + 40;
+  const height = 50;
+
+  fillRoundedCard(ctx, x, y, width, height, 25, styles.bg, styles.border);
+
+  ctx.fillStyle = styles.fg;
+  ctx.textBaseline = "middle";
+  ctx.fillText(text, x + 20, y + height / 2);
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const objectUrl = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = objectUrl;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+}
+
+async function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        reject(new Error("Failed to create PNG blob"));
+        return;
+      }
+      resolve(blob);
+    }, "image/png");
+  });
+}
+
 export default function FullRigCalculatorPage() {
   const [inputs, setInputs] = useState<Inputs>(() => ({
     ...defaultInputs,
@@ -237,10 +410,12 @@ export default function FullRigCalculatorPage() {
   const [sharePanelOpen, setSharePanelOpen] = useState(false);
   const [shareMessage, setShareMessage] = useState("");
   const [shareBusy, setShareBusy] = useState(false);
+  const [pngBusy, setPngBusy] = useState(false);
   const [shortShareUrl, setShortShareUrl] = useState("");
   const [comparePanelOpen, setComparePanelOpen] = useState(false);
   const [compareTargetSetupId, setCompareTargetSetupId] = useState("");
   const maxWasManuallyEditedRef = useRef(false);
+  const sharePanelRef = useRef<HTMLDivElement | null>(null);
 
   const { loading: proAccessLoading, isAuthenticated, isPro, userId } = useProAccess();
   const { setups, isReady: savedSetupsReady, saveSetup } = useSavedSetups(userId);
@@ -287,6 +462,19 @@ export default function FullRigCalculatorPage() {
       setCompareTargetSetupId(setups[0]?.id ?? "");
     }
   }, [comparePanelOpen, compareTargetSetupId, setups]);
+
+  useEffect(() => {
+    if (!sharePanelOpen) return;
+
+    const timer = window.setTimeout(() => {
+      sharePanelRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 50);
+
+    return () => window.clearTimeout(timer);
+  }, [sharePanelOpen]);
 
   const safeInputs = {
     ...inputs,
@@ -462,6 +650,8 @@ export default function FullRigCalculatorPage() {
 
   function handleOpenSharePanel() {
     setSharePanelOpen(true);
+    setSavePanelOpen(false);
+    setComparePanelOpen(false);
     setShareMessage("");
   }
 
@@ -469,6 +659,7 @@ export default function FullRigCalculatorPage() {
     setSharePanelOpen(false);
     setShareMessage("");
     setShareBusy(false);
+    setPngBusy(false);
     setShortShareUrl("");
   }
 
@@ -522,6 +713,184 @@ export default function FullRigCalculatorPage() {
       // user cancelled or share failed
     } finally {
       setShareBusy(false);
+    }
+  }
+
+  async function handleDownloadPng() {
+    try {
+      setPngBusy(true);
+
+      const canvas = document.createElement("canvas");
+      canvas.width = EXPORT_CARD.width;
+      canvas.height = EXPORT_CARD.height;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        throw new Error("Unable to create export canvas");
+      }
+
+      ctx.fillStyle = "#F8FAFC";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.shadowColor = "rgba(15, 23, 42, 0.10)";
+      ctx.shadowBlur = 40;
+      ctx.shadowOffsetY = 18;
+      fillRoundedCard(
+        ctx,
+        EXPORT_CARD.padding,
+        EXPORT_CARD.padding,
+        canvas.width - EXPORT_CARD.padding * 2,
+        canvas.height - EXPORT_CARD.padding * 2,
+        EXPORT_CARD.radius,
+        "#FFFFFF",
+        "#E2E8F0"
+      );
+      ctx.shadowColor = "transparent";
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
+
+      const cardX = EXPORT_CARD.padding;
+      const cardY = EXPORT_CARD.padding;
+      const cardWidth = canvas.width - EXPORT_CARD.padding * 2;
+      const innerX = cardX + 52;
+      const innerY = cardY + 48;
+      const innerWidth = cardWidth - 104;
+
+      ctx.textBaseline = "top";
+      ctx.fillStyle = "#183170";
+      ctx.font = `700 28px ${EXPORT_CARD.fontFamily}`;
+      ctx.fillText("PressureCal", innerX, innerY);
+
+      ctx.fillStyle = "#0F172A";
+      ctx.font = `700 56px ${EXPORT_CARD.fontFamily}`;
+      ctx.fillText("PressureCal result", innerX, innerY + 56);
+
+      ctx.fillStyle = "#475569";
+      ctx.font = `500 28px ${EXPORT_CARD.fontFamily}`;
+      const setupLines = wrapCanvasText(ctx, suggestedSetupName, innerWidth - 340);
+      let setupY = innerY + 136;
+      for (const line of setupLines.slice(0, 2)) {
+        ctx.fillText(line, innerX, setupY);
+        setupY += 36;
+      }
+
+      const badgeVariant =
+        badge.text === "Calibrated"
+          ? "green"
+          : badge.text === "Under-calibrated"
+            ? "amber"
+            : "red";
+
+      drawBadge({
+        ctx,
+        x: cardX + cardWidth - 280,
+        y: innerY + 8,
+        text: badge.text,
+        variant: badgeVariant,
+      });
+
+      const dividerY = innerY + 230;
+      ctx.strokeStyle = "#E2E8F0";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(innerX, dividerY);
+      ctx.lineTo(cardX + cardWidth - 52, dividerY);
+      ctx.stroke();
+
+      ctx.fillStyle = "#64748B";
+      ctx.font = `600 22px ${EXPORT_CARD.fontFamily}`;
+      ctx.fillText("SETUP", innerX, dividerY + 34);
+
+      ctx.fillStyle = "#334155";
+      ctx.font = `500 24px ${EXPORT_CARD.fontFamily}`;
+      const exportSetupLine = buildExportSetupLine(inputs);
+      const exportSetupLines = wrapCanvasText(ctx, exportSetupLine, innerWidth);
+      let exportSetupY = dividerY + 72;
+      for (const line of exportSetupLines.slice(0, 2)) {
+        ctx.fillText(line, innerX, exportSetupY);
+        exportSetupY += 34;
+      }
+
+      const metricY = dividerY + 168;
+      const metricGap = 24;
+      const metricWidth = (innerWidth - metricGap * 2) / 3;
+      const metricHeight = 220;
+
+      drawMetricCard({
+        ctx,
+        x: innerX,
+        y: metricY,
+        width: metricWidth,
+        height: metricHeight,
+        label: "At-gun pressure",
+        value: `${fmt(r.gunPressurePsi, 0)} PSI`,
+        secondary: `${fmt(gunBar, 1)} bar`,
+      });
+
+      drawMetricCard({
+        ctx,
+        x: innerX + metricWidth + metricGap,
+        y: metricY,
+        width: metricWidth,
+        height: metricHeight,
+        label: "Flow",
+        value: `${fmt(gunLpm, 1)} L/min`,
+        secondary: `${fmt(r.gunFlowGpm, 2)} GPM`,
+      });
+
+      drawMetricCard({
+        ctx,
+        x: innerX + (metricWidth + metricGap) * 2,
+        y: metricY,
+        width: metricWidth,
+        height: metricHeight,
+        label: "Hose loss",
+        value: `${fmt(r.hoseLossPsi, 0)} PSI`,
+        secondary: `${fmt(lossBar, 1)} bar`,
+      });
+
+      const footerY = metricY + metricHeight + 20;
+      const footerCardHeight = 108;
+
+      fillRoundedCard(ctx, innerX, footerY, innerWidth, footerCardHeight, 28, "#F8FAFC", "#E2E8F0");
+
+      ctx.fillStyle = "#64748B";
+      ctx.font = `600 20px ${EXPORT_CARD.fontFamily}`;
+      ctx.fillText("DETAILS", innerX + 24, footerY + 18);
+
+      ctx.fillStyle = "#0F172A";
+      ctx.font = `700 24px ${EXPORT_CARD.fontFamily}`;
+      ctx.fillText(`Selected nozzle ${selectedDisplayTipCode}`, innerX + 24, footerY + 48);
+      ctx.fillText(`Recommended nozzle ${calibratedDisplayTipCode}`, innerX + 24, footerY + 80);
+
+      ctx.fillStyle = "#475569";
+      ctx.font = `500 22px ${EXPORT_CARD.fontFamily}`;
+      ctx.fillText(`Pressure loss guide: ${efficiencyTier}`, innerX + 520, footerY + 48);
+
+      const noteLines = wrapCanvasText(ctx, efficiencyNote, innerWidth - 560);
+      let noteY = footerY + 80;
+      for (const line of noteLines.slice(0, 1)) {
+        ctx.fillText(line, innerX + 520, noteY);
+        noteY += 28;
+      }
+
+      ctx.fillStyle = "#475569";
+      ctx.font = `600 22px ${EXPORT_CARD.fontFamily}`;
+      ctx.fillText("pressurecal.com", innerX, canvas.height - 150);
+
+      ctx.fillStyle = "#64748B";
+      ctx.font = `500 20px ${EXPORT_CARD.fontFamily}`;
+      ctx.fillText("Model your machine from pump to gun.", innerX, canvas.height - 114);
+
+      const blob = await canvasToBlob(canvas);
+      downloadBlob(blob, "pressurecal-result.png");
+
+      setShareMessage("PNG downloaded");
+      window.setTimeout(() => setShareMessage(""), 2200);
+    } catch {
+      window.alert("Unable to export PNG right now.");
+    } finally {
+      setPngBusy(false);
     }
   }
 
@@ -594,7 +963,7 @@ export default function FullRigCalculatorPage() {
   }
 
   return (
-    <PressureCalLayout>
+    <PressureCalLayout hideFeedbackWidget={sharePanelOpen}>
       <Helmet>
         <title>Full Pressure Washer Setup Calculator | PressureCal</title>
         <meta
@@ -859,7 +1228,10 @@ export default function FullRigCalculatorPage() {
           </div>
 
           {sharePanelOpen ? (
-            <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div
+              ref={sharePanelRef}
+              className="mb-6 scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+            >
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
@@ -867,7 +1239,7 @@ export default function FullRigCalculatorPage() {
                   </div>
                   <h2 className="mt-2 text-2xl font-semibold text-slate-900">Share this PressureCal result</h2>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
-                    Copy a clean result summary or share a short branded link with the exact setup loaded.
+                    Copy a clean result summary, download a PNG card, or share a short branded link with the exact setup loaded.
                   </p>
                 </div>
 
@@ -921,7 +1293,7 @@ export default function FullRigCalculatorPage() {
                 <button
                   type="button"
                   onClick={handleNativeShareResult}
-                  disabled={shareBusy}
+                  disabled={shareBusy || pngBusy}
                   className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {shareBusy ? "Preparing share link..." : "Share result"}
@@ -929,8 +1301,17 @@ export default function FullRigCalculatorPage() {
 
                 <button
                   type="button"
+                  onClick={handleDownloadPng}
+                  disabled={pngBusy || shareBusy}
+                  className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {pngBusy ? "Preparing PNG..." : "Download PNG"}
+                </button>
+
+                <button
+                  type="button"
                   onClick={handleCopyShareResultLink}
-                  disabled={shareBusy}
+                  disabled={shareBusy || pngBusy}
                   className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Copy share link
@@ -939,18 +1320,10 @@ export default function FullRigCalculatorPage() {
                 <button
                   type="button"
                   onClick={handleCopyResultSummary}
-                  disabled={shareBusy}
+                  disabled={shareBusy || pngBusy}
                   className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Copy result summary
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleCloseSharePanel}
-                  className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                >
-                  Close
                 </button>
               </div>
 
