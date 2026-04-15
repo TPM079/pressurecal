@@ -121,293 +121,290 @@ export default function PsiBarCalculatorPage() {
 
   return (
     <PressureCalLayout>
-      <>
-        <Helmet>
-          <title>PSI ↔ BAR Converter | PressureCal</title>
-          <meta
-            name="description"
-            content="Convert PSI to BAR and BAR to PSI instantly. Accurate pressure conversion for pressure washing equipment, pumps, and setup checks."
-          />
-          <link
-            rel="canonical"
-            href="https://www.pressurecal.com/psi-bar-calculator"
-          />
-          <meta
-            property="og:title"
-            content="PSI ↔ BAR Converter | PressureCal"
-          />
-          <meta
-            property="og:description"
-            content="Convert PSI to BAR and BAR to PSI instantly. Accurate pressure conversion for pressure washing equipment, pumps, and setup checks."
-          />
-          <meta
-            property="og:url"
-            content="https://www.pressurecal.com/psi-bar-calculator"
-          />
-          <meta property="og:type" content="website" />
-          <meta
-            name="twitter:title"
-            content="PSI ↔ BAR Converter | PressureCal"
-          />
-          <meta
-            name="twitter:description"
-            content="Convert PSI to BAR and BAR to PSI instantly. Accurate pressure conversion for pressure washing equipment, pumps, and setup checks."
-          />
-          <script type="application/ld+json">
-            {JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "WebApplication",
-              name: "PSI ↔ BAR Converter",
-              url: "https://www.pressurecal.com/psi-bar-calculator",
-              applicationCategory: "Converter",
-              operatingSystem: "Web",
-              description:
-                "Convert PSI to BAR and BAR to PSI instantly. Accurate pressure conversion for pressure washing equipment, pumps, and setup checks.",
-            })}
-          </script>
-        </Helmet>
+      <Helmet>
+        <title>PSI to BAR Converter | Pressure Washer Pressure Calculator</title>
+        <meta
+          name="description"
+          content="Convert PSI to BAR and BAR to PSI for pressure washer setups, pumps, and machine specs. Check common pressure conversions fast, including 4000 PSI to BAR."
+        />
+        <link
+          rel="canonical"
+          href="https://www.pressurecal.com/psi-bar-calculator"
+        />
+        <meta
+          property="og:title"
+          content="PSI to BAR Converter | Pressure Washer Pressure Calculator"
+        />
+        <meta
+          property="og:description"
+          content="Convert PSI to BAR and BAR to PSI for pressure washer setups, pumps, and machine specs. Check common pressure conversions fast, including 4000 PSI to BAR."
+        />
+        <meta
+          property="og:url"
+          content="https://www.pressurecal.com/psi-bar-calculator"
+        />
+        <meta property="og:type" content="website" />
+        <meta
+          name="twitter:title"
+          content="PSI to BAR Converter | Pressure Washer Pressure Calculator"
+        />
+        <meta
+          name="twitter:description"
+          content="Convert PSI to BAR and BAR to PSI for pressure washer setups, pumps, and machine specs. Check common pressure conversions fast, including 4000 PSI to BAR."
+        />
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebApplication",
+            name: "PSI to BAR Converter",
+            url: "https://www.pressurecal.com/psi-bar-calculator",
+            applicationCategory: "Converter",
+            operatingSystem: "Web",
+            description:
+              "Convert PSI to BAR and BAR to PSI for pressure washer setups, pumps, and machine specs. Check common pressure conversions fast, including 4000 PSI to BAR.",
+          })}
+        </script>
+      </Helmet>
 
-        <div className="mx-auto max-w-3xl">
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
-            <div className="mb-6">
-              <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">
-                Pressure Conversion
-              </p>
-              <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
-                PSI ↔ BAR Converter
-              </h1>
-              <p className="mt-3 text-base text-slate-600">
-                Convert pressure instantly between PSI and BAR for pressure
-                washing, pump setup, machine specifications, and equipment
-                calibration.
-              </p>
-            </div>
+      <div className="mx-auto max-w-3xl">
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+          <div className="mb-6">
+            <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">
+              Pressure Conversion
+            </p>
+            <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
+              PSI to BAR Converter
+            </h1>
+            <p className="mt-3 text-base text-slate-600">
+              Convert PSI to BAR and BAR to PSI for pressure washer setups, pumps,
+              machine specifications, and gauge checks.
+            </p>
+          </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <label
-                  htmlFor="psi"
-                  className="mb-2 block text-sm font-medium text-slate-700"
-                >
-                  PSI
-                </label>
-                <input
-                  ref={psiInputRef}
-                  id="psi"
-                  type="number"
-                  inputMode="decimal"
-                  autoFocus
-                  value={lastEdited === "psi" ? psiInput : result.psi}
-                  onChange={(e) => handlePsiChange(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.currentTarget.blur();
-                    }
-                  }}
-                  placeholder="Enter PSI"
-                  className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="bar"
-                  className="mb-2 block text-sm font-medium text-slate-700"
-                >
-                  BAR
-                </label>
-                <input
-                  id="bar"
-                  type="number"
-                  inputMode="decimal"
-                  value={lastEdited === "bar" ? barInput : result.bar}
-                  onChange={(e) => handleBarChange(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.currentTarget.blur();
-                    }
-                  }}
-                  placeholder="Enter BAR"
-                  className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-                />
-              </div>
-            </div>
-
-            <div className="mt-5 flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={handleClear}
-                className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 active:scale-[0.98]"
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label
+                htmlFor="psi"
+                className="mb-2 block text-sm font-medium text-slate-700"
               >
-                Clear
-              </button>
+                PSI
+              </label>
+              <input
+                ref={psiInputRef}
+                id="psi"
+                type="number"
+                inputMode="decimal"
+                autoFocus
+                value={lastEdited === "psi" ? psiInput : result.psi}
+                onChange={(e) => handlePsiChange(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.currentTarget.blur();
+                  }
+                }}
+                placeholder="Enter PSI"
+                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+              />
+            </div>
 
-              <button
-                type="button"
-                onClick={handleSwap}
-                disabled={!hasValidResult}
-                className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+            <div>
+              <label
+                htmlFor="bar"
+                className="mb-2 block text-sm font-medium text-slate-700"
               >
-                Swap
-              </button>
-
-              <button
-                type="button"
-                onClick={handleCopyResult}
-                disabled={!hasValidResult}
-                className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {copied ? "Copied" : "Copy Result"}
-              </button>
-            </div>
-
-            {hasValidResult && (
-              <div className="mt-5 rounded-2xl border border-blue-100 bg-blue-50 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
-                  Result
-                </p>
-                <p className="mt-2 text-lg font-semibold text-slate-900">
-                  {result.psi} PSI = {result.bar} BAR
-                </p>
-              </div>
-            )}
-
-            <div className="mt-6">
-              <p className="mb-3 text-sm font-medium text-slate-700">
-                Quick PSI presets
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {[1000, 2000, 3000, 4000, 5000].map((value) => {
-                  const isActive =
-                    lastEdited === "psi" && psiInput === String(value);
-
-                  return (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => setPsiPreset(value)}
-                      className={`rounded-xl border px-3 py-2 text-sm font-medium transition active:scale-[0.98] ${
-                        isActive
-                          ? "border-blue-600 bg-blue-600 text-white"
-                          : "border-slate-200 text-slate-700 hover:bg-slate-100"
-                      }`}
-                    >
-                      {value} PSI
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="mt-4">
-              <p className="mb-3 text-sm font-medium text-slate-700">
-                Quick BAR presets
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {[70, 100, 150, 200, 250].map((value) => {
-                  const isActive =
-                    lastEdited === "bar" && barInput === String(value);
-
-                  return (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => setBarPreset(value)}
-                      className={`rounded-xl border px-3 py-2 text-sm font-medium transition active:scale-[0.98] ${
-                        isActive
-                          ? "border-blue-600 bg-blue-600 text-white"
-                          : "border-slate-200 text-slate-700 hover:bg-slate-100"
-                      }`}
-                    >
-                      {value} BAR
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="mt-8 rounded-2xl bg-slate-50 p-4">
-              <h2 className="text-sm font-semibold text-slate-900">
-                Conversion formulas
-              </h2>
-              <p className="mt-2 text-sm text-slate-600">
-                BAR = PSI × 0.0689476
-              </p>
-              <p className="text-sm text-slate-600">PSI = BAR × 14.5038</p>
-            </div>
-
-            <div className="mt-6 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-slate-200 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Example
-                </p>
-                <p className="mt-2 text-sm text-slate-700">
-                  1000 PSI = 68.95 BAR
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-slate-200 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Example
-                </p>
-                <p className="mt-2 text-sm text-slate-700">
-                  3000 PSI = 206.84 BAR
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-slate-200 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Example
-                </p>
-                <p className="mt-2 text-sm text-slate-700">
-                  250 BAR = 3626 PSI
-                </p>
-              </div>
+                BAR
+              </label>
+              <input
+                id="bar"
+                type="number"
+                inputMode="decimal"
+                value={lastEdited === "bar" ? barInput : result.bar}
+                onChange={(e) => handleBarChange(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.currentTarget.blur();
+                  }
+                }}
+                placeholder="Enter BAR"
+                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+              />
             </div>
           </div>
 
-          <div className="mt-10 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
-            <h2 className="text-lg font-semibold text-slate-900">
-              PSI to BAR Conversion
-            </h2>
-            <p className="mt-3 text-sm leading-6 text-slate-600">
-              PSI and BAR are common pressure units used across pressure washing
-              equipment, pumps, unloaders, gauges, and industrial systems. This
-              calculator helps operators and equipment builders quickly convert
-              between PSI and BAR for setup, troubleshooting, and accurate
-              machine calibration.
+          <div className="mt-5 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={handleClear}
+              className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 active:scale-[0.98]"
+            >
+              Clear
+            </button>
+
+            <button
+              type="button"
+              onClick={handleSwap}
+              disabled={!hasValidResult}
+              className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Swap
+            </button>
+
+            <button
+              type="button"
+              onClick={handleCopyResult}
+              disabled={!hasValidResult}
+              className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {copied ? "Copied" : "Copy Result"}
+            </button>
+          </div>
+
+          {hasValidResult && (
+            <div className="mt-5 rounded-2xl border border-blue-100 bg-blue-50 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                Result
+              </p>
+              <p className="mt-2 text-lg font-semibold text-slate-900">
+                {result.psi} PSI = {result.bar} BAR
+              </p>
+            </div>
+          )}
+
+          <div className="mt-6">
+            <p className="mb-3 text-sm font-medium text-slate-700">
+              Quick PSI presets
             </p>
+            <div className="flex flex-wrap gap-2">
+              {[1000, 2000, 3000, 4000, 5000].map((value) => {
+                const isActive =
+                  lastEdited === "psi" && psiInput === String(value);
 
-            <div className="mt-6">
-              <h3 className="text-sm font-semibold text-slate-900">
-                Related Calculators
-              </h3>
-              <div className="mt-3 flex flex-wrap gap-3">
-                <Link
-                  to="/lpm-gpm-calculator"
-                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 active:scale-[0.98]"
-                >
-                  LPM ↔ GPM Calculator
-                </Link>
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setPsiPreset(value)}
+                    className={`rounded-xl border px-3 py-2 text-sm font-medium transition active:scale-[0.98] ${
+                      isActive
+                        ? "border-blue-600 bg-blue-600 text-white"
+                        : "border-slate-200 text-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    {value} PSI
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
-                <Link
-                  to="/nozzle-size-calculator"
-                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 active:scale-[0.98]"
-                >
-                  Nozzle Size Calculator
-                </Link>
+          <div className="mt-4">
+            <p className="mb-3 text-sm font-medium text-slate-700">
+              Quick BAR presets
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {[70, 100, 150, 200, 250].map((value) => {
+                const isActive =
+                  lastEdited === "bar" && barInput === String(value);
 
-                <Link
-                  to="/hose-pressure-loss-calculator"
-                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 active:scale-[0.98]"
-                >
-                  Hose Pressure Loss Calculator
-                </Link>
-              </div>
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setBarPreset(value)}
+                    className={`rounded-xl border px-3 py-2 text-sm font-medium transition active:scale-[0.98] ${
+                      isActive
+                        ? "border-blue-600 bg-blue-600 text-white"
+                        : "border-slate-200 text-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    {value} BAR
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="mt-8 rounded-2xl bg-slate-50 p-4">
+            <h2 className="text-sm font-semibold text-slate-900">
+              Conversion formulas
+            </h2>
+            <p className="mt-2 text-sm text-slate-600">
+              BAR = PSI × 0.0689476
+            </p>
+            <p className="text-sm text-slate-600">PSI = BAR × 14.5038</p>
+          </div>
+
+          <div className="mt-6 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl border border-slate-200 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Example
+              </p>
+              <p className="mt-2 text-sm text-slate-700">
+                1000 PSI = 68.95 BAR
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Example
+              </p>
+              <p className="mt-2 text-sm text-slate-700">
+                3000 PSI = 206.84 BAR
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Example
+              </p>
+              <p className="mt-2 text-sm text-slate-700">
+                250 BAR = 3626 PSI
+              </p>
             </div>
           </div>
         </div>
-      </>
+
+        <div className="mt-10 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+          <h2 className="text-lg font-semibold text-slate-900">
+            PSI to BAR Conversion
+          </h2>
+          <p className="mt-3 text-sm leading-6 text-slate-600">
+            PSI and BAR are common pressure units used across pressure washing
+            equipment, pumps, unloaders, gauges, and industrial systems. This
+            calculator helps operators and equipment builders quickly convert
+            between PSI and BAR for setup, troubleshooting, and accurate
+            machine calibration.
+          </p>
+
+          <div className="mt-6">
+            <h3 className="text-sm font-semibold text-slate-900">
+              Related Calculators
+            </h3>
+            <div className="mt-3 flex flex-wrap gap-3">
+              <Link
+                to="/lpm-gpm-calculator"
+                className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 active:scale-[0.98]"
+              >
+                LPM ↔ GPM Calculator
+              </Link>
+
+              <Link
+                to="/nozzle-size-calculator"
+                className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 active:scale-[0.98]"
+              >
+                Nozzle Size Calculator
+              </Link>
+
+              <Link
+                to="/hose-pressure-loss-calculator"
+                className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 active:scale-[0.98]"
+              >
+                Hose Pressure Loss Calculator
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
     </PressureCalLayout>
   );
 }
