@@ -139,12 +139,13 @@ function CalculatorCore({
           </div>
 
           <h1 className="text-5xl font-semibold tracking-tight text-slate-900">
-            Pressure Washer Nozzle Size Calculator
-          </h1>
+  Pressure Washer Nozzle Size Calculator
+</h1>
 
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-600">
-            Calculate the correct pressure washer nozzle size based on pump pressure and flow rate.
-          </p>
+<p className="mx-auto mt-4 max-w-2xl text-lg text-slate-600">
+  Calculate the right pressure washer nozzle size from PSI and LPM, then check the
+  matching tip code for your setup.
+</p>
 
           <div className="mt-6 flex items-center justify-center gap-2">
             <button

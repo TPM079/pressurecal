@@ -437,13 +437,13 @@ export default function HomePage() {
             </div>
 
             <h1 className="mt-6 max-w-3xl text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
-              Check what your setup is really doing
-            </h1>
+  Pressure Washer Calculator
+</h1>
 
-            <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600 sm:text-xl">
-              PressureCal helps you check nozzle match, hose loss, pressure, flow, and
-              what you are likely getting at the gun.
-            </p>
+<p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600 sm:text-xl">
+  Check nozzle size, hose pressure loss, pressure, flow, and what your setup is
+  likely doing at the gun.
+</p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link

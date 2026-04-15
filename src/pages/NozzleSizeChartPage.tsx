@@ -1134,15 +1134,13 @@ export default function NozzleSizeChartPage() {
                 </div>
 
                 <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-900 md:text-5xl">
-                  Pressure Washer Nozzle Size Chart
-                </h1>
+  Pressure Washer Nozzle Size Chart
+</h1>
 
-                <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">
-                  A technical reference chart for selecting pressure washer
-                  nozzle tip codes from machine pressure and flow rate, with LPM shown first for Australian operators. Built
-                  with the same sizing logic as the PressureCal live nozzle
-                  calculator.
-                </p>
+<p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">
+  Use this pressure washer nozzle size chart to match nozzle tips to PSI and LPM,
+  compare common sizes, and choose a suitable nozzle for your machine setup.
+</p>
 
                 <div className="mt-6 flex flex-wrap gap-3">
                   <Link

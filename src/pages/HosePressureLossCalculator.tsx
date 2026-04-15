@@ -331,12 +331,13 @@ export default function HosePressureLossCalculator() {
               </div>
 
               <h1 className="text-5xl font-semibold tracking-tight text-slate-900">
-                Hose Pressure Loss Calculator
-              </h1>
+  Pressure Washer Hose Pressure Loss Calculator
+</h1>
 
-              <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-600">
-                Estimate pressure drop based on hose length and internal diameter.
-              </p>
+<p className="mx-auto mt-4 max-w-2xl text-lg text-slate-600">
+  Estimate hose pressure loss for your pressure washer setup using hose length,
+  hose size, PSI and LPM.
+</p>
 
               <div className="mt-6 flex items-center justify-center gap-2">
                 <button
