@@ -11,7 +11,7 @@ import {
   useNavigationType,
 } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-
+import TargetPressureNozzleCalculatorPage from "./pages/TargetPressureNozzleCalculatorPage";
 import AboutPage from "./pages/AboutPage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import TermsOfServicePage from "./pages/TermsOfServicePage";
@@ -146,7 +146,14 @@ export default function App() {
               </PageTransition>
             }
           />
-
+<Route
+  path="/target-pressure-nozzle-calculator"
+  element={
+    <PageTransition>
+      <TargetPressureNozzleCalculatorPage />
+    </PageTransition>
+  }
+/>
           <Route
             path="/nozzle-size-chart"
             element={

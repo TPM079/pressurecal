@@ -14,6 +14,7 @@ const navLinks = [
   { to: "/psi-bar-calculator", label: "PSI ↔ BAR Converter" },
   { to: "/lpm-gpm-calculator", label: "LPM ↔ GPM Converter" },
   { to: "/nozzle-size-calculator", label: "Nozzle Size Calculator" },
+  { to: "/target-pressure-nozzle-calculator", label: "Target Pressure Nozzle Calculator" },
   { to: "/hose-pressure-loss-calculator", label: "Hose Pressure Loss Calculator" },
   { to: "/nozzle-size-chart", label: "Nozzle Size Chart" },
 ];

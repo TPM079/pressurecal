@@ -41,6 +41,12 @@ const toolCards: ToolCard[] = [
     cta: "Check nozzle size →",
   },
   {
+    href: "/target-pressure-nozzle-calculator",
+    title: "Target Pressure Nozzle Calculator",
+    description: "Work backwards from your target PSI and find the nozzle size that best matches your pump and setup.",
+    cta: "Open tool →",
+  },
+  {
     href: "/hose-pressure-loss-calculator",
     title: "Hose Pressure Loss Calculator",
     description:

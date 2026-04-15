@@ -406,7 +406,18 @@ function CalculatorCore({
     </div>
   );
 }
-
+<div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+  <p className="text-sm text-slate-700">
+    Need to work backwards from your desired PSI? Use the{" "}
+    <Link
+      to="/target-pressure-nozzle-calculator"
+      className="font-semibold text-slate-900 underline hover:text-slate-700"
+    >
+      Target Pressure Nozzle Calculator
+    </Link>
+    .
+  </p>
+</div>
 export default function NozzleCalculator({ embedded = false }: NozzleCalculatorProps) {
   const [pressure, setPressure] = useState<number>(DEFAULTS.pressure);
   const [pressureUnit, setPressureUnit] = useState<PressureUnit>(DEFAULTS.pressureUnit);
