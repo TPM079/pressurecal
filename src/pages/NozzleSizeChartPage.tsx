@@ -1082,47 +1082,47 @@ export default function NozzleSizeChartPage() {
   return (
     <>
       <Helmet>
-        <title>Pressure Washer Nozzle Size Chart (PSI & LPM) | PressureCal</title>
-        <meta
-          name="description"
-          content="View a complete pressure washer nozzle size chart based on PSI and LPM. Quickly find the correct nozzle size for your setup."
-        />
-        <link
-          rel="canonical"
-          href="https://www.pressurecal.com/nozzle-size-chart"
-        />
-        <meta
-          property="og:title"
-          content="Pressure Washer Nozzle Size Chart (PSI & LPM) | PressureCal"
-        />
-        <meta
-          property="og:description"
-          content="View a complete pressure washer nozzle size chart based on PSI and LPM. Quickly find the correct nozzle size for your setup."
-        />
-        <meta
-          property="og:url"
-          content="https://www.pressurecal.com/nozzle-size-chart"
-        />
-        <meta property="og:type" content="website" />
-        <meta
-          name="twitter:title"
-          content="Pressure Washer Nozzle Size Chart (PSI & LPM) | PressureCal"
-        />
-        <meta
-          name="twitter:description"
-          content="View a complete pressure washer nozzle size chart based on PSI and LPM. Quickly find the correct nozzle size for your setup."
-        />
-        <script type="application/ld+json">
-          {JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "WebPage",
-            name: "Pressure Washer Nozzle Size Chart",
-            url: "https://www.pressurecal.com/nozzle-size-chart",
-            description:
-              "Pressure washer nozzle size chart for matching machine pressure and flow to the correct tip code.",
-          })}
-        </script>
-      </Helmet>
+  <title>Pressure Washer Nozzle Size Chart | PSI, LPM & Tip Guide</title>
+  <meta
+    name="description"
+    content="Use this pressure washer nozzle size chart to match nozzle tips to PSI and LPM, compare common sizes, and choose a suitable nozzle for your machine setup."
+  />
+  <link
+    rel="canonical"
+    href="https://www.pressurecal.com/nozzle-size-chart"
+  />
+  <meta
+    property="og:title"
+    content="Pressure Washer Nozzle Size Chart | PSI, LPM & Tip Guide"
+  />
+  <meta
+    property="og:description"
+    content="Use this pressure washer nozzle size chart to match nozzle tips to PSI and LPM, compare common sizes, and choose a suitable nozzle for your machine setup."
+  />
+  <meta
+    property="og:url"
+    content="https://www.pressurecal.com/nozzle-size-chart"
+  />
+  <meta property="og:type" content="website" />
+  <meta
+    name="twitter:title"
+    content="Pressure Washer Nozzle Size Chart | PSI, LPM & Tip Guide"
+  />
+  <meta
+    name="twitter:description"
+    content="Use this pressure washer nozzle size chart to match nozzle tips to PSI and LPM, compare common sizes, and choose a suitable nozzle for your machine setup."
+  />
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      name: "Pressure Washer Nozzle Size Chart",
+      url: "https://www.pressurecal.com/nozzle-size-chart",
+      description:
+        "Pressure washer nozzle size chart for matching nozzle tips to PSI and LPM, comparing common sizes, and choosing a suitable nozzle for your machine setup.",
+    })}
+  </script>
+</Helmet>
 
       <PressureCalLayout>
         <main className="-mx-4 -my-8 bg-slate-100 print:bg-white sm:-my-10">

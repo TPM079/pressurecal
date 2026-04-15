@@ -531,46 +531,46 @@ export default function NozzleCalculator({ embedded = false }: NozzleCalculatorP
   return (
     <>
       <Helmet>
-        <title>Pressure Washer Nozzle Size Calculator | PressureCal</title>
-        <meta
-          name="description"
-          content="Calculate the correct pressure washer nozzle size using PSI and flow rate. Get accurate tip sizing for optimal performance, cleaning power, and equipment protection."
-        />
-        <link rel="canonical" href="https://www.pressurecal.com/nozzle-size-calculator" />
-        <meta
-          property="og:title"
-          content="Pressure Washer Nozzle Size Calculator | PressureCal"
-        />
-        <meta
-          property="og:description"
-          content="Calculate the correct pressure washer nozzle size using PSI and flow rate. Get accurate tip sizing for optimal performance, cleaning power, and equipment protection."
-        />
-        <meta
-          property="og:url"
-          content="https://www.pressurecal.com/nozzle-size-calculator"
-        />
-        <meta property="og:type" content="website" />
-        <meta
-          name="twitter:title"
-          content="Pressure Washer Nozzle Size Calculator | PressureCal"
-        />
-        <meta
-          name="twitter:description"
-          content="Calculate the correct pressure washer nozzle size using PSI and flow rate. Get accurate tip sizing for optimal performance, cleaning power, and equipment protection."
-        />
-        <script type="application/ld+json">
-          {JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "WebApplication",
-            name: "Pressure Washer Nozzle Size Calculator",
-            url: "https://www.pressurecal.com/nozzle-size-calculator",
-            applicationCategory: "Calculator",
-            operatingSystem: "Web",
-            description:
-              "Calculate the correct pressure washer nozzle size using PSI and flow rate. Get accurate tip sizing for optimal performance, cleaning power, and equipment protection.",
-          })}
-        </script>
-      </Helmet>
+  <title>Pressure Washer Nozzle Size Calculator | Match PSI & LPM</title>
+  <meta
+    name="description"
+    content="Calculate the right pressure washer nozzle size for your machine using PSI and LPM. Match your setup faster and avoid oversized or undersized nozzle tips."
+  />
+  <link rel="canonical" href="https://www.pressurecal.com/nozzle-size-calculator" />
+  <meta
+    property="og:title"
+    content="Pressure Washer Nozzle Size Calculator | Match PSI & LPM"
+  />
+  <meta
+    property="og:description"
+    content="Calculate the right pressure washer nozzle size for your machine using PSI and LPM. Match your setup faster and avoid oversized or undersized nozzle tips."
+  />
+  <meta
+    property="og:url"
+    content="https://www.pressurecal.com/nozzle-size-calculator"
+  />
+  <meta property="og:type" content="website" />
+  <meta
+    name="twitter:title"
+    content="Pressure Washer Nozzle Size Calculator | Match PSI & LPM"
+  />
+  <meta
+    name="twitter:description"
+    content="Calculate the right pressure washer nozzle size for your machine using PSI and LPM. Match your setup faster and avoid oversized or undersized nozzle tips."
+  />
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      name: "Pressure Washer Nozzle Size Calculator",
+      url: "https://www.pressurecal.com/nozzle-size-calculator",
+      applicationCategory: "Calculator",
+      operatingSystem: "Web",
+      description:
+        "Calculate the right pressure washer nozzle size for your machine using PSI and LPM. Match your setup faster and avoid oversized or undersized nozzle tips.",
+    })}
+  </script>
+</Helmet>
 
       <PressureCalLayout>
         <div className="-mx-4 -my-8 bg-slate-100 px-4 py-8 sm:-my-10 sm:py-10">

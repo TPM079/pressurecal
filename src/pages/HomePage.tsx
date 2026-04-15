@@ -391,43 +391,43 @@ export default function HomePage() {
   return (
     <PressureCalLayout>
       <Helmet>
-        <title>Pressure Washer Setup Calculator | PressureCal</title>
-        <meta
-          name="description"
-          content="Check nozzle match, hose loss, pressure, flow, and what your setup is likely doing at the gun in one place."
-        />
-        <link rel="canonical" href="https://www.pressurecal.com/" />
-        <meta
-          property="og:title"
-          content="Pressure Washer Setup Calculator | PressureCal"
-        />
-        <meta
-          property="og:description"
-          content="Check nozzle match, hose loss, pressure, flow, and what your setup is likely doing at the gun in one place."
-        />
-        <meta property="og:url" content="https://www.pressurecal.com/" />
-        <meta property="og:type" content="website" />
-        <meta
-          name="twitter:title"
-          content="Pressure Washer Setup Calculator | PressureCal"
-        />
-        <meta
-          name="twitter:description"
-          content="Check nozzle match, hose loss, pressure, flow, and what your setup is likely doing at the gun in one place."
-        />
-        <script type="application/ld+json">
-          {JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "SoftwareApplication",
-            name: "PressureCal",
-            url: "https://www.pressurecal.com/",
-            applicationCategory: "EngineeringApplication",
-            operatingSystem: "Web",
-            description:
-              "PressureCal is a professional pressure washer setup calculator for nozzle sizing, hose pressure loss, at-gun pressure, flow, and bypass behaviour.",
-          })}
-        </script>
-      </Helmet>
+  <title>Pressure Washer Calculator | Nozzle Size, Hose Loss & PSI/LPM</title>
+  <meta
+    name="description"
+    content="Model your pressure washer setup with practical tools for nozzle sizing, hose pressure loss, and PSI/LPM conversions. Built for operators who want real answers, not guesswork."
+  />
+  <link rel="canonical" href="https://www.pressurecal.com/" />
+  <meta
+    property="og:title"
+    content="Pressure Washer Calculator | Nozzle Size, Hose Loss & PSI/LPM"
+  />
+  <meta
+    property="og:description"
+    content="Model your pressure washer setup with practical tools for nozzle sizing, hose pressure loss, and PSI/LPM conversions. Built for operators who want real answers, not guesswork."
+  />
+  <meta property="og:url" content="https://www.pressurecal.com/" />
+  <meta property="og:type" content="website" />
+  <meta
+    name="twitter:title"
+    content="Pressure Washer Calculator | Nozzle Size, Hose Loss & PSI/LPM"
+  />
+  <meta
+    name="twitter:description"
+    content="Model your pressure washer setup with practical tools for nozzle sizing, hose pressure loss, and PSI/LPM conversions. Built for operators who want real answers, not guesswork."
+  />
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: "PressureCal",
+      url: "https://www.pressurecal.com/",
+      applicationCategory: "EngineeringApplication",
+      operatingSystem: "Web",
+      description:
+        "PressureCal is a pressure washer calculator for nozzle sizing, hose pressure loss, PSI/LPM conversions, at-gun pressure, flow, and bypass behaviour.",
+    })}
+  </script>
+</Helmet>
 
       <section className="-mx-4 -mt-8 overflow-hidden border-b border-slate-200 bg-white px-4 sm:-mt-10">
         <div className="mx-auto grid max-w-6xl items-center gap-10 py-14 sm:py-16 lg:grid-cols-[1.05fr_0.95fr]">
