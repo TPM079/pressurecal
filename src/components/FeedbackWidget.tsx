@@ -39,6 +39,22 @@ export default function FeedbackWidget() {
   }, [isOpen]);
 
   useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      setIsOpen(false);
+      resetForm();
+    }
+
+    if (isOpen) {
+      window.addEventListener("keydown", handleKeyDown);
+    }
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, location.pathname]);
+
+  useEffect(() => {
     return () => {
       if (autoCloseTimerRef.current) {
         window.clearTimeout(autoCloseTimerRef.current);
@@ -76,12 +92,12 @@ export default function FeedbackWidget() {
     tag === "calculation"
       ? "Something off with the numbers?"
       : tag === "bug"
-      ? "What broke?"
-      : tag === "idea"
-      ? "What would you like added?"
-      : tag === "ux"
-      ? "What feels confusing or clunky?"
-      : "What’s missing or annoying?";
+        ? "What broke?"
+        : tag === "idea"
+          ? "What would you like added?"
+          : tag === "ux"
+            ? "What feels confusing or clunky?"
+            : "What’s missing or annoying?";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -128,7 +144,7 @@ export default function FeedbackWidget() {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-50">
+    <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+1rem)] right-4 z-50 sm:bottom-5 sm:right-5">
       <AnimatePresence mode="wait">
         {!isOpen ? (
           <motion.button
@@ -142,11 +158,25 @@ export default function FeedbackWidget() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.96 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="group inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/95 px-3 py-2.5 text-xs font-semibold text-slate-900 shadow-lg backdrop-blur transition hover:-translate-y-0.5 hover:shadow-xl sm:px-4 sm:py-3 sm:text-sm"
+            className="group inline-flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-slate-900 shadow-lg backdrop-blur transition hover:-translate-y-0.5 hover:shadow-xl sm:h-auto sm:w-auto sm:gap-2 sm:px-4 sm:py-3"
             aria-label="Open feedback form"
+            title="Feedback"
           >
-            <span className="inline-flex h-2.5 w-2.5 rounded-full bg-slate-900" />
-            Feedback
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-5 w-5"
+              aria-hidden="true"
+            >
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            <span className="hidden h-2.5 w-2.5 rounded-full bg-slate-900 sm:inline-flex" />
+            <span className="hidden text-sm font-semibold sm:inline">Feedback</span>
           </motion.button>
         ) : (
           <motion.div
@@ -155,7 +185,7 @@ export default function FeedbackWidget() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 14, scale: 0.97 }}
             transition={{ duration: 0.22, ease: "easeOut" }}
-            className="w-[min(340px,calc(100vw-1.5rem))] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl"
+            className="w-[min(360px,calc(100vw-1rem))] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl sm:w-[360px]"
           >
             <div className="border-b border-slate-200 bg-slate-50 px-4 py-4">
               <div className="flex items-start justify-between gap-3">
@@ -164,7 +194,7 @@ export default function FeedbackWidget() {
                     Got feedback?
                   </div>
                   <div className="mt-1 text-xs leading-5 text-slate-600">
-                    Tell me what’s missing, confusing, or annoying.
+                    Tell me what feels off, confusing, or missing.
                   </div>
                 </div>
 
@@ -182,7 +212,7 @@ export default function FeedbackWidget() {
               </div>
             </div>
 
-            <div className="px-4 py-4">
+            <div className="max-h-[min(75vh,640px)] overflow-y-auto px-4 py-4">
               {submitState === "sent" ? (
                 <div className="space-y-3">
                   <div className="rounded-2xl border border-green-200 bg-green-50 px-4 py-4">
@@ -287,9 +317,7 @@ export default function FeedbackWidget() {
 
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
                     Page:{" "}
-                    <span className="font-medium text-slate-700">
-                      {location.pathname}
-                    </span>
+                    <span className="font-medium text-slate-700">{location.pathname}</span>
                   </div>
 
                   {submitState === "error" && (
@@ -315,9 +343,7 @@ export default function FeedbackWidget() {
                       disabled={submitState === "sending" || !message.trim()}
                       className="flex-1 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      {submitState === "sending"
-                        ? "Sending..."
-                        : "Send feedback"}
+                      {submitState === "sending" ? "Sending..." : "Send feedback"}
                     </button>
                   </div>
                 </form>

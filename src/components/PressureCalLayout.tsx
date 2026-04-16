@@ -1,5 +1,6 @@
-import { type ReactNode, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+
+import { type ReactNode, useEffect, useRef, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { supabase } from "../lib/supabase-browser";
 import FeedbackWidget from "./FeedbackWidget";
 import pressureCalPrimaryLogo from "../assets/PressureCal_primary_logo.png";
@@ -9,14 +10,25 @@ type PressureCalLayoutProps = {
   hideFeedbackWidget?: boolean;
 };
 
-const navLinks = [
+const primaryNavLinks = [
   { to: "/calculator", label: "Full Setup Calculator" },
-  { to: "/psi-bar-calculator", label: "PSI ↔ BAR Converter" },
-  { to: "/lpm-gpm-calculator", label: "LPM ↔ GPM Converter" },
+  { to: "/pricing", label: "PressureCal Pro" },
+];
+
+const toolLinks = [
   { to: "/nozzle-size-calculator", label: "Nozzle Size Calculator" },
   { to: "/target-pressure-nozzle-calculator", label: "Target Pressure Nozzle Calculator" },
   { to: "/hose-pressure-loss-calculator", label: "Hose Pressure Loss Calculator" },
   { to: "/nozzle-size-chart", label: "Nozzle Size Chart" },
+  { to: "/psi-bar-calculator", label: "PSI ↔ BAR Converter" },
+  { to: "/lpm-gpm-calculator", label: "LPM ↔ GPM Converter" },
+];
+
+const quickFooterLinks = [
+  { to: "/calculator", label: "Full Setup Calculator" },
+  { to: "/nozzle-size-calculator", label: "Nozzle Size Calculator" },
+  { to: "/hose-pressure-loss-calculator", label: "Hose Pressure Loss Calculator" },
+  { to: "/pricing", label: "PressureCal Pro" },
 ];
 
 const legalLinks = [
@@ -25,14 +37,36 @@ const legalLinks = [
   { to: "/terms", label: "Terms" },
 ];
 
+function HeaderActionButton({
+  to,
+  children,
+  className,
+}: {
+  to: string;
+  children: ReactNode;
+  className: string;
+}) {
+  return (
+    <Link to={to} className={className}>
+      {children}
+    </Link>
+  );
+}
+
 export default function PressureCalLayout({
   children,
   hideFeedbackWidget = false,
 }: PressureCalLayoutProps) {
+  const location = useLocation();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
-  const [toolsOpen, setToolsOpen] = useState(false);
-  const [companyOpen, setCompanyOpen] = useState(false);
+  const [desktopToolsOpen, setDesktopToolsOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileToolsOpen, setMobileToolsOpen] = useState(false);
+  const [footerLinksOpen, setFooterLinksOpen] = useState(false);
+  const [footerCompanyOpen, setFooterCompanyOpen] = useState(false);
+
+  const desktopToolsRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -61,6 +95,27 @@ export default function PressureCalLayout({
     };
   }, []);
 
+  useEffect(() => {
+    setDesktopToolsOpen(false);
+    setMobileMenuOpen(false);
+    setMobileToolsOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    function handlePointerDown(event: MouseEvent) {
+      if (!desktopToolsRef.current) return;
+
+      if (!desktopToolsRef.current.contains(event.target as Node)) {
+        setDesktopToolsOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+    };
+  }, []);
+
   async function handleSignOut() {
     setSigningOut(true);
 
@@ -77,6 +132,8 @@ export default function PressureCalLayout({
       setSigningOut(false);
     }
   }
+
+  const mobileAccountLabel = isAuthenticated ? "Account" : "Sign in";
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
@@ -99,8 +156,8 @@ export default function PressureCalLayout({
             />
           </Link>
 
-          <nav className="hidden items-center gap-5 md:flex">
-            {navLinks.map((link) => (
+          <nav className="hidden items-center gap-5 lg:flex">
+            {primaryNavLinks.map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
@@ -110,6 +167,35 @@ export default function PressureCalLayout({
               </Link>
             ))}
 
+            <div className="relative" ref={desktopToolsRef}>
+              <button
+                type="button"
+                onClick={() => setDesktopToolsOpen((current) => !current)}
+                className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-slate-900"
+                aria-expanded={desktopToolsOpen}
+                aria-haspopup="menu"
+              >
+                Tools
+                <span className="text-slate-400">{desktopToolsOpen ? "−" : "+"}</span>
+              </button>
+
+              {desktopToolsOpen ? (
+                <div className="absolute right-0 top-[calc(100%+14px)] w-80 rounded-2xl border border-slate-200 bg-white p-3 shadow-xl">
+                  <div className="grid gap-1">
+                    {toolLinks.map((link) => (
+                      <Link
+                        key={link.to}
+                        to={link.to}
+                        className="rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-950"
+                      >
+                        {link.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
             <Link
               to="/about"
               className="text-sm font-medium text-slate-600 transition hover:text-slate-900"
@@ -117,12 +203,12 @@ export default function PressureCalLayout({
               About
             </Link>
 
-            <Link
+            <HeaderActionButton
               to="/calculator"
               className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
             >
               Open Full Setup Calculator
-            </Link>
+            </HeaderActionButton>
 
             {isAuthenticated ? (
               <>
@@ -142,60 +228,112 @@ export default function PressureCalLayout({
                 </button>
               </>
             ) : (
-              <Link
+              <HeaderActionButton
                 to="/account"
                 className="inline-flex items-center justify-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
               >
                 Sign in
-              </Link>
+              </HeaderActionButton>
             )}
           </nav>
-        </div>
 
-        <div className="border-t border-slate-100 bg-white md:hidden">
-          <div className="mx-auto flex max-w-6xl gap-3 overflow-x-auto px-4 py-3">
-            {navLinks.map((link) => (
-              <Link
-                key={link.to}
-                to={link.to}
-                className="whitespace-nowrap rounded-full border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
-              >
-                {link.label}
-              </Link>
-            ))}
-
-            <Link
-              to="/about"
-              className="whitespace-nowrap rounded-full border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
+          <div className="flex items-center gap-2 lg:hidden">
+            <HeaderActionButton
+              to="/calculator"
+              className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-800 sm:px-4 sm:text-sm"
             >
-              About
-            </Link>
+              Open Calculator
+            </HeaderActionButton>
 
-            <Link
-              to="/account"
-              className="whitespace-nowrap rounded-full border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen((current) => !current)}
+              className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50"
+              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={mobileMenuOpen}
             >
-              {isAuthenticated ? "Account" : "Sign in"}
-            </Link>
-
-            {isAuthenticated ? (
-              <button
-                type="button"
-                onClick={handleSignOut}
-                disabled={signingOut}
-                className="whitespace-nowrap rounded-full border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {signingOut ? "Signing out..." : "Sign out"}
-              </button>
-            ) : null}
+              <span className="text-lg leading-none">{mobileMenuOpen ? "×" : "≡"}</span>
+            </button>
           </div>
         </div>
+
+        {mobileMenuOpen ? (
+          <div className="border-t border-slate-100 bg-white lg:hidden">
+            <div className="mx-auto max-w-6xl px-4 py-4">
+              <div className="space-y-2">
+                <Link
+                  to="/calculator"
+                  className="block rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-white"
+                >
+                  Full Setup Calculator
+                </Link>
+
+                <Link
+                  to="/pricing"
+                  className="block rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                >
+                  PressureCal Pro
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={() => setMobileToolsOpen((current) => !current)}
+                  className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                >
+                  <span>Tools</span>
+                  <span className="text-slate-400">{mobileToolsOpen ? "−" : "+"}</span>
+                </button>
+
+                {mobileToolsOpen ? (
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-2">
+                    <div className="grid gap-1">
+                      {toolLinks.map((link) => (
+                        <Link
+                          key={link.to}
+                          to={link.to}
+                          className="rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-white hover:text-slate-950"
+                        >
+                          {link.label}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                <Link
+                  to="/about"
+                  className="block rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                >
+                  About
+                </Link>
+
+                <Link
+                  to="/account"
+                  className="block rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                >
+                  {mobileAccountLabel}
+                </Link>
+
+                {isAuthenticated ? (
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    disabled={signingOut}
+                    className="flex w-full items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {signingOut ? "Signing out..." : "Sign out"}
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        ) : null}
       </header>
 
-      <main className="px-4 py-8 pb-24 sm:py-10 sm:pb-10">{children}</main>
+      <main className="px-4 py-8 pb-28 sm:py-10 sm:pb-12">{children}</main>
 
       <footer className="border-t border-slate-200 bg-white">
-        <div className="mx-auto max-w-6xl px-4 py-6">
+        <div className="mx-auto max-w-6xl px-4 py-6 sm:py-8">
           <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
             <div className="max-w-xl">
               <p className="text-base font-semibold text-slate-900">PressureCal</p>
@@ -213,11 +351,11 @@ export default function PressureCalLayout({
               </p>
             </div>
 
-            <div className="hidden gap-6 sm:grid sm:grid-cols-2">
+            <div className="hidden gap-10 sm:grid sm:grid-cols-2">
               <div>
-                <p className="text-sm font-semibold text-slate-900">Tools</p>
+                <p className="text-sm font-semibold text-slate-900">Quick links</p>
                 <div className="mt-3 flex flex-col gap-2 text-sm text-slate-500">
-                  {navLinks.map((link) => (
+                  {quickFooterLinks.map((link) => (
                     <Link
                       key={link.to}
                       to={link.to}
@@ -249,17 +387,17 @@ export default function PressureCalLayout({
               <div className="rounded-2xl border border-slate-200">
                 <button
                   type="button"
-                  onClick={() => setToolsOpen((current) => !current)}
+                  onClick={() => setFooterLinksOpen((current) => !current)}
                   className="flex w-full items-center justify-between px-4 py-3 text-left"
                 >
-                  <span className="text-sm font-semibold text-slate-900">Tools</span>
-                  <span className="text-slate-500">{toolsOpen ? "−" : "+"}</span>
+                  <span className="text-sm font-semibold text-slate-900">Quick links</span>
+                  <span className="text-slate-500">{footerLinksOpen ? "−" : "+"}</span>
                 </button>
 
-                {toolsOpen ? (
+                {footerLinksOpen ? (
                   <div className="border-t border-slate-200 px-4 py-3">
                     <div className="flex flex-col gap-2 text-sm text-slate-500">
-                      {navLinks.map((link) => (
+                      {quickFooterLinks.map((link) => (
                         <Link
                           key={link.to}
                           to={link.to}
@@ -276,14 +414,14 @@ export default function PressureCalLayout({
               <div className="rounded-2xl border border-slate-200">
                 <button
                   type="button"
-                  onClick={() => setCompanyOpen((current) => !current)}
+                  onClick={() => setFooterCompanyOpen((current) => !current)}
                   className="flex w-full items-center justify-between px-4 py-3 text-left"
                 >
                   <span className="text-sm font-semibold text-slate-900">Company</span>
-                  <span className="text-slate-500">{companyOpen ? "−" : "+"}</span>
+                  <span className="text-slate-500">{footerCompanyOpen ? "−" : "+"}</span>
                 </button>
 
-                {companyOpen ? (
+                {footerCompanyOpen ? (
                   <div className="border-t border-slate-200 px-4 py-3">
                     <div className="flex flex-col gap-2 text-sm text-slate-500">
                       {legalLinks.map((link) => (

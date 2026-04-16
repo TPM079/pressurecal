@@ -143,8 +143,8 @@ function CalculatorCore({
 </h1>
 
 <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-600">
-  Calculate the right pressure washer nozzle size from PSI and LPM, then check the
-  matching tip code for your setup.
+  Calculate the right pressure washer nozzle size from PSI and LPM, then check
+  the matching tip code before you fit the wrong nozzle to the machine.
 </p>
 
           <div className="mt-6 flex items-center justify-center gap-2">
@@ -387,14 +387,39 @@ function CalculatorCore({
                 .
               </p>
             </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+              <p className="text-sm text-slate-700">
+                Need to work backwards from your desired PSI? Use the{" "}
+                <Link
+                  to="/target-pressure-nozzle-calculator"
+                  className="font-semibold text-slate-900 underline hover:text-slate-700"
+                >
+                  Target Pressure Nozzle Calculator
+                </Link>
+                .
+              </p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+              <p className="text-sm text-slate-700">
+                Need to check nozzle size, hose loss, and at-gun performance together?
+                Use the{" "}
+                <Link
+                  to="/calculator"
+                  className="font-semibold text-slate-900 underline hover:text-slate-700"
+                >
+                  Full Setup Calculator
+                </Link>
+                .
+              </p>
+            </div>
           </section>
 
           <div className="mt-8 text-center">
             <Link
-              to="/"
+              to="/calculator"
               className="text-sm font-semibold text-slate-700 underline hover:text-slate-900"
             >
-              Open full PressureCal rig calculator
+              Open Full Setup Calculator
             </Link>
           </div>
 
@@ -406,18 +431,7 @@ function CalculatorCore({
     </div>
   );
 }
-<div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
-  <p className="text-sm text-slate-700">
-    Need to work backwards from your desired PSI? Use the{" "}
-    <Link
-      to="/target-pressure-nozzle-calculator"
-      className="font-semibold text-slate-900 underline hover:text-slate-700"
-    >
-      Target Pressure Nozzle Calculator
-    </Link>
-    .
-  </p>
-</div>
+
 export default function NozzleCalculator({ embedded = false }: NozzleCalculatorProps) {
   const [pressure, setPressure] = useState<number>(DEFAULTS.pressure);
   const [pressureUnit, setPressureUnit] = useState<PressureUnit>(DEFAULTS.pressureUnit);
@@ -543,19 +557,19 @@ export default function NozzleCalculator({ embedded = false }: NozzleCalculatorP
   return (
     <>
       <Helmet>
-  <title>Pressure Washer Nozzle Size Calculator | Match PSI & LPM</title>
+  <title>Pressure Washer Nozzle Size Calculator | Match PSI, LPM & Tip Size</title>
   <meta
     name="description"
-    content="Calculate the right pressure washer nozzle size for your machine using PSI and LPM. Match your setup faster and avoid oversized or undersized nozzle tips."
+    content="Calculate the right pressure washer nozzle size from PSI and LPM, then check the matching tip code before you fit the wrong nozzle to the machine."
   />
   <link rel="canonical" href="https://www.pressurecal.com/nozzle-size-calculator" />
   <meta
     property="og:title"
-    content="Pressure Washer Nozzle Size Calculator | Match PSI & LPM"
+    content="Pressure Washer Nozzle Size Calculator | Match PSI, LPM & Tip Size"
   />
   <meta
     property="og:description"
-    content="Calculate the right pressure washer nozzle size for your machine using PSI and LPM. Match your setup faster and avoid oversized or undersized nozzle tips."
+    content="Calculate the right pressure washer nozzle size from PSI and LPM, then check the matching tip code before you fit the wrong nozzle to the machine."
   />
   <meta
     property="og:url"
@@ -564,11 +578,11 @@ export default function NozzleCalculator({ embedded = false }: NozzleCalculatorP
   <meta property="og:type" content="website" />
   <meta
     name="twitter:title"
-    content="Pressure Washer Nozzle Size Calculator | Match PSI & LPM"
+    content="Pressure Washer Nozzle Size Calculator | Match PSI, LPM & Tip Size"
   />
   <meta
     name="twitter:description"
-    content="Calculate the right pressure washer nozzle size for your machine using PSI and LPM. Match your setup faster and avoid oversized or undersized nozzle tips."
+    content="Calculate the right pressure washer nozzle size from PSI and LPM, then check the matching tip code before you fit the wrong nozzle to the machine."
   />
   <script type="application/ld+json">
     {JSON.stringify({
@@ -579,7 +593,7 @@ export default function NozzleCalculator({ embedded = false }: NozzleCalculatorP
       applicationCategory: "Calculator",
       operatingSystem: "Web",
       description:
-        "Calculate the right pressure washer nozzle size for your machine using PSI and LPM. Match your setup faster and avoid oversized or undersized nozzle tips.",
+        "Calculate the right pressure washer nozzle size from PSI and LPM, then check the matching tip code before you fit the wrong nozzle to the machine.",
     })}
   </script>
 </Helmet>

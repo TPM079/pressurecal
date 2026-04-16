@@ -965,10 +965,10 @@ export default function FullRigCalculatorPage() {
   return (
     <PressureCalLayout hideFeedbackWidget={sharePanelOpen}>
       <Helmet>
-        <title>Full Pressure Washer Setup Calculator | PressureCal</title>
+        <title>Full Setup Calculator | Hose Loss, Nozzle Match & At-Gun Pressure</title>
         <meta
           name="description"
-          content="Full setup calculator for pressure washer systems, including hose loss, nozzle sizing, operating pressure, flow, and power requirement."
+          content="Model hose loss, nozzle match, at-gun pressure, flow, and power requirement in one full pressure washer setup calculator."
         />
         <link rel="canonical" href="https://www.pressurecal.com/calculator" />
       </Helmet>
@@ -980,10 +980,10 @@ export default function FullRigCalculatorPage() {
               Full setup calculator
             </div>
             <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
-              Full Pressure Washer Setup Calculator
+              Full Setup Calculator
             </h1>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              Model hose loss, nozzle match, at-gun pressure, flow, and power requirement in one setup view.
+              Model nozzle match, hose loss, at-gun pressure, flow, and power requirement in one working view.
             </p>
           </div>
 
@@ -996,10 +996,10 @@ export default function FullRigCalculatorPage() {
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    Current setup
+                    Current setup snapshot
                   </div>
                   <div className="mt-1 text-sm text-slate-600">
-                    Everything PressureCal is modelling right now.
+                    Everything PressureCal is modelling right now, ready to share, save, or compare.
                   </div>
 
                   {loadedFromLink ? (
@@ -1018,18 +1018,19 @@ export default function FullRigCalculatorPage() {
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
-                    onClick={copySetupLink}
+                    onClick={handleOpenSharePanel}
                     className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-slate-800"
                   >
-                    {copyMessage ? "Copied ✓" : "Copy setup link"}
+                    Share result
                   </button>
 
                   <button
                     type="button"
-                    onClick={handleOpenSharePanel}
-                    className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                    onClick={handleOpenSavePanel}
+                    disabled={proAccessLoading || (isAuthenticated && isPro && !savedSetupsReady)}
+                    className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    Share result
+                    Save setup
                   </button>
 
                   <button
@@ -1043,11 +1044,10 @@ export default function FullRigCalculatorPage() {
 
                   <button
                     type="button"
-                    onClick={handleOpenSavePanel}
-                    disabled={proAccessLoading || (isAuthenticated && isPro && !savedSetupsReady)}
-                    className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    onClick={copySetupLink}
+                    className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
                   >
-                    Save setup
+                    {copyMessage ? "Copied ✓" : "Copy setup link"}
                   </button>
                 </div>
               </div>
@@ -1070,8 +1070,8 @@ export default function FullRigCalculatorPage() {
 
               <div className="text-xs text-slate-500">
                 {isAuthenticated && isPro
-                  ? "Save, share, or compare this exact setup."
-                  : "Share this exact setup."}
+                  ? "Share this exact setup, or save and compare it once it becomes a repeat-job setup."
+                  : "Share this exact setup, then save or compare it later if it becomes repeat work."}
               </div>
             </div>
 
@@ -1330,43 +1330,6 @@ export default function FullRigCalculatorPage() {
               {shareMessage ? <p className="mt-3 text-sm font-semibold text-green-700">{shareMessage}</p> : null}
             </div>
           ) : null}
-
-          <section className="mb-6 rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
-            <div className="max-w-4xl">
-              <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-                What this full setup calculator checks
-              </h2>
-              <p className="mt-3 text-sm leading-7 text-slate-600">
-                This full pressure washer setup calculator is designed for operators who want to understand
-                how the whole setup behaves, not just one number at a time. It combines machine pressure,
-                machine flow, hose length, hose internal diameter, nozzle size, and optional engine power
-                so you can estimate the real operating point at the gun.
-              </p>
-              <p className="mt-4 text-sm leading-7 text-slate-600">
-                Use this page when a simple nozzle chart or conversion tool is not enough. It is especially
-                useful when the machine feels weak at the gun, when hose runs are long, when surface cleaner
-                nozzle counts change the required nozzle size, or when you want to compare rated pump pressure
-                with the pressure you are likely to see while working.
-              </p>
-              <div className="mt-5 flex flex-wrap gap-3">
-                <Link to="/nozzle-size-calculator" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
-                  Nozzle Size Calculator
-                </Link>
-                <Link to="/hose-pressure-loss-calculator" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
-                  Hose Pressure Loss Calculator
-                </Link>
-                <Link to="/nozzle-size-chart" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
-                  Nozzle Size Chart
-                </Link>
-                <Link to="/psi-bar-calculator" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
-                  PSI ↔ BAR Converter
-                </Link>
-                <Link to="/lpm-gpm-calculator" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
-                  LPM ↔ GPM Converter
-                </Link>
-              </div>
-            </div>
-          </section>
 
           <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
             <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -1661,6 +1624,44 @@ export default function FullRigCalculatorPage() {
               </div>
             </section>
           </div>
+          <section className="mt-6 rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
+            <div className="max-w-4xl">
+              <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+                What this full setup calculator checks
+              </h2>
+              <p className="mt-3 text-sm leading-7 text-slate-600">
+                This full setup calculator is for operators who want to check the whole
+                setup in one place, not just one number at a time. It combines machine
+                pressure, machine flow, hose length, hose internal diameter, nozzle size,
+                and optional engine power so you can estimate the real operating point at
+                the gun.
+              </p>
+              <p className="mt-4 text-sm leading-7 text-slate-600">
+                Use this page when a chart or simple converter is not enough — especially
+                when the machine feels weak at the gun, hose runs are long, surface cleaner
+                nozzle counts change the required nozzle size, or you want to compare rated
+                pump pressure with what you are likely to see while working.
+              </p>
+              <div className="mt-5 flex flex-wrap gap-3">
+                <Link to="/nozzle-size-calculator" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+                  Nozzle Size Calculator
+                </Link>
+                <Link to="/hose-pressure-loss-calculator" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+                  Hose Pressure Loss Calculator
+                </Link>
+                <Link to="/nozzle-size-chart" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+                  Nozzle Size Chart
+                </Link>
+                <Link to="/psi-bar-calculator" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+                  PSI ↔ BAR Converter
+                </Link>
+                <Link to="/lpm-gpm-calculator" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+                  LPM ↔ GPM Converter
+                </Link>
+              </div>
+            </div>
+          </section>
+
         </div>
       </section>
 

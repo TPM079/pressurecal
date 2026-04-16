@@ -273,10 +273,10 @@ export default function HosePressureLossCalculator() {
   return (
     <>
      <Helmet>
-  <title>Pressure Washer Hose Pressure Loss Calculator | PSI & LPM</title>
+  <title>Pressure Washer Hose Pressure Loss Calculator | Hose Length, Size, PSI & LPM</title>
   <meta
     name="description"
-    content="Estimate hose pressure loss for your pressure washer setup using hose length, hose size, PSI and LPM. See how much pressure you lose before the gun."
+    content="Estimate hose pressure loss from hose length, hose size, PSI and LPM so you can see how much pressure is being lost before the gun."
   />
   <link
     rel="canonical"
@@ -284,11 +284,11 @@ export default function HosePressureLossCalculator() {
   />
   <meta
     property="og:title"
-    content="Pressure Washer Hose Pressure Loss Calculator | PSI & LPM"
+    content="Pressure Washer Hose Pressure Loss Calculator | Hose Length, Size, PSI & LPM"
   />
   <meta
     property="og:description"
-    content="Estimate hose pressure loss for your pressure washer setup using hose length, hose size, PSI and LPM. See how much pressure you lose before the gun."
+    content="Estimate hose pressure loss from hose length, hose size, PSI and LPM so you can see how much pressure is being lost before the gun."
   />
   <meta
     property="og:url"
@@ -297,11 +297,11 @@ export default function HosePressureLossCalculator() {
   <meta property="og:type" content="website" />
   <meta
     name="twitter:title"
-    content="Pressure Washer Hose Pressure Loss Calculator | PSI & LPM"
+    content="Pressure Washer Hose Pressure Loss Calculator | Hose Length, Size, PSI & LPM"
   />
   <meta
     name="twitter:description"
-    content="Estimate hose pressure loss for your pressure washer setup using hose length, hose size, PSI and LPM. See how much pressure you lose before the gun."
+    content="Estimate hose pressure loss from hose length, hose size, PSI and LPM so you can see how much pressure is being lost before the gun."
   />
   <script type="application/ld+json">
     {JSON.stringify({
@@ -312,7 +312,7 @@ export default function HosePressureLossCalculator() {
       applicationCategory: "Calculator",
       operatingSystem: "Web",
       description:
-        "Estimate hose pressure loss for your pressure washer setup using hose length, hose size, PSI and LPM. See how much pressure you lose before the gun.",
+        "Estimate hose pressure loss from hose length, hose size, PSI and LPM so you can see how much pressure is being lost before the gun.",
     })}
   </script>
 </Helmet>
@@ -335,8 +335,8 @@ export default function HosePressureLossCalculator() {
 </h1>
 
 <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-600">
-  Estimate hose pressure loss for your pressure washer setup using hose length,
-  hose size, PSI and LPM.
+  Estimate hose pressure loss from hose length, hose size, PSI and LPM so you
+  can see how much pressure is being lost before the gun.
 </p>
 
               <div className="mt-6 flex items-center justify-center gap-2">
@@ -623,14 +623,28 @@ export default function HosePressureLossCalculator() {
                   .
                 </p>
               </div>
+
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+                <p className="text-sm text-slate-700">
+                  Need to check hose loss, nozzle match, and at-gun performance together?
+                  Use the{" "}
+                  <Link
+                    to="/calculator"
+                    className="font-semibold text-slate-900 underline hover:text-slate-700"
+                  >
+                    Full Setup Calculator
+                  </Link>
+                  .
+                </p>
+              </div>
             </section>
 
             <div className="mt-8 text-center">
               <Link
-                to="/"
+                to="/calculator"
                 className="text-sm font-semibold text-slate-700 underline hover:text-slate-900"
               >
-                Open full PressureCal rig calculator
+                Open Full Setup Calculator
               </Link>
             </div>
 
