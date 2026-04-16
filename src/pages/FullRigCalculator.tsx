@@ -414,6 +414,8 @@ export default function FullRigCalculatorPage() {
   const [shortShareUrl, setShortShareUrl] = useState("");
   const [comparePanelOpen, setComparePanelOpen] = useState(false);
   const [compareTargetSetupId, setCompareTargetSetupId] = useState("");
+  const [mobileMoreActionsOpen, setMobileMoreActionsOpen] = useState(false);
+  const [mobileSystemDetailsOpen, setMobileSystemDetailsOpen] = useState(false);
   const maxWasManuallyEditedRef = useRef(false);
   const sharePanelRef = useRef<HTMLDivElement | null>(null);
 
@@ -475,6 +477,12 @@ export default function FullRigCalculatorPage() {
 
     return () => window.clearTimeout(timer);
   }, [sharePanelOpen]);
+  useEffect(() => {
+    if (sharePanelOpen || savePanelOpen || comparePanelOpen) {
+      setMobileMoreActionsOpen(false);
+    }
+  }, [sharePanelOpen, savePanelOpen, comparePanelOpen]);
+
 
   const safeInputs = {
     ...inputs,
@@ -630,10 +638,12 @@ export default function FullRigCalculatorPage() {
   function handleOpenComparePanel() {
     setComparePanelOpen(true);
     setSavePanelOpen(false);
+    setMobileMoreActionsOpen(false);
   }
 
   function handleCloseComparePanel() {
     setComparePanelOpen(false);
+    setMobileMoreActionsOpen(false);
   }
 
   function handleOpenSavePanel() {
@@ -641,11 +651,13 @@ export default function FullRigCalculatorPage() {
     setComparePanelOpen(false);
     setSaveMessage("");
     setSaveName((current) => (current.trim() ? current : suggestedSetupName));
+    setMobileMoreActionsOpen(false);
   }
 
   function handleCloseSavePanel() {
     setSavePanelOpen(false);
     setSaveMessage("");
+    setMobileMoreActionsOpen(false);
   }
 
   function handleOpenSharePanel() {
@@ -653,6 +665,7 @@ export default function FullRigCalculatorPage() {
     setSavePanelOpen(false);
     setComparePanelOpen(false);
     setShareMessage("");
+    setMobileMoreActionsOpen(false);
   }
 
   function handleCloseSharePanel() {
@@ -661,6 +674,7 @@ export default function FullRigCalculatorPage() {
     setShareBusy(false);
     setPngBusy(false);
     setShortShareUrl("");
+    setMobileMoreActionsOpen(false);
   }
 
   async function getOrCreateShortShareUrl() {
@@ -1015,7 +1029,59 @@ export default function FullRigCalculatorPage() {
                   ) : null}
                 </div>
 
-                <div className="flex flex-wrap gap-2">
+                <div className="sm:hidden">
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={handleOpenSharePanel}
+                      className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-slate-800"
+                    >
+                      Share result
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleOpenSavePanel}
+                      disabled={proAccessLoading || (isAuthenticated && isPro && !savedSetupsReady)}
+                      className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      Save setup
+                    </button>
+                  </div>
+
+                  <div className="mt-2">
+                    <button
+                      type="button"
+                      onClick={() => setMobileMoreActionsOpen((current) => !current)}
+                      className="inline-flex w-full items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                    >
+                      {mobileMoreActionsOpen ? "Close more actions" : "More actions"}
+                    </button>
+
+                    {mobileMoreActionsOpen ? (
+                      <div className="mt-2 grid gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                        <button
+                          type="button"
+                          onClick={handleOpenComparePanel}
+                          disabled={proAccessLoading || (isAuthenticated && isPro && !savedSetupsReady)}
+                          className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          Compare to saved
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={copySetupLink}
+                          className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                        >
+                          {copyMessage ? "Copied ✓" : "Copy setup link"}
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="hidden flex-wrap gap-2 sm:flex">
                   <button
                     type="button"
                     onClick={handleOpenSharePanel}
@@ -1594,7 +1660,52 @@ export default function FullRigCalculatorPage() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:hidden">
+                <button
+                  type="button"
+                  onClick={() => setMobileSystemDetailsOpen((current) => !current)}
+                  className="flex w-full items-center justify-between gap-3 text-left"
+                >
+                  <div>
+                    <h2 className="text-2xl font-semibold text-slate-900">System details</h2>
+                    <p className="mt-1 text-sm text-slate-600">
+                      Required HP, pressure variance, and P × Q reference.
+                    </p>
+                  </div>
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-lg font-semibold text-slate-700">
+                    {mobileSystemDetailsOpen ? "−" : "+"}
+                  </span>
+                </button>
+
+                {mobileSystemDetailsOpen ? (
+                  <div className="mt-5 grid gap-3">
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Required HP</div>
+                      <div className="mt-2 text-xl font-semibold text-slate-950">{fmt(requiredHp, 1)} HP</div>
+                      <div className="mt-1 text-sm text-slate-600">
+                        Usable engine HP {usableEngineHp > 0 ? fmt(usableEngineHp, 1) : "—"}
+                      </div>
+                    </div>
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Pressure variance</div>
+                      <div className="mt-2 text-xl font-semibold text-slate-950">{fmt(pressureVariancePct, 1)}%</div>
+                      <div className="mt-1 text-sm text-slate-600">{r.statusMessage}</div>
+                    </div>
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Rated P × Q</div>
+                      <div className="mt-2 text-xl font-semibold text-slate-950">{fmt(pqRated, 0)} ({pqClassRated})</div>
+                      <div className="mt-1 text-sm text-slate-600">{fmt(ratedBar, 1)} BAR × {fmt(ratedLpm, 1)} LPM</div>
+                    </div>
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="text-xs uppercase tracking-[0.14em] text-slate-500">At-gun P × Q</div>
+                      <div className="mt-2 text-xl font-semibold text-slate-950">{fmt(pqAtGun, 0)} ({pqClassGun})</div>
+                      <div className="mt-1 text-sm text-slate-600">{fmt(gunBar, 1)} BAR × {fmt(gunLpm, 1)} LPM</div>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:block">
                 <h2 className="text-2xl font-semibold text-slate-900">System details</h2>
 
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
