@@ -101,6 +101,35 @@ const converterLinks = [
   },
 ];
 
+const fullCalculatorReasons = [
+  "The machine feels weaker at the gun than the rated spec suggests.",
+  "Hose length and nozzle choice both changed and you want the setup checked together.",
+  "You want a clearer read on at-gun pressure, flow, and likely rig behaviour.",
+];
+
+const useCaseCards = [
+  {
+    title: "The machine feels weaker at the gun than the spec sheet suggests",
+    description:
+      "Hose loss, nozzle size, fittings, and the rest of the setup can all pull real pressure down before the water reaches the gun.",
+  },
+  {
+    title: "You are deciding between nozzle sizes before buying parts",
+    description:
+      "A nozzle that is too small can load the engine harder. A nozzle that is too large can make the setup feel weak and sluggish.",
+  },
+  {
+    title: "You added hose length and want to know what it is costing you",
+    description:
+      "Longer hose runs and smaller hose IDs can shift the real operating point more than most operators expect.",
+  },
+  {
+    title: "You want the full setup checked before blaming the machine",
+    description:
+      "PressureCal helps you check the whole picture before changing parts, chasing faults, or guessing at the gun.",
+  },
+];
+
 const defaultInputs: Inputs = {
   pumpPressure: 4000,
   pumpPressureUnit: "psi",
@@ -348,6 +377,21 @@ export default function HomePage() {
     },
   ];
 
+  const heroProofItems = [
+    {
+      label: "At-gun",
+      value: `${fmt(solved.gunPressurePsi, 0)} PSI`,
+    },
+    {
+      label: "Hose loss",
+      value: `${fmt(solved.hoseLossPsi, 0)} PSI`,
+    },
+    {
+      label: "Tip",
+      value: recommendedTip,
+    },
+  ];
+
   function scrollToCalculator() {
     const el = document.getElementById("calculator");
     if (!el) return;
@@ -428,7 +472,7 @@ export default function HomePage() {
 </Helmet>
 
       <section className="-mx-4 -mt-8 overflow-hidden border-b border-slate-200 bg-white px-4 sm:-mt-10">
-        <div className="mx-auto grid max-w-6xl items-center gap-10 py-14 sm:py-16 lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="mx-auto grid max-w-6xl items-center gap-10 py-12 sm:py-16 lg:grid-cols-[1.05fr_0.95fr]">
           <div>
             <div className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm font-medium text-slate-600">
               Built for pressure washing operators
@@ -469,6 +513,22 @@ export default function HomePage() {
               >
                 Quick Setup Check
               </button>
+            </div>
+
+            <div className="mt-6 lg:hidden">
+              <div className="grid grid-cols-3 gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
+                {heroProofItems.map((item) => (
+                  <div key={item.label} className="rounded-2xl border border-slate-200 bg-white px-3 py-3 text-center">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                      {item.label}
+                    </p>
+                    <p className="mt-2 text-base font-semibold text-slate-950">{item.value}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-3 text-xs font-medium text-slate-500">
+                Live preview from the current inputs.
+              </p>
             </div>
 
             <div className="mt-8 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm font-medium text-slate-600">
@@ -568,7 +628,7 @@ export default function HomePage() {
       </section>
 
       <section className="border-b border-slate-200 bg-white">
-        <div className="mx-auto max-w-6xl px-4 py-14">
+        <div className="mx-auto max-w-6xl px-4 py-12 sm:py-14">
           <div className="max-w-4xl">
             <h2 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
               See what your setup is actually doing
@@ -581,11 +641,11 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="mt-10 grid gap-5 md:grid-cols-3">
+          <div className="mt-8 grid gap-4 md:grid-cols-3">
             {proofPoints.map((item) => (
               <div
                 key={item.title}
-                className="rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm"
+                className="rounded-3xl border border-slate-200 bg-slate-50 p-5 shadow-sm sm:p-6"
               >
                 <h3 className="text-lg font-semibold text-slate-950">{item.title}</h3>
                 <p className="mt-3 text-sm leading-6 text-slate-600">{item.description}</p>
@@ -596,8 +656,8 @@ export default function HomePage() {
           <div className="mt-12">
             <h3 className="text-xl font-semibold text-slate-950">Other useful tools</h3>
 
-            <div className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-              {supportingToolCards.map((item) => (
+            <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {supportingToolCards.map((item, index) => (
                 <Link
                   key={item.title}
                   to={item.href}
@@ -607,22 +667,38 @@ export default function HomePage() {
                       tool: item.title,
                     })
                   }
-                  className="rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-white hover:shadow-md"
+                  className={`${index > 1 ? "hidden md:block " : ""}rounded-3xl border border-slate-200 bg-slate-50 p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-white hover:shadow-md sm:p-6`}
                 >
-                  <h4 className="text-xl font-semibold text-slate-950">{item.title}</h4>
+                  <h4 className="text-lg font-semibold text-slate-950 sm:text-xl">{item.title}</h4>
                   <p className="mt-3 text-sm leading-6 text-slate-600">{item.description}</p>
                   <p className="mt-5 text-sm font-semibold text-slate-950">{item.cta}</p>
                 </Link>
               ))}
             </div>
+            <p className="mt-4 text-sm text-slate-500 md:hidden">
+              More tools are available from the Tools menu.
+            </p>
           </div>
 
-          <div className="mt-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+          <div className="mt-10 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
               Quick unit tools
             </p>
 
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <div className="mt-4 grid gap-3 sm:hidden">
+              {converterLinks.map((item) => (
+                <Link
+                  key={item.title}
+                  to={item.href}
+                  className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 transition hover:border-slate-300"
+                >
+                  <span className="text-sm font-semibold text-slate-950">{item.title}</span>
+                  <span className="text-sm font-semibold text-slate-950">Open →</span>
+                </Link>
+              ))}
+            </div>
+
+            <div className="mt-4 hidden gap-4 md:grid md:grid-cols-2">
               {converterLinks.map((item) => (
                 <Link
                   key={item.title}
@@ -640,7 +716,7 @@ export default function HomePage() {
       </section>
 
       <section id="calculator" className="-mx-4 border-b border-slate-200 bg-slate-50/70 px-4">
-        <div className="mx-auto max-w-6xl py-10 lg:py-12">
+        <div className="mx-auto max-w-6xl py-10 sm:py-12 lg:py-12">
           <div className="max-w-3xl">
             <h2 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
               Quick Setup Check
@@ -652,8 +728,8 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="mt-8 grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="mt-8 grid gap-5 lg:grid-cols-[1.05fr_0.95fr]">
+            <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <h3 className="text-2xl font-semibold text-slate-950">Core inputs</h3>
@@ -667,18 +743,18 @@ export default function HomePage() {
                       location: "calculator_card",
                     })
                   }
-                  className="rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-950"
+                  className="hidden rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-950 sm:inline-flex"
                 >
                   Open Full Setup Calculator
                 </Link>
               </div>
 
-              <p className="mt-3 max-w-2xl text-base leading-7 text-slate-600">
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
                 Start with rated pressure, flow, and hose length. PressureCal estimates
                 the nozzle and shows what the setup is likely doing at the gun.
               </p>
 
-              <div className="mt-8 grid gap-5">
+              <div className="mt-6 grid gap-4 sm:mt-8 sm:gap-5">
                 <div>
                   <label className="block text-sm font-medium text-slate-700">
                     Pump pressure ({inputs.pumpPressureUnit.toUpperCase()})
@@ -836,9 +912,9 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div className="mt-8 rounded-3xl border border-slate-200 bg-slate-50 p-6 text-center">
+              <div className="mt-6 rounded-3xl border border-slate-200 bg-slate-50 p-5 text-center sm:mt-8 sm:p-6">
                 <p className="text-sm font-medium text-slate-600">Recommended nozzle size</p>
-                <p className="mt-3 text-6xl font-semibold tracking-tight text-slate-950">
+                <p className="mt-3 text-5xl font-semibold tracking-tight text-slate-950 sm:text-6xl">
                   {recommendedTip}
                 </p>
                 <p className="mt-3 text-sm text-slate-600">
@@ -876,8 +952,8 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="space-y-6">
-              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="space-y-5 sm:space-y-6">
+              <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
                 <div className="flex flex-wrap items-center gap-3">
                   <span
                     className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${systemBadge.cls}`}
@@ -917,24 +993,23 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h3 className="text-xl font-semibold text-slate-950">When to open the full calculator</h3>
+              <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+                <h3 className="text-lg font-semibold text-slate-950 sm:text-xl">When to open the full calculator</h3>
 
                 <p className="mt-2 text-sm leading-6 text-slate-600">
                   Use the full setup calculator when nozzle size, hose loss, pressure,
                   and flow all need to be checked together instead of guessed separately.
                 </p>
 
-                <div className="mt-5 space-y-3">
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
-                    The machine feels weaker at the gun than the rated spec suggests.
-                  </div>
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
-                    Hose length and nozzle choice both changed and you want the setup checked together.
-                  </div>
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
-                    You want a clearer read on at-gun pressure, flow, and likely rig behaviour.
-                  </div>
+                <div className="mt-4 space-y-3 sm:mt-5">
+                  {fullCalculatorReasons.map((reason, index) => (
+                    <div
+                      key={reason}
+                      className={`${index > 1 ? "hidden sm:block " : ""}rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700`}
+                    >
+                      {reason}
+                    </div>
+                  ))}
                 </div>
 
                 <Link
@@ -956,7 +1031,7 @@ export default function HomePage() {
       </section>
 
       <section className="border-b border-slate-200 bg-slate-950 text-white">
-        <div className="mx-auto max-w-6xl px-4 py-14">
+        <div className="mx-auto max-w-6xl px-4 py-12 sm:py-14">
           <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
             <div className="max-w-2xl">
               <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-300">
@@ -1027,52 +1102,26 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="mt-10 grid gap-5 md:grid-cols-2">
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-slate-950">
-                The machine feels weaker at the gun than the spec sheet suggests
-              </h3>
-              <p className="mt-3 text-sm leading-7 text-slate-600">
-                Hose loss, nozzle size, fittings, and the rest of the setup can all pull
-                real pressure down before the water reaches the gun.
-              </p>
-            </div>
-
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-slate-950">
-                You are deciding between nozzle sizes before buying parts
-              </h3>
-              <p className="mt-3 text-sm leading-7 text-slate-600">
-                A nozzle that is too small can load the engine harder. A nozzle that is
-                too large can make the setup feel weak and sluggish.
-              </p>
-            </div>
-
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-slate-950">
-                You added hose length and want to know what it is costing you
-              </h3>
-              <p className="mt-3 text-sm leading-7 text-slate-600">
-                Longer hose runs and smaller hose IDs can shift the real operating point
-                more than most operators expect.
-              </p>
-            </div>
-
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-slate-950">
-                You want the full setup checked before blaming the machine
-              </h3>
-              <p className="mt-3 text-sm leading-7 text-slate-600">
-                PressureCal helps you check the whole picture before changing parts,
-                chasing faults, or guessing at the gun.
-              </p>
-            </div>
+          <div className="mt-10 grid gap-4 md:grid-cols-2 md:gap-5">
+            {useCaseCards.map((item, index) => (
+              <div
+                key={item.title}
+                className={`${index > 1 ? "hidden md:block " : ""}rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6`}
+              >
+                <h3 className="text-lg font-semibold text-slate-950">
+                  {item.title}
+                </h3>
+                <p className="mt-3 text-sm leading-7 text-slate-600">
+                  {item.description}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       <section className="bg-slate-950 text-white">
-        <div className="mx-auto grid max-w-6xl gap-8 px-4 py-16 lg:grid-cols-[1fr_auto] lg:items-end">
+        <div className="mx-auto grid max-w-6xl gap-8 px-4 py-14 sm:py-16 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="max-w-3xl">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
               Open the full setup calculator and model the setup properly

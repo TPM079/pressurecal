@@ -1,5 +1,4 @@
-
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { supabase } from "../lib/supabase-browser";
 import FeedbackWidget from "./FeedbackWidget";
@@ -10,11 +9,6 @@ type PressureCalLayoutProps = {
   hideFeedbackWidget?: boolean;
 };
 
-const primaryNavLinks = [
-  { to: "/calculator", label: "Full Setup Calculator" },
-  { to: "/pricing", label: "PressureCal Pro" },
-];
-
 const toolLinks = [
   { to: "/nozzle-size-calculator", label: "Nozzle Size Calculator" },
   { to: "/target-pressure-nozzle-calculator", label: "Target Pressure Nozzle Calculator" },
@@ -24,33 +18,24 @@ const toolLinks = [
   { to: "/lpm-gpm-calculator", label: "LPM ↔ GPM Converter" },
 ];
 
-const quickFooterLinks = [
+const footerQuickLinks = [
   { to: "/calculator", label: "Full Setup Calculator" },
   { to: "/nozzle-size-calculator", label: "Nozzle Size Calculator" },
   { to: "/hose-pressure-loss-calculator", label: "Hose Pressure Loss Calculator" },
   { to: "/pricing", label: "PressureCal Pro" },
 ];
 
-const legalLinks = [
+const companyLinks = [
   { to: "/about", label: "About" },
   { to: "/privacy", label: "Privacy" },
   { to: "/terms", label: "Terms" },
 ];
 
-function HeaderActionButton({
-  to,
-  children,
-  className,
-}: {
-  to: string;
-  children: ReactNode;
-  className: string;
-}) {
-  return (
-    <Link to={to} className={className}>
-      {children}
-    </Link>
-  );
+function navLinkClass(isActive: boolean) {
+  return [
+    "text-sm font-medium transition",
+    isActive ? "text-slate-950" : "text-slate-600 hover:text-slate-900",
+  ].join(" ");
 }
 
 export default function PressureCalLayout({
@@ -60,13 +45,10 @@ export default function PressureCalLayout({
   const location = useLocation();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
-  const [desktopToolsOpen, setDesktopToolsOpen] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [mobileToolsOpen, setMobileToolsOpen] = useState(false);
-  const [footerLinksOpen, setFooterLinksOpen] = useState(false);
-  const [footerCompanyOpen, setFooterCompanyOpen] = useState(false);
 
-  const desktopToolsRef = useRef<HTMLDivElement | null>(null);
+  const isCalculatorPage = location.pathname === "/calculator";
 
   useEffect(() => {
     let mounted = true;
@@ -74,10 +56,7 @@ export default function PressureCalLayout({
     async function loadSession() {
       const { data } = await supabase.auth.getSession();
 
-      if (!mounted) {
-        return;
-      }
-
+      if (!mounted) return;
       setIsAuthenticated(Boolean(data.session?.user));
     }
 
@@ -96,25 +75,9 @@ export default function PressureCalLayout({
   }, []);
 
   useEffect(() => {
-    setDesktopToolsOpen(false);
+    setToolsOpen(false);
     setMobileMenuOpen(false);
-    setMobileToolsOpen(false);
   }, [location.pathname]);
-
-  useEffect(() => {
-    function handlePointerDown(event: MouseEvent) {
-      if (!desktopToolsRef.current) return;
-
-      if (!desktopToolsRef.current.contains(event.target as Node)) {
-        setDesktopToolsOpen(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handlePointerDown);
-    return () => {
-      document.removeEventListener("mousedown", handlePointerDown);
-    };
-  }, []);
 
   async function handleSignOut() {
     setSigningOut(true);
@@ -132,8 +95,6 @@ export default function PressureCalLayout({
       setSigningOut(false);
     }
   }
-
-  const mobileAccountLabel = isAuthenticated ? "Account" : "Sign in";
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
@@ -156,37 +117,37 @@ export default function PressureCalLayout({
             />
           </Link>
 
-          <nav className="hidden items-center gap-5 lg:flex">
-            {primaryNavLinks.map((link) => (
-              <Link
-                key={link.to}
-                to={link.to}
-                className="text-sm font-medium text-slate-600 transition hover:text-slate-900"
-              >
-                {link.label}
-              </Link>
-            ))}
+          <nav className="hidden items-center gap-5 md:flex">
+            <Link to="/pricing" className={navLinkClass(location.pathname === "/pricing")}>
+              PressureCal Pro
+            </Link>
 
-            <div className="relative" ref={desktopToolsRef}>
+            <div className="relative">
               <button
                 type="button"
-                onClick={() => setDesktopToolsOpen((current) => !current)}
-                className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-slate-900"
-                aria-expanded={desktopToolsOpen}
+                onClick={() => setToolsOpen((current) => !current)}
+                className={["inline-flex items-center gap-1 text-sm font-medium transition", toolsOpen ? "text-slate-950" : "text-slate-600 hover:text-slate-900"].join(" ")}
+                aria-expanded={toolsOpen}
                 aria-haspopup="menu"
               >
                 Tools
-                <span className="text-slate-400">{desktopToolsOpen ? "−" : "+"}</span>
+                <span className="text-slate-400">+</span>
               </button>
 
-              {desktopToolsOpen ? (
-                <div className="absolute right-0 top-[calc(100%+14px)] w-80 rounded-2xl border border-slate-200 bg-white p-3 shadow-xl">
-                  <div className="grid gap-1">
+              {toolsOpen ? (
+                <div className="absolute right-0 top-full mt-3 w-72 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
+                  <div className="space-y-1">
+                    <Link
+                      to="/calculator"
+                      className="block rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
+                    >
+                      Full Setup Calculator
+                    </Link>
                     {toolLinks.map((link) => (
                       <Link
                         key={link.to}
                         to={link.to}
-                        className="rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-950"
+                        className="block rounded-xl px-3 py-2.5 text-sm text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
                       >
                         {link.label}
                       </Link>
@@ -196,26 +157,26 @@ export default function PressureCalLayout({
               ) : null}
             </div>
 
-            <Link
-              to="/about"
-              className="text-sm font-medium text-slate-600 transition hover:text-slate-900"
-            >
+            <Link to="/about" className={navLinkClass(location.pathname === "/about")}>
               About
             </Link>
 
-            <HeaderActionButton
-              to="/calculator"
-              className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
-            >
-              Open Full Setup Calculator
-            </HeaderActionButton>
+            {isCalculatorPage ? (
+              <span className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-500">
+                Full Setup Calculator
+              </span>
+            ) : (
+              <Link
+                to="/calculator"
+                className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+              >
+                Open Full Setup Calculator
+              </Link>
+            )}
 
             {isAuthenticated ? (
               <>
-                <Link
-                  to="/account"
-                  className="text-sm font-medium text-slate-600 transition hover:text-slate-900"
-                >
+                <Link to="/account" className={navLinkClass(location.pathname === "/account")}>
                   Account
                 </Link>
                 <button
@@ -228,98 +189,84 @@ export default function PressureCalLayout({
                 </button>
               </>
             ) : (
-              <HeaderActionButton
+              <Link
                 to="/account"
                 className="inline-flex items-center justify-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
               >
                 Sign in
-              </HeaderActionButton>
+              </Link>
             )}
           </nav>
 
-          <div className="flex items-center gap-2 lg:hidden">
-            <HeaderActionButton
-              to="/calculator"
-              className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-800 sm:px-4 sm:text-sm"
-            >
-              Open Calculator
-            </HeaderActionButton>
+          <div className="flex items-center gap-2 md:hidden">
+            {!isCalculatorPage ? (
+              <Link
+                to="/calculator"
+                className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+              >
+                Open Calculator
+              </Link>
+            ) : (
+              <span className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-500">
+                Calculator
+              </span>
+            )}
 
             <button
               type="button"
               onClick={() => setMobileMenuOpen((current) => !current)}
               className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50"
-              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+              aria-label="Toggle menu"
               aria-expanded={mobileMenuOpen}
             >
-              <span className="text-lg leading-none">{mobileMenuOpen ? "×" : "≡"}</span>
+              {mobileMenuOpen ? "×" : "☰"}
             </button>
           </div>
         </div>
 
         {mobileMenuOpen ? (
-          <div className="border-t border-slate-100 bg-white lg:hidden">
+          <div className="border-t border-slate-100 bg-white md:hidden">
             <div className="mx-auto max-w-6xl px-4 py-4">
-              <div className="space-y-2">
-                <Link
-                  to="/calculator"
-                  className="block rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-white"
-                >
-                  Full Setup Calculator
-                </Link>
-
+              <div className="grid gap-2">
                 <Link
                   to="/pricing"
-                  className="block rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
                 >
                   PressureCal Pro
                 </Link>
-
-                <button
-                  type="button"
-                  onClick={() => setMobileToolsOpen((current) => !current)}
-                  className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                <Link
+                  to="/calculator"
+                  className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
                 >
-                  <span>Tools</span>
-                  <span className="text-slate-400">{mobileToolsOpen ? "−" : "+"}</span>
-                </button>
-
-                {mobileToolsOpen ? (
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-2">
-                    <div className="grid gap-1">
-                      {toolLinks.map((link) => (
-                        <Link
-                          key={link.to}
-                          to={link.to}
-                          className="rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-white hover:text-slate-950"
-                        >
-                          {link.label}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-
+                  Full Setup Calculator
+                </Link>
+                {toolLinks.map((link) => (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
                 <Link
                   to="/about"
-                  className="block rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
                 >
                   About
                 </Link>
-
                 <Link
                   to="/account"
-                  className="block rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
                 >
-                  {mobileAccountLabel}
+                  {isAuthenticated ? "Account" : "Sign in"}
                 </Link>
-
                 {isAuthenticated ? (
                   <button
                     type="button"
                     onClick={handleSignOut}
                     disabled={signingOut}
-                    className="flex w-full items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="rounded-xl border border-slate-200 px-4 py-3 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {signingOut ? "Signing out..." : "Sign out"}
                   </button>
@@ -330,10 +277,10 @@ export default function PressureCalLayout({
         ) : null}
       </header>
 
-      <main className="px-4 py-8 pb-28 sm:py-10 sm:pb-12">{children}</main>
+      <main className="px-4 py-8 pb-24 sm:py-10 sm:pb-10">{children}</main>
 
       <footer className="border-t border-slate-200 bg-white">
-        <div className="mx-auto max-w-6xl px-4 py-6 sm:py-8">
+        <div className="mx-auto max-w-6xl px-4 py-6">
           <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
             <div className="max-w-xl">
               <p className="text-base font-semibold text-slate-900">PressureCal</p>
@@ -346,21 +293,15 @@ export default function PressureCalLayout({
                 recognises their continuing connection to land, waters and community. We pay our
                 respects to Elders past and present.
               </p>
-              <p className="mt-4 text-sm text-slate-500">
-                © {new Date().getFullYear()} PressureCal
-              </p>
+              <p className="mt-4 text-sm text-slate-500">© {new Date().getFullYear()} PressureCal</p>
             </div>
 
-            <div className="hidden gap-10 sm:grid sm:grid-cols-2">
+            <div className="grid gap-6 sm:grid-cols-2">
               <div>
                 <p className="text-sm font-semibold text-slate-900">Quick links</p>
                 <div className="mt-3 flex flex-col gap-2 text-sm text-slate-500">
-                  {quickFooterLinks.map((link) => (
-                    <Link
-                      key={link.to}
-                      to={link.to}
-                      className="transition hover:text-slate-700"
-                    >
+                  {footerQuickLinks.map((link) => (
+                    <Link key={link.to} to={link.to} className="transition hover:text-slate-700">
                       {link.label}
                     </Link>
                   ))}
@@ -370,72 +311,12 @@ export default function PressureCalLayout({
               <div>
                 <p className="text-sm font-semibold text-slate-900">Company</p>
                 <div className="mt-3 flex flex-col gap-2 text-sm text-slate-500">
-                  {legalLinks.map((link) => (
-                    <Link
-                      key={link.to}
-                      to={link.to}
-                      className="transition hover:text-slate-700"
-                    >
+                  {companyLinks.map((link) => (
+                    <Link key={link.to} to={link.to} className="transition hover:text-slate-700">
                       {link.label}
                     </Link>
                   ))}
                 </div>
-              </div>
-            </div>
-
-            <div className="space-y-3 sm:hidden">
-              <div className="rounded-2xl border border-slate-200">
-                <button
-                  type="button"
-                  onClick={() => setFooterLinksOpen((current) => !current)}
-                  className="flex w-full items-center justify-between px-4 py-3 text-left"
-                >
-                  <span className="text-sm font-semibold text-slate-900">Quick links</span>
-                  <span className="text-slate-500">{footerLinksOpen ? "−" : "+"}</span>
-                </button>
-
-                {footerLinksOpen ? (
-                  <div className="border-t border-slate-200 px-4 py-3">
-                    <div className="flex flex-col gap-2 text-sm text-slate-500">
-                      {quickFooterLinks.map((link) => (
-                        <Link
-                          key={link.to}
-                          to={link.to}
-                          className="transition hover:text-slate-700"
-                        >
-                          {link.label}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-
-              <div className="rounded-2xl border border-slate-200">
-                <button
-                  type="button"
-                  onClick={() => setFooterCompanyOpen((current) => !current)}
-                  className="flex w-full items-center justify-between px-4 py-3 text-left"
-                >
-                  <span className="text-sm font-semibold text-slate-900">Company</span>
-                  <span className="text-slate-500">{footerCompanyOpen ? "−" : "+"}</span>
-                </button>
-
-                {footerCompanyOpen ? (
-                  <div className="border-t border-slate-200 px-4 py-3">
-                    <div className="flex flex-col gap-2 text-sm text-slate-500">
-                      {legalLinks.map((link) => (
-                        <Link
-                          key={link.to}
-                          to={link.to}
-                          className="transition hover:text-slate-700"
-                        >
-                          {link.label}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
               </div>
             </div>
           </div>
