@@ -738,7 +738,13 @@ export default function PressureCalProPage() {
                     <p className="pb-1 text-sm text-slate-300">/ month</p>
                   </div>
 
-                  <p className="mt-2 text-sm text-slate-300">or $99 / year</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <p className="text-sm text-slate-300">or $99 / year</p>
+                    <span className="inline-flex items-center rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-xs font-semibold tracking-wide text-emerald-200">
+                      Best value
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm text-slate-200">Around 27¢/day billed annually</p>
 
                   <ul className="mt-8 space-y-3 text-base leading-7 text-slate-100">
                     {proFeatures.map((feature) => (
