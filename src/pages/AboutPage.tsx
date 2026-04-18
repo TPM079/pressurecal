@@ -37,7 +37,7 @@ export default function AboutPage() {
           name="description"
           content="Learn what PressureCal is, who it is for, and why it exists. PressureCal is a practical pressure washer setup tool built for pressure washing operators."
         />
-        <link rel="canonical" href="https://pressurecal.com/about" />
+        <link rel="canonical" href="https://www.pressurecal.com/about" />
       </Helmet>
 
       <section className="-mx-4 border-b border-slate-200 bg-slate-100 px-4">
@@ -220,3 +220,4 @@ export default function AboutPage() {
     </PressureCalLayout>
   );
 }
+

@@ -1089,7 +1089,7 @@ export default function NozzleSizeChartPage() {
   />
   <link
     rel="canonical"
-    href="https://pressurecal.com/nozzle-size-chart"
+    href="https://www.pressurecal.com/nozzle-size-chart"
   />
   <meta
     property="og:title"
@@ -1101,7 +1101,7 @@ export default function NozzleSizeChartPage() {
   />
   <meta
     property="og:url"
-    content="https://pressurecal.com/nozzle-size-chart"
+    content="https://www.pressurecal.com/nozzle-size-chart"
   />
   <meta property="og:type" content="website" />
   <meta
@@ -1117,7 +1117,7 @@ export default function NozzleSizeChartPage() {
       "@context": "https://schema.org",
       "@type": "WebPage",
       name: "Pressure Washer Nozzle Size Chart",
-      url: "https://pressurecal.com/nozzle-size-chart",
+      url: "https://www.pressurecal.com/nozzle-size-chart",
       description:
         "Pressure washer nozzle size chart for matching nozzle tips to PSI and LPM, comparing common sizes, and choosing a suitable nozzle for your machine setup.",
     })}
@@ -1272,3 +1272,4 @@ export default function NozzleSizeChartPage() {
     </>
   );
 }
+

@@ -280,7 +280,7 @@ export default function HosePressureLossCalculator() {
   />
   <link
     rel="canonical"
-    href="https://pressurecal.com/hose-pressure-loss-calculator"
+    href="https://www.pressurecal.com/hose-pressure-loss-calculator"
   />
   <meta
     property="og:title"
@@ -292,7 +292,7 @@ export default function HosePressureLossCalculator() {
   />
   <meta
     property="og:url"
-    content="https://pressurecal.com/hose-pressure-loss-calculator"
+    content="https://www.pressurecal.com/hose-pressure-loss-calculator"
   />
   <meta property="og:type" content="website" />
   <meta
@@ -308,7 +308,7 @@ export default function HosePressureLossCalculator() {
       "@context": "https://schema.org",
       "@type": "WebApplication",
       name: "Pressure Washer Hose Pressure Loss Calculator",
-      url: "https://pressurecal.com/hose-pressure-loss-calculator",
+      url: "https://www.pressurecal.com/hose-pressure-loss-calculator",
       applicationCategory: "Calculator",
       operatingSystem: "Web",
       description:
@@ -660,3 +660,4 @@ export default function HosePressureLossCalculator() {
     </>
   );
 }
+

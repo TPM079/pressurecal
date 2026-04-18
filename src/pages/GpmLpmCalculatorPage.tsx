@@ -129,7 +129,7 @@ export default function GpmLpmCalculatorPage() {
         />
         <link
           rel="canonical"
-          href="https://pressurecal.com/lpm-gpm-calculator"
+          href="https://www.pressurecal.com/lpm-gpm-calculator"
         />
         <meta
           property="og:title"
@@ -141,7 +141,7 @@ export default function GpmLpmCalculatorPage() {
         />
         <meta
           property="og:url"
-          content="https://pressurecal.com/lpm-gpm-calculator"
+          content="https://www.pressurecal.com/lpm-gpm-calculator"
         />
         <meta property="og:type" content="website" />
         <meta
@@ -157,7 +157,7 @@ export default function GpmLpmCalculatorPage() {
             "@context": "https://schema.org",
             "@type": "WebApplication",
             name: "GPM to LPM Converter",
-            url: "https://pressurecal.com/lpm-gpm-calculator",
+            url: "https://www.pressurecal.com/lpm-gpm-calculator",
             applicationCategory: "Converter",
             operatingSystem: "Web",
             description:

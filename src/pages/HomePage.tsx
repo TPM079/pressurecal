@@ -438,7 +438,7 @@ export default function HomePage() {
     name="description"
     content="Model what your pressure washer is really doing at the gun with nozzle sizing, hose loss, at-gun pressure, flow, and full setup checks."
   />
-  <link rel="canonical" href="https://pressurecal.com/" />
+  <link rel="canonical" href="https://www.pressurecal.com/" />
   <meta
     property="og:title"
     content="Pressure Washer Calculator | Nozzle Size, Hose Loss & At-Gun Pressure"
@@ -447,7 +447,7 @@ export default function HomePage() {
     property="og:description"
     content="Model what your pressure washer is really doing at the gun with nozzle sizing, hose loss, at-gun pressure, flow, and full setup checks."
   />
-  <meta property="og:url" content="https://pressurecal.com/" />
+  <meta property="og:url" content="https://www.pressurecal.com/" />
   <meta property="og:type" content="website" />
   <meta
     name="twitter:title"
@@ -462,7 +462,7 @@ export default function HomePage() {
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
       name: "PressureCal",
-      url: "https://pressurecal.com/",
+      url: "https://www.pressurecal.com/",
       applicationCategory: "EngineeringApplication",
       operatingSystem: "Web",
       description:
@@ -1153,3 +1153,4 @@ export default function HomePage() {
     </PressureCalLayout>
   );
 }
+

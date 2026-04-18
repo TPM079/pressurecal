@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 const DIST_DIR = path.resolve(process.cwd(), "dist");
-const SITE_URL = "https://pressurecal.com";
+const SITE_URL = "https://www.pressurecal.com";
 const OG_IMAGE = `${SITE_URL}/social-preview.png`;
 
 const ROUTES = [
@@ -186,3 +186,4 @@ main().catch((error) => {
   console.error(error);
   process.exit(1);
 });
+

@@ -2,17 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "redirects": [
     {
-      "source": "/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.pressurecal.com"
-        }
-      ],
-      "destination": "https://pressurecal.com/:path*",
-      "permanent": true
-    },
-    {
       "source": "/pro",
       "destination": "/pricing",
       "permanent": true
