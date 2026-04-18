@@ -984,7 +984,7 @@ export default function FullRigCalculatorPage() {
           name="description"
           content="Model hose loss, nozzle match, at-gun pressure, flow, and power requirement in one full pressure washer setup calculator."
         />
-        <link rel="canonical" href="https://www.pressurecal.com/calculator" />
+        <link rel="canonical" href="https://pressurecal.com/calculator" />
       </Helmet>
 
       <section className="-mx-4 bg-slate-100 px-4 pb-8 pt-12 sm:pb-10">

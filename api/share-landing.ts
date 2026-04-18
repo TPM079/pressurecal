@@ -24,7 +24,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).send("Share link not found");
     }
 
-    const host = req.headers.host ?? "www.pressurecal.com";
+    const host = req.headers.host ?? "pressurecal.com";
     const protocol = host.startsWith("localhost") ? "http" : "https";
     const origin = `${protocol}://${host}`;
     const destination = `${origin}/calculator?${shared.query_string}`;

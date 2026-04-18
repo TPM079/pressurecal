@@ -129,7 +129,7 @@ export default function PsiBarCalculatorPage() {
         />
         <link
           rel="canonical"
-          href="https://www.pressurecal.com/psi-bar-calculator"
+          href="https://pressurecal.com/psi-bar-calculator"
         />
         <meta
           property="og:title"
@@ -141,7 +141,7 @@ export default function PsiBarCalculatorPage() {
         />
         <meta
           property="og:url"
-          content="https://www.pressurecal.com/psi-bar-calculator"
+          content="https://pressurecal.com/psi-bar-calculator"
         />
         <meta property="og:type" content="website" />
         <meta
@@ -157,7 +157,7 @@ export default function PsiBarCalculatorPage() {
             "@context": "https://schema.org",
             "@type": "WebApplication",
             name: "PSI to BAR Converter",
-            url: "https://www.pressurecal.com/psi-bar-calculator",
+            url: "https://pressurecal.com/psi-bar-calculator",
             applicationCategory: "Converter",
             operatingSystem: "Web",
             description:

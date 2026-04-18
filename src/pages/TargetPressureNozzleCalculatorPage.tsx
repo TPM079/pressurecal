@@ -14,7 +14,7 @@ export default function TargetPressureNozzleCalculatorPage() {
         />
         <link
           rel="canonical"
-          href="https://www.pressurecal.com/target-pressure-nozzle-calculator"
+          href="https://pressurecal.com/target-pressure-nozzle-calculator"
         />
         <meta
           property="og:title"
@@ -26,7 +26,7 @@ export default function TargetPressureNozzleCalculatorPage() {
         />
         <meta
           property="og:url"
-          content="https://www.pressurecal.com/target-pressure-nozzle-calculator"
+          content="https://pressurecal.com/target-pressure-nozzle-calculator"
         />
         <meta property="og:type" content="website" />
         <meta

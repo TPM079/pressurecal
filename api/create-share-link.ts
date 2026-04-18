@@ -20,7 +20,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       origin:
         typeof req.headers.origin === "string" && req.headers.origin.trim()
           ? req.headers.origin.trim()
-          : `https://${req.headers.host ?? "www.pressurecal.com"}`,
+          : `https://${req.headers.host ?? "pressurecal.com"}`,
     });
 
     return res.status(200).json(result);
