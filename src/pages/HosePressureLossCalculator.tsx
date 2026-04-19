@@ -591,7 +591,7 @@ export default function HosePressureLossCalculator() {
                 <div className="mt-6 grid gap-4 md:grid-cols-3">
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
                     <h3 className="text-sm font-semibold text-slate-900">
-                      100 ft hose check
+                      30 metre hose check
                     </h3>
                     <p className="mt-2 text-sm leading-6 text-slate-600">
                       Estimate how much pressure is lost through a typical hose
@@ -602,7 +602,7 @@ export default function HosePressureLossCalculator() {
 
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
                     <h3 className="text-sm font-semibold text-slate-900">
-                      200 ft hose check
+                      60 metre hose check
                     </h3>
                     <p className="mt-2 text-sm leading-6 text-slate-600">
                       Compare close-range work to longer hose runs. Extra length
