@@ -18,6 +18,23 @@ const DEFAULTS = {
   flowUnit: "lpm" as FlowUnit,
 };
 
+const commonSetupPresets = [
+  { label: "4000 PSI / 15 LPM", pressure: 4000, pressureUnit: "psi" as PressureUnit, flow: 15, flowUnit: "lpm" as FlowUnit },
+  { label: "3000 PSI / 21 LPM", pressure: 3000, pressureUnit: "psi" as PressureUnit, flow: 21, flowUnit: "lpm" as FlowUnit },
+  { label: "200 BAR / 15 LPM", pressure: 200, pressureUnit: "bar" as PressureUnit, flow: 15, flowUnit: "lpm" as FlowUnit },
+  { label: "250 BAR / 21 LPM", pressure: 250, pressureUnit: "bar" as PressureUnit, flow: 21, flowUnit: "lpm" as FlowUnit },
+];
+
+function fmt(n: number, dp = 2) {
+  if (!Number.isFinite(n)) return "—";
+  return n.toFixed(dp);
+}
+
+function fmtRounded(n: number) {
+  if (!Number.isFinite(n)) return "—";
+  return String(Math.round(n));
+}
+
 function tipFromGpmAt4000(gpmAt4000: number) {
   const tip = Math.round(Math.max(0, gpmAt4000) * 10)
     .toString()
@@ -52,11 +69,6 @@ function orificeDiameterMmFromFlowAndPressure(
   return d * 1000;
 }
 
-function fmt(n: number, dp = 2) {
-  if (!Number.isFinite(n)) return "—";
-  return n.toFixed(dp);
-}
-
 function toPsi(value: number, unit: PressureUnit) {
   return unit === "psi" ? value : value * PSI_PER_BAR;
 }
@@ -73,13 +85,9 @@ function fromGpm(valueGpm: number, unit: FlowUnit) {
   return unit === "gpm" ? valueGpm : valueGpm * LPM_PER_GPM;
 }
 
-function flowLabel(valueGpmAt4000: number, preferredUnit: FlowUnit) {
-  if (preferredUnit === "lpm") {
-    const lpm = valueGpmAt4000 * LPM_PER_GPM;
-    return `${fmt(lpm, 2)} L/min (${fmt(valueGpmAt4000, 2)} GPM)`;
-  }
-
-  return `${fmt(valueGpmAt4000, 2)} GPM (${fmt(valueGpmAt4000 * LPM_PER_GPM, 2)} L/min)`;
+function flowLabel(valueGpmAt4000: number) {
+  const lpm = valueGpmAt4000 * LPM_PER_GPM;
+  return `${fmtRounded(lpm)} LPM (${fmt(valueGpmAt4000, 2)} GPM)`;
 }
 
 type NozzleCalculatorProps = {
@@ -104,6 +112,12 @@ type CalculatorCoreProps = {
   resetAll: () => void;
   copySetupLink: () => Promise<void>;
   copyMessage: string;
+  applyPreset: (preset: {
+    pressure: number;
+    pressureUnit: PressureUnit;
+    flow: number;
+    flowUnit: FlowUnit;
+  }) => void;
 };
 
 function CalculatorCore({
@@ -124,34 +138,38 @@ function CalculatorCore({
   resetAll,
   copySetupLink,
   copyMessage,
+  applyPreset,
 }: CalculatorCoreProps) {
   return (
     <div className={embedded ? "space-y-6" : "space-y-8"}>
       {!embedded && (
-        <div className="text-center">
-          <div className="mb-4">
-            <Link
-              to="/"
-              className="text-sm font-semibold text-slate-600 hover:text-slate-900"
-            >
-              ← Back to PressureCal
-            </Link>
+        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+          <div className="max-w-3xl">
+            <div className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+              Nozzle Sizing
+            </div>
+
+            <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-900 md:text-5xl">
+              Pressure Washer Nozzle Size Calculator
+            </h1>
+
+            <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
+              Calculate the right pressure washer nozzle size from pump pressure and flow,
+              then check the matching nozzle / tip code before you fit the wrong nozzle to
+              the machine.
+            </p>
+
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
+              PressureCal keeps PSI and LPM first, with BAR and GPM still available when
+              you need to compare mixed-spec equipment, manuals, or parts.
+            </p>
           </div>
 
-          <h1 className="text-5xl font-semibold tracking-tight text-slate-900">
-  Pressure Washer Nozzle Size Calculator
-</h1>
-
-<p className="mx-auto mt-4 max-w-2xl text-lg text-slate-600">
-  Calculate the right pressure washer nozzle size from PSI and LPM, then check
-  the matching tip code before you fit the wrong nozzle to the machine.
-</p>
-
-          <div className="mt-6 flex items-center justify-center gap-2">
+          <div className="mt-6 flex flex-wrap gap-3">
             <button
               type="button"
               onClick={swapUnits}
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50"
+              className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 active:scale-[0.98]"
             >
               Swap units
             </button>
@@ -159,17 +177,17 @@ function CalculatorCore({
             <button
               type="button"
               onClick={resetAll}
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50"
+              className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 active:scale-[0.98]"
             >
               Reset
             </button>
           </div>
-        </div>
+        </section>
       )}
 
       {embedded && (
-        <div>
-          <div className="flex flex-wrap items-center justify-between gap-3">
+        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                 Embedded calculator
@@ -177,13 +195,17 @@ function CalculatorCore({
               <h3 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">
                 Nozzle Size Calculator
               </h3>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+                Match nozzle size to pump pressure and flow, then use the linked tools to
+                check hose loss and the full setup when needed.
+              </p>
             </div>
 
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={swapUnits}
-                className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50"
+                className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 active:scale-[0.98]"
               >
                 Swap units
               </button>
@@ -191,241 +213,318 @@ function CalculatorCore({
               <button
                 type="button"
                 onClick={resetAll}
-                className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50"
+                className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 active:scale-[0.98]"
               >
                 Reset
               </button>
             </div>
           </div>
-
-          <p className="mt-3 text-sm leading-6 text-slate-600">
-            Dial in the recommended tip size from pump pressure and flow, then use the cards on the
-            right to see how the full setup performs.
-          </p>
-        </div>
+        </section>
       )}
 
-      <div
-        className={
-          embedded ? "space-y-6" : "rounded-2xl border border-slate-200 bg-white p-8 shadow-sm"
-        }
-      >
-        <div className="space-y-8">
-          <div>
-            <div className="mb-2 text-center text-base font-semibold text-slate-800">
-              Pump Pressure
+      <section className={embedded ? "rounded-3xl border border-slate-200 bg-white p-6 shadow-sm" : "rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8"}>
+        <div className="grid gap-8 lg:grid-cols-[1.02fr_0.98fr]">
+          <div className="space-y-6">
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">
+                Pump pressure ({pressureUnit === "psi" ? "PSI" : "BAR"})
+              </label>
+
+              <div className="flex gap-3">
+                <input
+                  className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                  type="number"
+                  inputMode="decimal"
+                  value={pressure}
+                  onChange={(e) => setPressure(Number(e.target.value))}
+                />
+
+                <select
+                  className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                  value={pressureUnit}
+                  onChange={(e) => setPressureUnit(e.target.value as PressureUnit)}
+                >
+                  <option value="psi">PSI</option>
+                  <option value="bar">BAR</option>
+                </select>
+              </div>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center">
-              <input
-                className="w-full max-w-3xl rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
-                type="number"
-                inputMode="decimal"
-                value={pressure}
-                onChange={(e) => setPressure(Number(e.target.value))}
-              />
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">
+                Pump flow ({flowUnit === "lpm" ? "LPM" : "GPM"})
+              </label>
 
-              <select
-                className="w-full max-w-[140px] rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
-                value={pressureUnit}
-                onChange={(e) => setPressureUnit(e.target.value as PressureUnit)}
-              >
-                <option value="psi">PSI</option>
-                <option value="bar">BAR</option>
-              </select>
-            </div>
-          </div>
+              <div className="flex gap-3">
+                <input
+                  className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                  type="number"
+                  inputMode="decimal"
+                  value={flow}
+                  onChange={(e) => setFlow(Number(e.target.value))}
+                />
 
-          <div>
-            <div className="mb-2 text-center text-base font-semibold text-slate-800">
-              Pump Flow
-            </div>
-
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center">
-              <input
-                className="w-full max-w-3xl rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
-                type="number"
-                inputMode="decimal"
-                value={flow}
-                onChange={(e) => setFlow(Number(e.target.value))}
-              />
-
-              <select
-                className="w-full max-w-[140px] rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
-                value={flowUnit}
-                onChange={(e) => setFlowUnit(e.target.value as FlowUnit)}
-              >
-                <option value="gpm">GPM</option>
-                <option value="lpm">L/min</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="rounded-2xl bg-slate-100 px-6 py-10 text-center">
-            <div className="text-sm font-medium text-slate-600">Recommended Nozzle Size</div>
-
-            <div className="mt-3 text-6xl font-semibold tracking-tight text-slate-900">{tip}</div>
-
-            <div className="mt-4 text-sm text-slate-600">
-              Orifice diameter{" "}
-              <span className="font-semibold text-slate-800">{fmt(orificeMm, 2)} mm</span> •{" "}
-              <span className="font-semibold text-slate-800">{fmt(orificeIn, 3)} in</span>
+                <select
+                  className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                  value={flowUnit}
+                  onChange={(e) => setFlowUnit(e.target.value as FlowUnit)}
+                >
+                  <option value="lpm">LPM</option>
+                  <option value="gpm">GPM</option>
+                </select>
+              </div>
             </div>
 
-            <div className="mt-2 text-sm text-slate-500">
-              Tip equivalent ≈ <span className="font-medium">{tipFlowLabel}</span> @ 4000 PSI
-            </div>
+            <div>
+              <p className="mb-3 text-sm font-medium text-slate-700">
+                Popular setup shortcuts
+              </p>
 
-            <div className="mt-8 flex flex-col items-center gap-3">
-              <button
-                type="button"
-                onClick={copySetupLink}
-                className="rounded-xl bg-slate-900 px-8 py-3 text-sm font-semibold text-white hover:bg-slate-800"
-              >
-                Copy Setup Link
-              </button>
-
-              <div className="text-xs text-slate-500">
-                {copyMessage || "Share link preserves your units and inputs."}
+              <div className="flex flex-wrap gap-2">
+                {commonSetupPresets.map((preset) => (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    onClick={() => applyPreset(preset)}
+                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 active:scale-[0.98]"
+                  >
+                    {preset.label}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
+
+          <div className="rounded-3xl border border-blue-200 bg-gradient-to-br from-blue-50 to-white p-5 shadow-sm">
+            <div className="flex flex-col gap-5">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
+                  Recommended nozzle / tip code
+                </p>
+
+                <div className="mt-4 flex flex-wrap items-end gap-4">
+                  <div className="rounded-2xl bg-blue-600 px-5 py-4 text-white shadow-sm">
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-100">
+                      Tip code
+                    </div>
+                    <div className="mt-1 text-5xl font-bold tracking-tight">{tip}</div>
+                  </div>
+
+                  <div className="rounded-2xl border border-blue-200 bg-white px-4 py-4 text-sm leading-6 text-slate-600">
+                    Useful for matching nozzle size before buying, fitting, or blaming
+                    the machine.
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Orifice diameter
+                  </p>
+                  <p className="mt-2 text-xl font-semibold text-slate-900">
+                    {fmt(orificeMm, 2)} mm
+                  </p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    {fmt(orificeIn, 3)} in
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Tip equivalent
+                  </p>
+                  <p className="mt-2 text-xl font-semibold text-slate-900">
+                    {tipFlowLabel}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-500">@ 4000 PSI</p>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={copySetupLink}
+                  className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                >
+                  Copy setup link
+                </button>
+
+                {!embedded && (
+                  <Link
+                    to="/calculator"
+                    className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  >
+                    Open full setup calculator
+                  </Link>
+                )}
+              </div>
+
+              <p className="text-xs text-slate-500">
+                {copyMessage || "Share link preserves your units and inputs."}
+              </p>
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
 
       {!embedded && (
         <>
-          <section className="mt-10 space-y-6 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-            <div>
-              <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-                How to choose the correct pressure washer nozzle size
-              </h2>
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+            <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+              Why nozzle size matters
+            </h2>
 
-              <p className="mt-4 text-sm leading-7 text-slate-600">
-                Choosing the correct pressure washer nozzle size is important for maintaining the
-                intended pressure and flow of your machine. A nozzle that is too small can increase
-                pressure, place extra load on the pump and engine, and cause the unloader to work
-                harder. A nozzle that is too large can reduce operating pressure and make cleaning
-                performance feel weak at the gun.
+            <div className="mt-4 space-y-4 text-sm leading-7 text-slate-600">
+              <p>
+                Matching nozzle size to pump pressure and flow is one of the most important
+                setup checks in pressure washing. A nozzle that is too small can raise pressure,
+                increase engine load, and push the unloader harder than intended.
               </p>
 
-              <p className="mt-4 text-sm leading-7 text-slate-600">
-                PressureCal estimates the nozzle tip size by using your pump pressure and flow rate,
-                then converts that to the common tip sizing convention based on flow at 4000 PSI.
-                It also estimates the approximate orifice diameter so you can better understand what
-                the nozzle is physically doing.
+              <p>
+                A nozzle that is too large can make the machine feel weak at the gun. The setup
+                may still flow water, but impact and cleaning performance can drop noticeably.
               </p>
 
-              <p className="mt-4 text-sm leading-7 text-slate-600">
-                In practical terms, both PSI and flow matter. Pressure influences impact force,
-                while flow influences rinsing ability and overall cleaning speed. The best nozzle is
-                the one that matches your machine’s rated output rather than relying on guesswork or
-                a generic chart.
-              </p>
-            </div>
-
-            <div>
-              <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-                Common nozzle sizing questions
-              </h2>
-
-              <div className="mt-6 space-y-5">
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
-                  <h3 className="text-sm font-semibold text-slate-900">
-                    What nozzle size suits 15 L/min at 4000 PSI?
-                  </h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                    A 15 L/min machine at 4000 PSI commonly corresponds to a 040 tip. PressureCal
-                    calculates this directly from the values you enter and also shows the estimated
-                    orifice diameter.
-                  </p>
-                </div>
-
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
-                  <h3 className="text-sm font-semibold text-slate-900">
-                    What happens if my nozzle is too small?
-                  </h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                    A nozzle that is too small can increase pressure above the intended operating
-                    point, increase engine load, and contribute to unloader cycling or bypass
-                    activity.
-                  </p>
-                </div>
-
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
-                  <h3 className="text-sm font-semibold text-slate-900">
-                    What happens if my nozzle is too large?
-                  </h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                    A nozzle that is too large usually reduces pressure at the gun. The machine may
-                    still flow water, but cleaning performance and impact can drop noticeably.
-                  </p>
-                </div>
-
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
-                  <h3 className="text-sm font-semibold text-slate-900">
-                    Is nozzle size the only thing that affects real pressure?
-                  </h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                    No. Hose length, hose internal diameter, fittings, and unloader settings all
-                    affect real operating pressure. For a more complete picture, combine this page
-                    with the hose loss tool and the full PressureCal rig calculator.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
-              <p className="text-sm text-slate-700">
-                Also need to estimate pressure drop through the hose? Use the{" "}
-                <Link
-                  to="/hose-pressure-loss-calculator"
-                  className="font-semibold text-slate-900 underline hover:text-slate-700"
-                >
-                  Hose Pressure Loss Calculator
-                </Link>
-                .
-              </p>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
-              <p className="text-sm text-slate-700">
-                Need to work backwards from your desired PSI? Use the{" "}
-                <Link
-                  to="/target-pressure-nozzle-calculator"
-                  className="font-semibold text-slate-900 underline hover:text-slate-700"
-                >
-                  Target Pressure Nozzle Calculator
-                </Link>
-                .
-              </p>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
-              <p className="text-sm text-slate-700">
-                Need to check nozzle size, hose loss, and at-gun performance together?
-                Use the{" "}
-                <Link
-                  to="/calculator"
-                  className="font-semibold text-slate-900 underline hover:text-slate-700"
-                >
-                  Full Setup Calculator
-                </Link>
-                .
+              <p>
+                PressureCal works from the pressure and flow you enter, converts that to the
+                common nozzle / tip code convention, and gives you a clearer starting point than
+                guesswork or a generic chart alone.
               </p>
             </div>
           </section>
 
-          <div className="mt-8 text-center">
-            <Link
-              to="/calculator"
-              className="text-sm font-semibold text-slate-700 underline hover:text-slate-900"
-            >
-              Open Full Setup Calculator
-            </Link>
-          </div>
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+            <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+              Common example
+            </h2>
 
-          <div className="mt-10 text-center text-xs text-slate-500">
-            Results are indicative. Orifice estimate assumes water, Cd≈0.62.
-          </div>
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  Machine pressure
+                </p>
+                <p className="mt-2 text-2xl font-semibold text-slate-900">
+                  4000 PSI
+                </p>
+                <p className="mt-1 text-sm text-slate-500">(276 BAR)</p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  Machine flow
+                </p>
+                <p className="mt-2 text-2xl font-semibold text-slate-900">
+                  15 LPM
+                </p>
+                <p className="mt-1 text-sm text-slate-500">(3.96 GPM)</p>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-blue-200 bg-blue-50 p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-800">
+                Recommended nozzle / tip code
+              </p>
+              <p className="mt-2 text-4xl font-bold tracking-tight text-blue-950">040</p>
+              <p className="mt-3 text-sm leading-6 text-blue-900">
+                A common 4000 PSI / 15 LPM setup lands on a 040 tip code. That is why 040 is
+                such a familiar reference point for many professional pressure washer setups.
+              </p>
+            </div>
+          </section>
+
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+            <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+              FAQ
+            </h2>
+
+            <div className="mt-5 space-y-5 text-sm leading-7 text-slate-600">
+              <div>
+                <h3 className="text-base font-semibold text-slate-900">
+                  What nozzle size suits 15 LPM at 4000 PSI?
+                </h3>
+                <p className="mt-2">
+                  A common 15 LPM setup at 4000 PSI lands on a 040 tip code.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-base font-semibold text-slate-900">
+                  What happens if my nozzle is too small?
+                </h3>
+                <p className="mt-2">
+                  A nozzle that is too small can raise pressure, increase engine load, and
+                  contribute to unloader cycling or bypass activity.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-base font-semibold text-slate-900">
+                  What happens if my nozzle is too large?
+                </h3>
+                <p className="mt-2">
+                  A nozzle that is too large usually reduces operating pressure at the gun and
+                  can make cleaning performance feel weak.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-base font-semibold text-slate-900">
+                  Is nozzle size the only thing that affects real pressure?
+                </h3>
+                <p className="mt-2">
+                  No. Hose length, hose ID, fittings, and unloader settings also affect real
+                  operating pressure. Use the related tools below when you need the fuller
+                  setup picture.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+            <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+              Related tools
+            </h2>
+
+            <p className="mt-4 text-sm leading-7 text-slate-600">
+              Need more than nozzle size alone? Move into the live tools:
+            </p>
+
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Link
+                to="/hose-pressure-loss-calculator"
+                className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+              >
+                Hose Pressure Loss Calculator
+              </Link>
+
+              <Link
+                to="/target-pressure-nozzle-calculator"
+                className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+              >
+                Target Pressure Nozzle Calculator
+              </Link>
+
+              <Link
+                to="/nozzle-size-chart"
+                className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+              >
+                Nozzle Size Chart
+              </Link>
+
+              <Link
+                to="/calculator"
+                className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+              >
+                Full Setup Calculator
+              </Link>
+            </div>
+
+            <p className="mt-6 text-xs text-slate-500">
+              Results are indicative. Orifice estimate assumes water and Cd ≈ 0.62.
+            </p>
+          </section>
         </>
       )}
     </div>
@@ -484,7 +583,7 @@ export default function NozzleCalculator({ embedded = false }: NozzleCalculatorP
     [flowLpm, pressurePsi],
   );
   const orificeIn = useMemo(() => orificeMm / 25.4, [orificeMm]);
-  const tipFlowLabel = useMemo(() => flowLabel(gpmAt4000, flowUnit), [gpmAt4000, flowUnit]);
+  const tipFlowLabel = useMemo(() => flowLabel(gpmAt4000), [gpmAt4000]);
 
   function resetAll() {
     setPressure(DEFAULTS.pressure);
@@ -506,8 +605,21 @@ export default function NozzleCalculator({ embedded = false }: NozzleCalculatorP
 
     setPressureUnit(nextPressureUnit);
     setFlowUnit(nextFlowUnit);
-    setPressure(Number(fromPsi(currentPressurePsi, nextPressureUnit).toFixed(2)));
-    setFlow(Number(fromGpm(currentFlowGpm, nextFlowUnit).toFixed(2)));
+    setPressure(Number(fromPsi(currentPressurePsi, nextPressureUnit).toFixed(nextPressureUnit === "psi" ? 0 : 1)));
+    setFlow(Number(fromGpm(currentFlowGpm, nextFlowUnit).toFixed(nextFlowUnit === "gpm" ? 2 : 1)));
+    setCopyMessage("");
+  }
+
+  function applyPreset(preset: {
+    pressure: number;
+    pressureUnit: PressureUnit;
+    flow: number;
+    flowUnit: FlowUnit;
+  }) {
+    setPressure(preset.pressure);
+    setPressureUnit(preset.pressureUnit);
+    setFlow(preset.flow);
+    setFlowUnit(preset.flowUnit);
     setCopyMessage("");
   }
 
@@ -549,6 +661,7 @@ export default function NozzleCalculator({ embedded = false }: NozzleCalculatorP
       resetAll={resetAll}
       copySetupLink={copySetupLink}
       copyMessage={copyMessage}
+      applyPreset={applyPreset}
     />
   );
 
@@ -557,54 +670,53 @@ export default function NozzleCalculator({ embedded = false }: NozzleCalculatorP
   return (
     <>
       <Helmet>
-  <title>Pressure Washer Nozzle Size Calculator | Match PSI, LPM & Tip Size</title>
-  <meta
-    name="description"
-    content="Calculate the right pressure washer nozzle size from PSI and LPM, then check the matching tip code before you fit the wrong nozzle to the machine."
-  />
-  <link rel="canonical" href="https://www.pressurecal.com/nozzle-size-calculator" />
-  <meta
-    property="og:title"
-    content="Pressure Washer Nozzle Size Calculator | Match PSI, LPM & Tip Size"
-  />
-  <meta
-    property="og:description"
-    content="Calculate the right pressure washer nozzle size from PSI and LPM, then check the matching tip code before you fit the wrong nozzle to the machine."
-  />
-  <meta
-    property="og:url"
-    content="https://www.pressurecal.com/nozzle-size-calculator"
-  />
-  <meta property="og:type" content="website" />
-  <meta
-    name="twitter:title"
-    content="Pressure Washer Nozzle Size Calculator | Match PSI, LPM & Tip Size"
-  />
-  <meta
-    name="twitter:description"
-    content="Calculate the right pressure washer nozzle size from PSI and LPM, then check the matching tip code before you fit the wrong nozzle to the machine."
-  />
-  <script type="application/ld+json">
-    {JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "WebApplication",
-      name: "Pressure Washer Nozzle Size Calculator",
-      url: "https://www.pressurecal.com/nozzle-size-calculator",
-      applicationCategory: "Calculator",
-      operatingSystem: "Web",
-      description:
-        "Calculate the right pressure washer nozzle size from PSI and LPM, then check the matching tip code before you fit the wrong nozzle to the machine.",
-    })}
-  </script>
-</Helmet>
+        <title>Pressure Washer Nozzle Size Calculator | Match PSI, LPM & Tip Code | PressureCal</title>
+        <meta
+          name="description"
+          content="Calculate the right pressure washer nozzle size from pump pressure and flow, then check the matching nozzle / tip code before you fit the wrong nozzle to the machine."
+        />
+        <link rel="canonical" href="https://www.pressurecal.com/nozzle-size-calculator" />
+        <meta
+          property="og:title"
+          content="Pressure Washer Nozzle Size Calculator | Match PSI, LPM & Tip Code | PressureCal"
+        />
+        <meta
+          property="og:description"
+          content="Calculate the right pressure washer nozzle size from pump pressure and flow, then check the matching nozzle / tip code before you fit the wrong nozzle to the machine."
+        />
+        <meta
+          property="og:url"
+          content="https://www.pressurecal.com/nozzle-size-calculator"
+        />
+        <meta property="og:type" content="website" />
+        <meta
+          name="twitter:title"
+          content="Pressure Washer Nozzle Size Calculator | Match PSI, LPM & Tip Code | PressureCal"
+        />
+        <meta
+          name="twitter:description"
+          content="Calculate the right pressure washer nozzle size from pump pressure and flow, then check the matching nozzle / tip code before you fit the wrong nozzle to the machine."
+        />
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebApplication",
+            name: "Pressure Washer Nozzle Size Calculator",
+            url: "https://www.pressurecal.com/nozzle-size-calculator",
+            applicationCategory: "Calculator",
+            operatingSystem: "Web",
+            description:
+              "Calculate the right pressure washer nozzle size from pump pressure and flow, then check the matching nozzle / tip code before you fit the wrong nozzle to the machine.",
+          })}
+        </script>
+      </Helmet>
 
       <PressureCalLayout>
         <div className="-mx-4 -my-8 bg-slate-100 px-4 py-8 sm:-my-10 sm:py-10">
-          <div className="mx-auto max-w-5xl">{content}</div>
+          <div className="mx-auto max-w-5xl space-y-8">{content}</div>
           <BackToTopButton />
         </div>
       </PressureCalLayout>
     </>
   );
 }
-
