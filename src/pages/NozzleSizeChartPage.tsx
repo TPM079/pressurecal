@@ -624,17 +624,17 @@ function SurfaceCleanerHelper() {
 
     const sourceText =
       pressureUnit === "psi"
-        ? `${formatNumber(pressure, 0)} PSI = ${formatNumber(
+        ? `${formatNumber(pressure, 0)} PSI (${formatNumber(
             pressureBar,
             1
-          )} BAR`
-        : `${formatNumber(pressure, 1)} BAR`;
+          )} BAR)`
+        : `${Math.round(psiFromBar(pressure))} PSI (${formatNumber(pressure, 1)} BAR)`;
 
     if (Math.abs(roundedPressureBar - pressureBar) < 0.05) {
-      return `${sourceText}, using ${roundedPressureBar} BAR chart row.`;
+      return `${sourceText}, using ${Math.round(pressurePsi)} PSI (${roundedPressureBar} BAR) chart row.`;
     }
 
-    return `${sourceText}, rounded to ${roundedPressureBar} BAR chart row.`;
+    return `${sourceText}, rounded to ${Math.round(pressurePsi)} PSI (${roundedPressureBar} BAR) chart row.`;
   }, [pressure, pressureUnit, pressureBar, roundedPressureBar]);
 
   const highlightedChartHref = useMemo(
@@ -759,13 +759,13 @@ function SurfaceCleanerHelper() {
                 <strong>{formatRoundedLpm(nearestFlow.lpm)} LPM</strong> ({nearestFlow.gpm} GPM)
               </p>
               <p className="mt-2 text-sm leading-6 text-blue-900">
-                Nearest chart row: <strong>{roundedPressureBar} BAR</strong> ({Math.round(pressurePsi)} PSI)
+                Nearest chart row: <strong>{Math.round(pressurePsi)} PSI</strong> ({roundedPressureBar} BAR)
               </p>
               <p className="mt-2 text-sm leading-6 text-blue-900">
                 {pressureRoundingNote}
               </p>
               <p className="mt-2 text-sm leading-6 text-blue-900">
-                Chart lookup pair: <strong>{roundedPressureBar} BAR ({Math.round(pressurePsi)} PSI)</strong> ×{" "}
+                Chart lookup pair: <strong>{Math.round(pressurePsi)} PSI ({roundedPressureBar} BAR)</strong> ×{" "}
                 <strong>{formatRoundedLpm(nearestFlow.lpm)} LPM</strong> →{" "}
                 <strong>{estimatedTipCode}</strong>
               </p>
