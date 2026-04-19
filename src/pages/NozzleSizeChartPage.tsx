@@ -95,10 +95,12 @@ function buildCalculatorHref(pressureBar: number, flowLpm: string) {
 }
 
 function buildChartHref(pressureBar: number, flowLpm: string) {
+  const nearestFlow = nearestFlowHeaderLpm(Number(flowLpm));
+
   const params = new URLSearchParams({
     p: String(pressureBar),
     pu: "bar",
-    f: flowLpm,
+    f: nearestFlow.lpm,
     fu: "lpm",
   });
 
@@ -1078,14 +1080,13 @@ export default function NozzleSizeChartPage() {
     const flowLpm = toLpm(flowValue, flowUnit);
 
     const roundedBar = Math.round(pressureBar / 10) * 10;
+    const nearestFlow = nearestFlowHeaderLpm(flowLpm);
 
     const rowSource =
       roundedBar <= 350 ? standardPressureRows : highPressureRows;
     const rowIndex = rowSource.findIndex((row) => row.bar === roundedBar);
-
-    const roundedFlowLpm = Math.round(flowLpm * 10) / 10;
     const colIndex = flowHeaders.findIndex(
-      (flow) => Math.abs(Number(flow.lpm) - roundedFlowLpm) < 0.2
+      (flow) => flow.lpm === nearestFlow.lpm
     );
 
     if (rowIndex < 0 || colIndex < 0) return null;
@@ -1095,7 +1096,7 @@ export default function NozzleSizeChartPage() {
       rowIndex,
       colIndex,
       pressureBar: roundedBar,
-      flowLpm: roundedFlowLpm,
+      flowLpm: Number(nearestFlow.lpm),
     };
   }, [location.search]);
 
