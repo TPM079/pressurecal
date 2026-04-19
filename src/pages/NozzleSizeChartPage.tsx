@@ -26,11 +26,11 @@ const flowHeaders = [
 ];
 
 const examplePresets = [
-  { label: "4000 PSI / 15.1 LPM", pressure: 276, flow: "15.1" },
-  { label: "3000 PSI / 20.8 LPM", pressure: 207, flow: "20.8" },
-  { label: "200 BAR / 15.0 LPM", pressure: 200, flow: "15.0" },
-  { label: "250 BAR / 20.8 LPM", pressure: 250, flow: "20.8" },
-  { label: "500 BAR / 30.0 LPM", pressure: 500, flow: "30.0" },
+  { label: "4000 PSI / 15 LPM", pressure: 276, flow: "15.1" },
+  { label: "3000 PSI / 21 LPM", pressure: 207, flow: "20.8" },
+  { label: "200 BAR / 15 LPM", pressure: 200, flow: "15.0" },
+  { label: "250 BAR / 21 LPM", pressure: 250, flow: "20.8" },
+  { label: "500 BAR / 30 LPM", pressure: 500, flow: "30.0" },
 ];
 
 type FlowHeader = (typeof flowHeaders)[number];
@@ -127,6 +127,12 @@ function toGpm(value: number, unit: FlowUnit) {
 function formatNumber(value: number, dp = 1) {
   if (!Number.isFinite(value)) return "—";
   return value.toFixed(dp);
+}
+
+function formatRoundedLpm(value: number | string) {
+  const n = typeof value === "string" ? Number(value) : value;
+  if (!Number.isFinite(n)) return "—";
+  return String(Math.round(n));
 }
 
 function nearestFlowHeaderLpm(flowLpm: number) {
@@ -256,7 +262,7 @@ function ReferenceTable({
 
                 return (
                   <th
-                    key={`${flow.lpm}-${flow.gpm}`}
+                    key={`${formatRoundedLpm(flow.lpm)}-${flow.gpm}`}
                     className={`border-r border-slate-200 px-2 py-3 text-center transition-colors last:border-r-0 print:px-1.5 print:py-2 ${
                       isColSelected
                         ? "bg-blue-200"
@@ -271,7 +277,7 @@ function ReferenceTable({
                       Flow Rate
                     </div>
                     <div className="mt-1 text-sm font-semibold text-slate-900 print:text-xs">
-                      {flow.lpm}
+                      {formatRoundedLpm(flow.lpm)}
                     </div>
                     <div className="text-xs text-slate-500 print:text-[10px]">
                       ({flow.gpm})
@@ -451,9 +457,9 @@ function TechnicalNotesPanel() {
         </p>
 
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900">
-          <span className="font-semibold">Example:</span> A 30.3 LPM machine with a
-          2-nozzle surface cleaner delivers 15.1 LPM per nozzle, so each nozzle should
-          be selected from the 15.1 LPM column.
+          <span className="font-semibold">Example:</span> A 30 LPM machine with a
+          2-nozzle surface cleaner delivers 15 LPM per nozzle, so each nozzle should
+          be selected from the 15 LPM column.
         </div>
 
         <p className="text-xs text-slate-500">
@@ -510,7 +516,7 @@ function ExamplePanel() {
           </div>
           <p className="mt-3 text-sm leading-6 text-blue-900">
             Locate <strong>4000 PSI (276 BAR)</strong> on the left-hand pressure column,
-            then move across to <strong>15.1 LPM (4 GPM)</strong>. The intersection
+            then move across to <strong>15 LPM (4 GPM)</strong>. The intersection
             gives a recommended tip code of <strong>040</strong>.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
@@ -734,7 +740,7 @@ function SurfaceCleanerHelper() {
             </div>
 
             <div className="mt-3 text-4xl font-bold tracking-tight text-slate-900">
-              {formatNumber(perNozzleLpm, 1)} LPM
+              {formatRoundedLpm(perNozzleLpm)} LPM
             </div>
 
             <div className="mt-2 text-sm text-slate-600">
@@ -750,7 +756,7 @@ function SurfaceCleanerHelper() {
               </div>
               <p className="mt-2 text-sm leading-6 text-blue-900">
                 Chart uses nearest available column:{" "}
-                <strong>{nearestFlow.lpm} LPM</strong> ({nearestFlow.gpm} GPM)
+                <strong>{formatRoundedLpm(nearestFlow.lpm)} LPM</strong> ({nearestFlow.gpm} GPM)
               </p>
               <p className="mt-2 text-sm leading-6 text-blue-900">
                 Nearest chart row: <strong>{roundedPressureBar} BAR</strong> ({Math.round(pressurePsi)} PSI)
@@ -760,7 +766,7 @@ function SurfaceCleanerHelper() {
               </p>
               <p className="mt-2 text-sm leading-6 text-blue-900">
                 Chart lookup pair: <strong>{roundedPressureBar} BAR ({Math.round(pressurePsi)} PSI)</strong> ×{" "}
-                <strong>{nearestFlow.lpm} LPM</strong> →{" "}
+                <strong>{formatRoundedLpm(nearestFlow.lpm)} LPM</strong> →{" "}
                 <strong>{estimatedTipCode}</strong>
               </p>
             </div>
@@ -789,9 +795,9 @@ function SurfaceCleanerHelper() {
 
             <p className="mt-4 text-sm leading-6 text-slate-600">
               Example: a machine delivering{" "}
-              <strong>{formatNumber(totalFlowLpm, 1)} LPM</strong> through{" "}
+              <strong>{formatRoundedLpm(totalFlowLpm)} LPM</strong> through{" "}
               <strong>{nozzleCount}</strong> nozzles gives{" "}
-              <strong>{formatNumber(perNozzleLpm, 1)} LPM</strong> per nozzle.
+              <strong>{formatRoundedLpm(perNozzleLpm)} LPM</strong> per nozzle.
             </p>
           </div>
         </div>
@@ -954,12 +960,12 @@ function SEOContentBlocks() {
 
         <div className="space-y-4 px-5 py-5 text-sm leading-7 text-slate-600 md:px-6">
           <p>
-            A common professional setup is <strong>4000 PSI and 15.1 LPM</strong>.
+            A common professional setup is <strong>4000 PSI and 15 LPM</strong>.
             In the chart, that lands on a <strong>040</strong> tip code.
           </p>
 
           <p>
-            That is why 4000 PSI / 15.1 LPM is such a useful reference point for
+            That is why 4000 PSI / 15 LPM is such a useful reference point for
             operators comparing machines, nozzles, and setup changes.
           </p>
 
@@ -1210,7 +1216,7 @@ export default function NozzleSizeChartPage() {
                   <div className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4 text-sm text-blue-900">
                     Highlighted from your link:{" "}
                     <strong>{selectedCell.pressureBar} BAR</strong> and{" "}
-                    <strong>{selectedCell.flowLpm.toFixed(1)} LPM</strong>.
+                    <strong>{formatRoundedLpm(selectedCell.flowLpm)} LPM</strong>.
                   </div>
                 )}
               </div>
