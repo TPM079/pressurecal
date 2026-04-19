@@ -286,11 +286,11 @@ export default function HosePressureLossCalculator() {
     <>
       <Helmet>
         <title>
-          Pressure Washer Hose Pressure Loss Calculator | PSI &amp; LPM | PressureCal
+          Pressure Washer Hose Pressure Loss Calculator | Metres, PSI &amp; LPM | PressureCal
         </title>
         <meta
           name="description"
-          content="Estimate pressure loss through pressure washer hose using hose length, hose size, PSI and LPM. Useful for checking at-gun pressure and real setup performance."
+          content="Estimate pressure loss through pressure washer hose using metres, PSI and LPM first, while still supporting feet, BAR and GPM when needed. Useful for checking at-gun pressure and real setup performance."
         />
         <link
           rel="canonical"
@@ -298,11 +298,11 @@ export default function HosePressureLossCalculator() {
         />
         <meta
           property="og:title"
-          content="Pressure Washer Hose Pressure Loss Calculator | PSI & LPM | PressureCal"
+          content="Pressure Washer Hose Pressure Loss Calculator | Metres, PSI & LPM | PressureCal"
         />
         <meta
           property="og:description"
-          content="Estimate pressure loss through pressure washer hose using hose length, hose size, PSI and LPM. Useful for checking at-gun pressure and real setup performance."
+          content="Estimate pressure loss through pressure washer hose using metres, PSI and LPM first, while still supporting feet, BAR and GPM when needed. Useful for checking at-gun pressure and real setup performance."
         />
         <meta
           property="og:url"
@@ -311,11 +311,11 @@ export default function HosePressureLossCalculator() {
         <meta property="og:type" content="website" />
         <meta
           name="twitter:title"
-          content="Pressure Washer Hose Pressure Loss Calculator | PSI & LPM | PressureCal"
+          content="Pressure Washer Hose Pressure Loss Calculator | Metres, PSI & LPM | PressureCal"
         />
         <meta
           name="twitter:description"
-          content="Estimate pressure loss through pressure washer hose using hose length, hose size, PSI and LPM. Useful for checking at-gun pressure and real setup performance."
+          content="Estimate pressure loss through pressure washer hose using metres, PSI and LPM first, while still supporting feet, BAR and GPM when needed. Useful for checking at-gun pressure and real setup performance."
         />
         <script type="application/ld+json">
           {JSON.stringify({
@@ -326,7 +326,7 @@ export default function HosePressureLossCalculator() {
             applicationCategory: "EngineeringApplication",
             operatingSystem: "Web",
             description:
-              "Estimate pressure loss through pressure washer hose using hose length, hose size, PSI and LPM. Useful for checking at-gun pressure and real setup performance.",
+              "Estimate pressure loss through pressure washer hose using metres, PSI and LPM first, while still supporting feet, BAR and GPM when needed. Useful for checking at-gun pressure and real setup performance.",
           })}
         </script>
       </Helmet>
@@ -366,7 +366,7 @@ export default function HosePressureLossCalculator() {
                   type="button"
                   onClick={swapUnits}
                   className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50"
-                  title="Swap PSI↔BAR, GPM↔LPM, m↔ft and mm↔in"
+                  title="Swap PSI↔BAR, LPM↔GPM, metres↔feet and mm↔in"
                 >
                   Swap units
                 </button>
@@ -388,8 +388,7 @@ export default function HosePressureLossCalculator() {
                   Calculator
                 </div>
                 <p className="mx-auto mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-                  Enter your hose length, hose size, pressure and flow to estimate
-                  hose pressure loss and at-gun performance.
+                  Enter hose length in metres, pump pressure in PSI and pump flow in LPM first, while still supporting feet, BAR and GPM when needed.
                 </p>
               </div>
 
@@ -438,7 +437,7 @@ export default function HosePressureLossCalculator() {
                       value={flowUnit}
                       onChange={(e) => setFlowUnit(e.target.value as FlowUnit)}
                     >
-                      <option value="lpm">L/min</option>
+                      <option value="lpm">LPM</option>
                       <option value="gpm">GPM</option>
                     </select>
                   </div>
@@ -464,8 +463,8 @@ export default function HosePressureLossCalculator() {
                         setHoseLengthUnit(e.target.value as LengthUnit)
                       }
                     >
-                      <option value="m">m</option>
-                      <option value="ft">ft</option>
+                      <option value="m">Metres</option>
+                      <option value="ft">Feet</option>
                     </select>
                   </div>
                 </div>
