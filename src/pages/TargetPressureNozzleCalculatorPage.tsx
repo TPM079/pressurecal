@@ -84,7 +84,7 @@ export default function TargetPressureNozzleCalculatorPage() {
                     Pump flow
                   </p>
                   <p className="mt-2 text-2xl font-semibold text-slate-900">15 LPM</p>
-                  <p className="mt-1 text-sm text-slate-500">(3.96 GPM)</p>
+                  <p className="mt-1 text-sm text-slate-500">(4.0 GPM)</p>
                 </div>
 
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">

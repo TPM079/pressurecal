@@ -48,7 +48,7 @@ export default function GpmLpmCalculatorPage() {
 
       return {
         gpm: gpmInput,
-        lpm: formatNumber(gpm * GPM_TO_LPM, 4),
+        lpm: formatLpmFromGpm(gpm),
       };
     }
 
@@ -59,7 +59,7 @@ export default function GpmLpmCalculatorPage() {
     }
 
     return {
-      gpm: formatNumber(lpm * LPM_TO_GPM, 4),
+      gpm: formatGpmFromLpm(lpm),
       lpm: lpmInput,
     };
   }, [gpmInput, lpmInput, lastEdited]);
@@ -187,7 +187,7 @@ export default function GpmLpmCalculatorPage() {
           <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
             <div className="max-w-3xl">
               <div className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
-                Flow Conversion
+                LPM to GPM Converter
               </div>
 
               <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-900 md:text-5xl">

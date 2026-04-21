@@ -230,6 +230,7 @@ export default function HomePage() {
   const flowLpm = lpmFromGpm(flowGpm);
   const recommendedTip = recommendedNozzleCode(pressurePsi, flowGpm);
   const hoseLengthLabel = inputs.hoseLengthUnit === "m" ? "Metres" : "Feet";
+  const hoseLengthShortUnit = inputs.hoseLengthUnit === "m" ? "m" : "ft";
 
   const solved = useMemo(
     () =>
@@ -336,7 +337,7 @@ export default function HomePage() {
     },
     {
       label: "Hose length",
-      value: `${fmt(Number(inputs.hoseLength || 0), 0)} ${hoseLengthLabel}`,
+      value: `${fmt(Number(inputs.hoseLength || 0), 0)} ${hoseLengthShortUnit}`,
     },
     {
       label: "Recommended nozzle / tip code",
@@ -379,7 +380,7 @@ export default function HomePage() {
     {
       label: "Nozzle status",
       primary: systemBadge.text,
-      secondary: `Recommended nozzle / tip code ${recommendedTip}`,
+      secondary: `Nozzle / tip code ${recommendedTip}`,
     },
   ];
 
@@ -811,8 +812,8 @@ export default function HomePage() {
                         })
                       }
                     >
-                      <option value="psi">psi</option>
-                      <option value="bar">bar</option>
+                      <option value="psi">PSI</option>
+                      <option value="bar">BAR</option>
                     </select>
                   </div>
                 </div>
@@ -870,7 +871,7 @@ export default function HomePage() {
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700">
-                    Hose length ({inputs.hoseLengthUnit})
+                    Hose length ({hoseLengthLabel})
                   </label>
                   <p className="mt-1 text-xs leading-5 text-slate-500">
                     Assumes 9.53 mm (3/8&quot;) hose ID

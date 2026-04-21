@@ -13,7 +13,11 @@ import {
 
 type ViewState = "loading" | "signed_out" | "signed_in";
 
-function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  label: string
+): Promise<T> {
   return new Promise((resolve, reject) => {
     const timer = window.setTimeout(() => {
       reject(new Error(`${label} timed out. Please refresh and try again.`));
@@ -87,9 +91,7 @@ export default function AccountPage() {
           "Checking your session"
         );
 
-        if (!mounted) {
-          return;
-        }
+        if (!mounted) return;
 
         const user = sessionResponse.data.session?.user;
 
@@ -102,9 +104,7 @@ export default function AccountPage() {
           setViewState("signed_out");
         }
       } catch (error) {
-        if (!mounted) {
-          return;
-        }
+        if (!mounted) return;
 
         const message =
           error instanceof Error
@@ -122,9 +122,7 @@ export default function AccountPage() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
 
       if (session?.user?.email) {
         setCurrentEmail(session.user.email);
@@ -175,11 +173,15 @@ export default function AccountPage() {
           `Magic link sent. Check your email and click the link — your ${pendingPlan} checkout will continue automatically when you come back.`
         );
       } else {
-        setMessage("Magic link sent. Check your email, then come back here after you click it.");
+        setMessage(
+          "Magic link sent. Check your email, then come back here after you click it."
+        );
       }
     } catch (error) {
       const text =
-        error instanceof Error ? error.message : "Unable to send the sign-in link right now.";
+        error instanceof Error
+          ? error.message
+          : "Unable to send the sign-in link right now.";
       setErrorMessage(text);
     } finally {
       setBusy(false);
@@ -234,38 +236,47 @@ export default function AccountPage() {
         />
       </Helmet>
 
-      <section className="-mx-4 border-b border-slate-200 bg-slate-950 px-4 text-white">
-        <div className="mx-auto max-w-4xl py-16 sm:py-20">
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-            Sign in to PressureCal
-          </h1>
+      <div className="-mx-4 -my-8 bg-slate-100 px-4 py-8 sm:-my-10 sm:py-10">
+        <div className="mx-auto max-w-5xl space-y-8">
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+            <div className="max-w-3xl">
+              <div className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+                Account
+              </div>
 
-          <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-300">
-            Use a magic link sent to your email. Once you are signed in, your
-            Pro subscription can be linked to your account properly.
-          </p>
+              <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-900 md:text-5xl">
+                Sign in to PressureCal
+              </h1>
 
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link
-              to="/pricing"
-              className="inline-flex items-center justify-center rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-200"
-            >
-              Go to pricing
-            </Link>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
+                Use a secure magic link sent to your email. Once you are signed in,
+                your Pro subscription can be linked to your account properly.
+              </p>
 
-            <Link
-              to="/saved-setups"
-              className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
-            >
-              View saved setups
-            </Link>
-          </div>
-        </div>
-      </section>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
+                Useful for continuing checkout, opening saved setups, and managing
+                your signed-in PressureCal session.
+              </p>
+            </div>
 
-      <section className="bg-slate-50/70">
-        <div className="mx-auto max-w-4xl px-4 py-16">
-          <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link
+                to="/pricing"
+                className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+              >
+                Go to Pricing
+              </Link>
+
+              <Link
+                to="/saved-setups"
+                className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                Open Saved Setups
+              </Link>
+            </div>
+          </section>
+
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
             {pendingPlan ? (
               <div className="mb-6 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4 text-sm text-blue-900">
                 <p className="font-semibold">
@@ -288,14 +299,16 @@ export default function AccountPage() {
 
             {viewState === "loading" ? (
               <div>
-                <h2 className="text-2xl font-semibold text-slate-950">Checking your session</h2>
+                <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+                  Checking your session
+                </h2>
                 <p className="mt-3 text-slate-600">Just a moment…</p>
               </div>
             ) : null}
 
             {viewState === "signed_out" ? (
               <div>
-                <h2 className="text-2xl font-semibold text-slate-950">
+                <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
                   Sign in with email
                 </h2>
                 <p className="mt-3 max-w-2xl text-slate-600">
@@ -304,7 +317,10 @@ export default function AccountPage() {
                 </p>
 
                 <form onSubmit={sendMagicLink} className="mt-8">
-                  <label className="block text-sm font-medium text-slate-700" htmlFor="email">
+                  <label
+                    className="block text-sm font-medium text-slate-700"
+                    htmlFor="email"
+                  >
                     Email address
                   </label>
                   <input
@@ -330,11 +346,12 @@ export default function AccountPage() {
 
             {viewState === "signed_in" ? (
               <div>
-                <h2 className="text-2xl font-semibold text-slate-950">
+                <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
                   You are signed in
                 </h2>
                 <p className="mt-3 text-slate-600">
-                  Signed in as <span className="font-medium text-slate-950">{currentEmail}</span>
+                  Signed in as{" "}
+                  <span className="font-medium text-slate-950">{currentEmail}</span>
                 </p>
 
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row">
@@ -342,14 +359,14 @@ export default function AccountPage() {
                     to={pendingResumePath || "/pricing"}
                     className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
                   >
-                    {pendingPlan ? "Continue to checkout" : "Go to pricing"}
+                    {pendingPlan ? "Continue to Checkout" : "Go to Pricing"}
                   </Link>
 
                   <Link
                     to="/saved-setups"
                     className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-50"
                   >
-                    Open saved setups
+                    Open Saved Setups
                   </Link>
 
                   <button
@@ -358,7 +375,7 @@ export default function AccountPage() {
                     disabled={busy}
                     className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {busy ? "Signing out…" : "Sign out"}
+                    {busy ? "Signing out…" : "Sign Out"}
                   </button>
                 </div>
               </div>
@@ -385,11 +402,11 @@ export default function AccountPage() {
                 </p>
               </div>
             ) : null}
-          </div>
-        </div>
-      </section>
+          </section>
 
-      <BackToTopButton />
+          <BackToTopButton />
+        </div>
+      </div>
     </PressureCalLayout>
   );
 }

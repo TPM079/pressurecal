@@ -4,7 +4,7 @@ import { siteLegal } from "../config/siteLegal";
 export default function TermsOfServicePage() {
   return (
     <LegalPageLayout
-      eyebrow="Terms of Service"
+      eyebrow="TERMS OF SERVICE"
       title="Terms of Service"
       intro={`These Terms of Service govern your use of ${siteLegal.brandName}, including the website, calculator and modelling tools, account features, saved setups, and subscription services.`}
     >
@@ -65,23 +65,20 @@ export default function TermsOfServicePage() {
 
       <h2>6. Acceptable use</h2>
       <p>You agree not to:</p>
-      <ul
-        className="my-5 ml-6 space-y-2 text-slate-300"
-        style={{ listStyleType: "disc" }}
-      >
-        <li className="pl-1" style={{ display: "list-item" }}>
+      <ul className="my-5 ml-6 list-disc space-y-2 text-slate-700 marker:text-slate-500">
+        <li className="pl-1">
           use the service unlawfully or in a way that infringes another person's rights;
         </li>
-        <li className="pl-1" style={{ display: "list-item" }}>
+        <li className="pl-1">
           attempt to interfere with the platform, its security, or its normal operation;
         </li>
-        <li className="pl-1" style={{ display: "list-item" }}>
+        <li className="pl-1">
           reverse engineer, scrape, or copy the service beyond what lawfully applies;
         </li>
-        <li className="pl-1" style={{ display: "list-item" }}>
+        <li className="pl-1">
           misuse accounts, credentials, billing flows, or access controls;
         </li>
-        <li className="pl-1" style={{ display: "list-item" }}>
+        <li className="pl-1">
           use the service in a misleading way or falsely imply endorsement by us.
         </li>
       </ul>

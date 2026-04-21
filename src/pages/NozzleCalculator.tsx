@@ -146,7 +146,7 @@ function CalculatorCore({
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
           <div className="max-w-3xl">
             <div className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
-              Nozzle Sizing
+              Nozzle Size Calculator
             </div>
 
             <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-900 md:text-5xl">
@@ -418,7 +418,7 @@ function CalculatorCore({
                 <p className="mt-2 text-2xl font-semibold text-slate-900">
                   15 LPM
                 </p>
-                <p className="mt-1 text-sm text-slate-500">(3.96 GPM)</p>
+                <p className="mt-1 text-sm text-slate-500">(4.0 GPM)</p>
               </div>
             </div>
 

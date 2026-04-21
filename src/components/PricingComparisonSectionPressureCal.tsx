@@ -187,7 +187,7 @@ export default function PricingComparisonSectionPressureCal({
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl text-center">
           <div className="inline-flex items-center rounded-full border border-[#1C408C]/15 bg-[#1C408C]/5 px-4 py-1.5 text-sm font-semibold text-[#1C408C]">
-            PressureCal Plans
+            Pricing
           </div>
 
           <h2 className="mt-5 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">

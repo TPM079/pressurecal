@@ -1,6 +1,7 @@
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import PressureCalLayout from "../components/PressureCalLayout";
+import BackToTopButton from "../components/BackToTopButton";
 
 const differentiators = [
   {
@@ -40,84 +41,82 @@ export default function AboutPage() {
         <link rel="canonical" href="https://www.pressurecal.com/about" />
       </Helmet>
 
-      <section className="-mx-4 border-b border-slate-200 bg-slate-100 px-4">
-        <div className="mx-auto max-w-6xl py-14 sm:py-16">
-          <div className="grid gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
-            <div className="max-w-3xl">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-700">
-                About PressureCal
-              </p>
-
-              <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
-                Pressure washer setup modelling built for pressure washing operators.
-              </h1>
-
-              <p className="mt-6 text-lg leading-8 text-slate-700">
-                PressureCal is a practical pressure washer setup tool built to help users
-                check nozzle sizing, hose pressure loss, and real at-gun performance more clearly.
-              </p>
-
-              <p className="mt-4 text-base leading-7 text-slate-600">
-                It exists because too many setup decisions are still made with rough guesses,
-                incomplete charts, or basic unit converters that do not reflect what happens
-                across a real system. PressureCal is built to bridge that gap with more useful
-                field-focused modelling and cleaner outputs.
-              </p>
-
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Link
-                  to="/calculator"
-                  className="inline-flex items-center rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-                >
-                  Open Full Setup Calculator
-                </Link>
-                <Link
-                  to="/terms"
-                  className="inline-flex items-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                >
-                  Read terms
-                </Link>
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="grid gap-5 sm:grid-cols-2">
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm text-slate-500">Primary use</p>
-                  <p className="mt-2 text-lg font-semibold text-slate-950">
-                    Pressure washer setup modelling
-                  </p>
+      <div className="-mx-4 -my-8 bg-slate-100 px-4 py-8 sm:-my-10 sm:py-10">
+        <div className="mx-auto max-w-5xl space-y-8">
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+            <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
+              <div className="max-w-3xl">
+                <div className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+                  ABOUT PRESSURECAL
                 </div>
 
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm text-slate-500">Built for</p>
-                  <p className="mt-2 text-lg font-semibold text-slate-950">
-                    Pressure washing operators
-                  </p>
-                </div>
+                <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-950 md:text-5xl">
+                  Pressure washer setup modelling built for pressure washing operators.
+                </h1>
 
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm text-slate-500">Core focus</p>
-                  <p className="mt-2 text-lg font-semibold text-slate-950">
-                    Nozzle sizing, hose loss, at-gun performance
-                  </p>
-                </div>
+                <p className="mt-4 text-base leading-7 text-slate-600">
+                  PressureCal is a practical pressure washer setup tool built to help users
+                  check nozzle sizing, hose pressure loss, and real at-gun performance more clearly.
+                </p>
 
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm text-slate-500">Approach</p>
-                  <p className="mt-2 text-lg font-semibold text-slate-950">
-                    Clear outputs with credible assumptions
-                  </p>
+                <p className="mt-3 text-sm leading-7 text-slate-500">
+                  It exists because too many setup decisions are still made with rough guesses,
+                  incomplete charts, or basic unit converters that do not reflect what happens
+                  across a real system. PressureCal is built to bridge that gap with more useful
+                  field-focused modelling and cleaner outputs.
+                </p>
+
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Link
+                    to="/calculator"
+                    className="inline-flex items-center rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                  >
+                    Open Full Setup Calculator
+                  </Link>
+                  <Link
+                    to="/terms"
+                    className="inline-flex items-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  >
+                    Read Terms
+                  </Link>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
-      <section className="-mx-4 bg-white px-4">
-        <div className="mx-auto max-w-6xl py-12 sm:py-16">
-          <div className="grid gap-6 md:grid-cols-3">
+              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                    <p className="text-sm text-slate-500">Primary use</p>
+                    <p className="mt-2 text-lg font-semibold text-slate-950">
+                      Pressure washer setup modelling
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                    <p className="text-sm text-slate-500">Built for</p>
+                    <p className="mt-2 text-lg font-semibold text-slate-950">
+                      Pressure washing operators
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                    <p className="text-sm text-slate-500">Core focus</p>
+                    <p className="mt-2 text-lg font-semibold text-slate-950">
+                      Nozzle sizing, hose loss, at-gun performance
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                    <p className="text-sm text-slate-500">Approach</p>
+                    <p className="mt-2 text-lg font-semibold text-slate-950">
+                      Clear outputs with credible assumptions
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="grid gap-6 md:grid-cols-3">
             {differentiators.map((item) => (
               <div
                 key={item.title}
@@ -127,63 +126,57 @@ export default function AboutPage() {
                 <p className="mt-3 text-sm leading-7 text-slate-600">{item.body}</p>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
+          </section>
 
-      <section className="-mx-4 border-y border-slate-200 bg-slate-50 px-4">
-        <div className="mx-auto grid max-w-6xl gap-10 py-12 sm:py-16 lg:grid-cols-[1fr_1fr]">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-700">
-              Why it exists
-            </p>
+          <section className="grid gap-8 lg:grid-cols-[1fr_1fr]">
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                Why it exists
+              </div>
 
-            <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
-              Better setup decisions start with better visibility.
-            </h2>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
+                Better setup decisions start with better visibility.
+              </h2>
 
-            <p className="mt-5 text-base leading-7 text-slate-600">
-              PressureCal was created to make pressure washer setup checks more useful,
-              more understandable, and more relevant to real operating conditions.
-            </p>
+              <p className="mt-4 text-base leading-7 text-slate-600">
+                PressureCal was created to make pressure washer setup checks more useful,
+                more understandable, and more relevant to real operating conditions.
+              </p>
 
-            <p className="mt-4 text-base leading-7 text-slate-600">
-              Instead of treating pressure washing as a few disconnected numbers,
-              PressureCal is built around the idea that the system matters. The pump,
-              hose, restriction, and nozzle all influence the result. That is the gap
-              PressureCal is intended to help users understand more clearly.
-            </p>
+              <p className="mt-4 text-base leading-7 text-slate-600">
+                Instead of treating pressure washing as a few disconnected numbers,
+                PressureCal is built around the idea that the system matters. The pump,
+                hose, restriction, and nozzle all influence the result. That is the gap
+                PressureCal is intended to help users understand more clearly.
+              </p>
 
-            <p className="mt-4 text-base leading-7 text-slate-600">
-              The platform starts with Australian operators in mind, including the way
-              many users actually reference machine performance in the field. Over time,
-              it is intended to support a broader international audience as well.
-            </p>
-          </div>
+              <p className="mt-4 text-base leading-7 text-slate-600">
+                The platform starts with Australian operators in mind, including the way
+                many users actually reference machine performance in the field. Over time,
+                it is intended to support a broader international audience as well.
+              </p>
+            </div>
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
-              Who it is for
-            </p>
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                Who it is for
+              </div>
 
-            <ul className="mt-5 space-y-3">
-              {audiences.map((item) => (
-                <li
-                  key={item}
-                  className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700"
-                >
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </section>
+              <ul className="mt-5 space-y-3">
+                {audiences.map((item) => (
+                  <li
+                    key={item}
+                    className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700"
+                  >
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
 
-      <section className="-mx-4 bg-white px-4">
-        <div className="mx-auto max-w-6xl py-12 sm:py-16">
-          <div className="grid gap-8 lg:grid-cols-[1fr_1fr]">
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <section className="grid gap-8 lg:grid-cols-[1fr_1fr]">
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
               <h2 className="text-2xl font-semibold text-slate-950">Free and Pro</h2>
 
               <p className="mt-4 text-base leading-7 text-slate-600">
@@ -199,7 +192,7 @@ export default function AboutPage() {
               </p>
             </div>
 
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
               <h2 className="text-2xl font-semibold text-slate-950">A sensible note on outputs</h2>
 
               <p className="mt-4 text-base leading-7 text-slate-600">
@@ -214,10 +207,11 @@ export default function AboutPage() {
                 to remove responsibility from the operator.
               </p>
             </div>
-          </div>
+          </section>
         </div>
-      </section>
+
+        <BackToTopButton />
+      </div>
     </PressureCalLayout>
   );
 }
-
