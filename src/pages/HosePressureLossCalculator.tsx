@@ -38,6 +38,11 @@ function fmt(n: number, dp = 2) {
   return n.toFixed(dp);
 }
 
+function fmtRounded(n: number) {
+  if (!Number.isFinite(n)) return "—";
+  return String(Math.round(n));
+}
+
 function toPsi(value: number, unit: PressureUnit) {
   return unit === "psi" ? value : value * PSI_PER_BAR;
 }
@@ -70,11 +75,7 @@ function fromMm(mm: number, unit: DiameterUnit) {
   return unit === "mm" ? mm : mm / MM_PER_IN;
 }
 
-function estimateHoseLossPsi(
-  flowGpm: number,
-  lengthM: number,
-  hoseIdMm: number
-) {
+function estimateHoseLossPsi(flowGpm: number, lengthM: number, hoseIdMm: number) {
   const rho = 1000;
   const mu = 0.001;
   const roughnessM = 0.0000015;
@@ -109,23 +110,13 @@ function estimateHoseLossPsi(
 
 export default function HosePressureLossCalculator() {
   const [pressure, setPressure] = useState<number>(DEFAULTS.pressure);
-  const [pressureUnit, setPressureUnit] = useState<PressureUnit>(
-    DEFAULTS.pressureUnit
-  );
-
+  const [pressureUnit, setPressureUnit] = useState<PressureUnit>(DEFAULTS.pressureUnit);
   const [flow, setFlow] = useState<number>(DEFAULTS.flow);
   const [flowUnit, setFlowUnit] = useState<FlowUnit>(DEFAULTS.flowUnit);
-
   const [hoseLength, setHoseLength] = useState<number>(DEFAULTS.hoseLength);
-  const [hoseLengthUnit, setHoseLengthUnit] = useState<LengthUnit>(
-    DEFAULTS.hoseLengthUnit
-  );
-
+  const [hoseLengthUnit, setHoseLengthUnit] = useState<LengthUnit>(DEFAULTS.hoseLengthUnit);
   const [hoseId, setHoseId] = useState<number>(DEFAULTS.hoseId);
-  const [hoseIdUnit, setHoseIdUnit] = useState<DiameterUnit>(
-    DEFAULTS.hoseIdUnit
-  );
-
+  const [hoseIdUnit, setHoseIdUnit] = useState<DiameterUnit>(DEFAULTS.hoseIdUnit);
   const [copyMessage, setCopyMessage] = useState("");
 
   useEffect(() => {
@@ -167,39 +158,16 @@ export default function HosePressureLossCalculator() {
     setHoseLengthUnit(nextLengthUnit);
     setHoseIdUnit(nextDiameterUnit);
 
-    if (nextPressure !== null && Number.isFinite(nextPressure)) {
-      setPressure(nextPressure);
-    }
-
-    if (nextFlow !== null && Number.isFinite(nextFlow)) {
-      setFlow(nextFlow);
-    }
-
-    if (nextLength !== null && Number.isFinite(nextLength)) {
-      setHoseLength(nextLength);
-    }
-
-    if (nextDiameter !== null && Number.isFinite(nextDiameter)) {
-      setHoseId(nextDiameter);
-    }
+    if (nextPressure !== null && Number.isFinite(nextPressure)) setPressure(nextPressure);
+    if (nextFlow !== null && Number.isFinite(nextFlow)) setFlow(nextFlow);
+    if (nextLength !== null && Number.isFinite(nextLength)) setHoseLength(nextLength);
+    if (nextDiameter !== null && Number.isFinite(nextDiameter)) setHoseId(nextDiameter);
   }, []);
 
-  const pressurePsi = useMemo(
-    () => toPsi(pressure, pressureUnit),
-    [pressure, pressureUnit]
-  );
-
+  const pressurePsi = useMemo(() => toPsi(pressure, pressureUnit), [pressure, pressureUnit]);
   const flowGpm = useMemo(() => toGpm(flow, flowUnit), [flow, flowUnit]);
-
-  const hoseLengthM = useMemo(
-    () => toMetres(hoseLength, hoseLengthUnit),
-    [hoseLength, hoseLengthUnit]
-  );
-
-  const hoseIdMm = useMemo(
-    () => toMm(hoseId, hoseIdUnit),
-    [hoseId, hoseIdUnit]
-  );
+  const hoseLengthM = useMemo(() => toMetres(hoseLength, hoseLengthUnit), [hoseLength, hoseLengthUnit]);
+  const hoseIdMm = useMemo(() => toMm(hoseId, hoseIdUnit), [hoseId, hoseIdUnit]);
 
   const hoseLossPsi = useMemo(
     () => estimateHoseLossPsi(flowGpm, hoseLengthM, hoseIdMm),
@@ -220,12 +188,16 @@ export default function HosePressureLossCalculator() {
     if (lossPct < 3) {
       return "Low hose loss. Most of the pump pressure is still reaching the gun.";
     }
-
     if (lossPct < 8) {
       return "Moderate hose loss. This may be noticeable depending on the nozzle and the job.";
     }
-
     return "Higher hose loss. Hose length or hose size could be having a meaningful effect on real cleaning performance.";
+  }, [lossPct]);
+
+  const lossMeaning = useMemo(() => {
+    if (lossPct < 3) return "Very close to rated performance.";
+    if (lossPct < 8) return "Noticeable, but often still workable depending on the job.";
+    return "Meaningful pressure loss. Hose length or hose ID may be worth revisiting.";
   }, [lossPct]);
 
   function resetAll() {
@@ -242,8 +214,7 @@ export default function HosePressureLossCalculator() {
   }
 
   function swapUnits() {
-    const nextPressureUnit: PressureUnit =
-      pressureUnit === "psi" ? "bar" : "psi";
+    const nextPressureUnit: PressureUnit = pressureUnit === "psi" ? "bar" : "psi";
     const nextFlowUnit: FlowUnit = flowUnit === "gpm" ? "lpm" : "gpm";
     const nextLengthUnit: LengthUnit = hoseLengthUnit === "m" ? "ft" : "m";
     const nextDiameterUnit: DiameterUnit = hoseIdUnit === "mm" ? "in" : "mm";
@@ -253,10 +224,10 @@ export default function HosePressureLossCalculator() {
     setHoseLengthUnit(nextLengthUnit);
     setHoseIdUnit(nextDiameterUnit);
 
-    setPressure(Number(fromPsi(pressurePsi, nextPressureUnit).toFixed(2)));
-    setFlow(Number(fromGpm(flowGpm, nextFlowUnit).toFixed(2)));
-    setHoseLength(Number(fromMetres(hoseLengthM, nextLengthUnit).toFixed(2)));
-    setHoseId(Number(fromMm(hoseIdMm, nextDiameterUnit).toFixed(3)));
+    setPressure(Number(fromPsi(pressurePsi, nextPressureUnit).toFixed(nextPressureUnit === "psi" ? 0 : 1)));
+    setFlow(Number(fromGpm(flowGpm, nextFlowUnit).toFixed(nextFlowUnit === "gpm" ? 2 : 0)));
+    setHoseLength(Number(fromMetres(hoseLengthM, nextLengthUnit).toFixed(0)));
+    setHoseId(Number(fromMm(hoseIdMm, nextDiameterUnit).toFixed(nextDiameterUnit === "mm" ? 2 : 3)));
     setCopyMessage("");
   }
 
@@ -333,40 +304,34 @@ export default function HosePressureLossCalculator() {
 
       <PressureCalLayout>
         <div className="-mx-4 -my-8 bg-slate-100 px-4 py-8 sm:-my-10 sm:py-10">
-          <div className="mx-auto max-w-5xl">
-            <div className="text-center">
-              <div className="mb-4">
-                <Link
-                  to="/"
-                  className="text-sm font-semibold text-slate-600 hover:text-slate-900"
-                >
-                  ← Back to PressureCal
-                </Link>
+          <div className="mx-auto max-w-5xl space-y-8">
+            <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+              <div className="max-w-3xl">
+                <div className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+                  Hose Pressure Loss
+                </div>
+
+                <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-900 md:text-5xl">
+                  Pressure Washer Hose Pressure Loss Calculator
+                </h1>
+
+                <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
+                  Estimate how much pressure your setup is losing through hose length and hose size.
+                  Use this calculator to check pressure drop before the gun, compare different hose
+                  runs, and see why a machine can feel different at the trigger than it does at the pump.
+                </p>
+
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
+                  PressureCal keeps metres, PSI and LPM first, with feet, BAR and GPM still
+                  available when needed. Useful estimates for real setup checks.
+                </p>
               </div>
 
-              <h1 className="text-5xl font-semibold tracking-tight text-slate-900">
-                Pressure Washer Hose Pressure Loss Calculator
-              </h1>
-
-              <p className="mx-auto mt-4 max-w-3xl text-lg text-slate-600">
-                Estimate how much pressure your setup is losing through hose
-                length and hose size. Use this calculator to check pressure drop
-                before the gun, compare different hose runs, and see why a machine
-                can feel different at the trigger than it does at the pump.
-              </p>
-
-              <p className="mx-auto mt-4 max-w-3xl text-sm leading-6 text-slate-500">
-                Useful for real setup checks. These results are estimates based on
-                the inputs provided and should be used alongside real-world
-                testing, gauge checks, manufacturer limits, and operator judgment.
-              </p>
-
-              <div className="mt-6 flex items-center justify-center gap-2">
+              <div className="mt-6 flex flex-wrap gap-3">
                 <button
                   type="button"
                   onClick={swapUnits}
-                  className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50"
-                  title="Swap PSI↔BAR, LPM↔GPM, metres↔feet and mm↔in"
+                  className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 active:scale-[0.98]"
                 >
                   Swap units
                 </button>
@@ -374,370 +339,376 @@ export default function HosePressureLossCalculator() {
                 <button
                   type="button"
                   onClick={resetAll}
-                  className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50"
-                  title="Reset to defaults"
+                  className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 active:scale-[0.98]"
                 >
                   Reset
                 </button>
               </div>
-            </div>
+            </section>
 
-            <div className="mt-10 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-              <div className="mb-8 text-center">
-                <div className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-                  Calculator
-                </div>
-                <p className="mx-auto mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-                  Enter hose length in metres, pump pressure in PSI and pump flow in LPM first, while still supporting feet, BAR and GPM when needed.
-                </p>
-              </div>
+            <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+              <div className="grid gap-8 lg:grid-cols-[1.02fr_0.98fr]">
+                <div className="space-y-6">
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">
+                      Pump pressure ({pressureUnit === "psi" ? "PSI" : "BAR"})
+                    </label>
 
-              <div className="space-y-8">
-                <div>
-                  <div className="mb-2 text-center text-base font-semibold text-slate-800">
-                    Pump Pressure
-                  </div>
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center">
-                    <input
-                      className="w-full max-w-3xl rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
-                      type="number"
-                      inputMode="decimal"
-                      value={pressure}
-                      onChange={(e) => setPressure(Number(e.target.value))}
-                    />
+                    <div className="flex gap-3">
+                      <input
+                        className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                        type="number"
+                        inputMode="decimal"
+                        value={pressure}
+                        onChange={(e) => setPressure(Number(e.target.value))}
+                      />
 
-                    <select
-                      className="w-full max-w-[140px] rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
-                      value={pressureUnit}
-                      onChange={(e) =>
-                        setPressureUnit(e.target.value as PressureUnit)
-                      }
-                    >
-                      <option value="psi">PSI</option>
-                      <option value="bar">BAR</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="mb-2 text-center text-base font-semibold text-slate-800">
-                    Pump Flow
-                  </div>
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center">
-                    <input
-                      className="w-full max-w-3xl rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
-                      type="number"
-                      inputMode="decimal"
-                      value={flow}
-                      onChange={(e) => setFlow(Number(e.target.value))}
-                    />
-
-                    <select
-                      className="w-full max-w-[140px] rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
-                      value={flowUnit}
-                      onChange={(e) => setFlowUnit(e.target.value as FlowUnit)}
-                    >
-                      <option value="lpm">LPM</option>
-                      <option value="gpm">GPM</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="mb-2 text-center text-base font-semibold text-slate-800">
-                    Hose Length
-                  </div>
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center">
-                    <input
-                      className="w-full max-w-3xl rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
-                      type="number"
-                      inputMode="decimal"
-                      value={hoseLength}
-                      onChange={(e) => setHoseLength(Number(e.target.value))}
-                    />
-
-                    <select
-                      className="w-full max-w-[140px] rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
-                      value={hoseLengthUnit}
-                      onChange={(e) =>
-                        setHoseLengthUnit(e.target.value as LengthUnit)
-                      }
-                    >
-                      <option value="m">Metres</option>
-                      <option value="ft">Feet</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="mb-2 text-center text-base font-semibold text-slate-800">
-                    Hose Internal Diameter
-                  </div>
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center">
-                    <input
-                      className="w-full max-w-3xl rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
-                      type="number"
-                      inputMode="decimal"
-                      value={hoseId}
-                      onChange={(e) => setHoseId(Number(e.target.value))}
-                    />
-
-                    <select
-                      className="w-full max-w-[140px] rounded-xl border border-slate-200 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-400"
-                      value={hoseIdUnit}
-                      onChange={(e) =>
-                        setHoseIdUnit(e.target.value as DiameterUnit)
-                      }
-                    >
-                      <option value="mm">mm</option>
-                      <option value="in">in</option>
-                    </select>
-                  </div>
-
-                  <div className="mt-4 flex flex-wrap justify-center gap-2">
-                    {hosePresets.map((preset) => (
-                      <button
-                        key={preset.label}
-                        type="button"
-                        onClick={() => {
-                          setHoseId(preset.value);
-                          setHoseIdUnit(preset.unit);
-                        }}
-                        className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                      <select
+                        className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                        value={pressureUnit}
+                        onChange={(e) => setPressureUnit(e.target.value as PressureUnit)}
                       >
-                        {preset.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="rounded-2xl bg-slate-100 px-6 py-10 text-center">
-                  <div className="text-sm font-medium text-slate-600">
-                    Estimated Pressure Loss
+                        <option value="psi">PSI</option>
+                        <option value="bar">BAR</option>
+                      </select>
+                    </div>
                   </div>
 
-                  <div className="mt-3 text-6xl font-semibold tracking-tight text-slate-900">
-                    {fmt(hoseLossPsi, 0)}
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">
+                      Pump flow ({flowUnit === "lpm" ? "LPM" : "GPM"})
+                    </label>
+
+                    <div className="flex gap-3">
+                      <input
+                        className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                        type="number"
+                        inputMode="decimal"
+                        value={flow}
+                        onChange={(e) => setFlow(Number(e.target.value))}
+                      />
+
+                      <select
+                        className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                        value={flowUnit}
+                        onChange={(e) => setFlowUnit(e.target.value as FlowUnit)}
+                      >
+                        <option value="lpm">LPM</option>
+                        <option value="gpm">GPM</option>
+                      </select>
+                    </div>
                   </div>
 
-                  <div className="mt-2 text-sm text-slate-600">
-                    PSI • {fmt(fromPsi(hoseLossPsi, "bar"), 1)} bar
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">
+                      Hose length ({hoseLengthUnit === "m" ? "Metres" : "Feet"})
+                    </label>
+
+                    <div className="flex gap-3">
+                      <input
+                        className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                        type="number"
+                        inputMode="decimal"
+                        value={hoseLength}
+                        onChange={(e) => setHoseLength(Number(e.target.value))}
+                      />
+
+                      <select
+                        className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                        value={hoseLengthUnit}
+                        onChange={(e) => setHoseLengthUnit(e.target.value as LengthUnit)}
+                      >
+                        <option value="m">Metres</option>
+                        <option value="ft">Feet</option>
+                      </select>
+                    </div>
                   </div>
 
-                  <div className="mt-6 text-sm text-slate-600">
-                    Pressure at gun{" "}
-                    <span className="font-semibold text-slate-800">
-                      {fmt(pressureAtGunPsi, 0)} PSI
-                    </span>{" "}
-                    •{" "}
-                    <span className="font-semibold text-slate-800">
-                      {fmt(fromPsi(pressureAtGunPsi, "bar"), 1)} bar
-                    </span>
-                  </div>
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">
+                      Hose internal diameter ({hoseIdUnit === "mm" ? "mm" : "in"})
+                    </label>
 
-                  <div className="mt-2 text-sm text-slate-500">
-                    Loss percentage ≈{" "}
-                    <span className="font-medium">{fmt(lossPct, 1)}%</span>
-                  </div>
+                    <div className="flex gap-3">
+                      <input
+                        className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                        type="number"
+                        inputMode="decimal"
+                        value={hoseId}
+                        onChange={(e) => setHoseId(Number(e.target.value))}
+                      />
 
-                  <div className="mx-auto mt-6 max-w-2xl rounded-xl border border-slate-200 bg-white px-4 py-4 text-sm leading-6 text-slate-600">
-                    <span className="font-semibold text-slate-900">What this means:</span>{" "}
-                    {interpretation}
-                  </div>
+                      <select
+                        className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                        value={hoseIdUnit}
+                        onChange={(e) => setHoseIdUnit(e.target.value as DiameterUnit)}
+                      >
+                        <option value="mm">mm</option>
+                        <option value="in">in</option>
+                      </select>
+                    </div>
 
-                  <div className="mt-8 flex flex-col items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={copySetupLink}
-                      className="rounded-xl bg-slate-900 px-8 py-3 text-sm font-semibold text-white hover:bg-slate-800"
-                    >
-                      Copy Setup Link
-                    </button>
-
-                    <div className="text-xs text-slate-500">
-                      {copyMessage || "Share link preserves your units and inputs."}
+                    <div className="mt-4">
+                      <p className="mb-3 text-sm font-medium text-slate-700">Common hose IDs</p>
+                      <div className="flex flex-wrap gap-2">
+                        {hosePresets.map((preset) => (
+                          <button
+                            key={preset.label}
+                            type="button"
+                            onClick={() => {
+                              setHoseId(preset.value);
+                              setHoseIdUnit(preset.unit);
+                            }}
+                            className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 active:scale-[0.98]"
+                          >
+                            {preset.label}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            <section className="mt-10 space-y-8 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-              <div>
-                <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-                  Why hose pressure loss matters
-                </h2>
-                <p className="mt-4 text-sm leading-7 text-slate-600">
-                  Even if your pump is rated for a certain pressure and flow,
-                  that is not always what you get at the gun. Longer hose runs
-                  and smaller hose sizes increase pressure loss, which can affect
-                  cleaning performance, nozzle matching, surface cleaner
-                  performance, and how a setup feels in real use.
-                </p>
-                <p className="mt-4 text-sm leading-7 text-slate-600">
-                  If pressure feels weak at the gun, hose loss is one of the
-                  first things worth checking. This calculator helps you estimate
-                  whether the hose itself is only a small part of the story or a
-                  meaningful contributor to the pressure you are losing before
-                  the nozzle.
-                </p>
-              </div>
+                <div className="rounded-3xl border border-blue-200 bg-gradient-to-br from-blue-50 to-white p-5 shadow-sm">
+                  <div className="flex flex-col gap-5">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
+                        Estimated hose pressure loss
+                      </p>
 
-              <div>
-                <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-                  Example uses
-                </h2>
+                      <div className="mt-3 flex flex-wrap items-end gap-3">
+                        <div className="rounded-2xl bg-blue-600 px-4 py-3 text-white shadow-sm">
+                          <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-100">
+                            Loss
+                          </div>
+                          <div className="mt-1 text-4xl font-bold tracking-tight">
+                            {fmtRounded(hoseLossPsi)} PSI
+                          </div>
+                          <div className="mt-1 text-sm text-blue-100">
+                            {fmt(fromPsi(hoseLossPsi, "bar"), 1)} BAR
+                          </div>
+                        </div>
 
-                <div className="mt-6 grid gap-4 md:grid-cols-3">
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
-                    <h3 className="text-sm font-semibold text-slate-900">
-                      30 metre hose check
-                    </h3>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">
-                      Estimate how much pressure is lost through a typical hose
-                      run and whether the loss is small or significant for your
-                      setup.
+                        <div className="rounded-2xl border border-blue-200 bg-white px-4 py-3 text-sm leading-6 text-slate-600">
+                          Useful for checking how much pressure the hose itself may be taking
+                          before the nozzle.
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                          Pressure at gun
+                        </p>
+                        <p className="mt-2 text-xl font-semibold text-slate-900">
+                          {fmtRounded(pressureAtGunPsi)} PSI
+                        </p>
+                        <p className="mt-1 text-sm text-slate-500">
+                          {fmt(fromPsi(pressureAtGunPsi, "bar"), 1)} BAR
+                        </p>
+                      </div>
+
+                      <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                          Loss percentage
+                        </p>
+                        <p className="mt-2 text-xl font-semibold text-slate-900">
+                          {fmt(lossPct, 1)}%
+                        </p>
+                        <p className="mt-1 text-sm text-slate-500">
+                          Estimated pressure drop
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                        What this means
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-slate-700">
+                        {interpretation}
+                      </p>
+                      <p className="mt-2 text-sm font-medium text-slate-900">
+                        {lossMeaning}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                      <button
+                        type="button"
+                        onClick={copySetupLink}
+                        className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                      >
+                        Copy setup link
+                      </button>
+
+                      <Link
+                        to="/calculator"
+                        className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                      >
+                        Open full setup calculator
+                      </Link>
+                    </div>
+
+                    <p className="text-xs text-slate-500">
+                      {copyMessage || "Share link preserves your units and inputs."}
                     </p>
-                  </div>
-
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
-                    <h3 className="text-sm font-semibold text-slate-900">
-                      60 metre hose check
-                    </h3>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">
-                      Compare close-range work to longer hose runs. Extra length
-                      often makes pressure loss much more noticeable.
-                    </p>
-                  </div>
-
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
-                    <h3 className="text-sm font-semibold text-slate-900">
-                      Hose size comparison
-                    </h3>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">
-                      Run different hose IDs through the calculator to see
-                      whether a larger hose meaningfully reduces pressure loss at
-                      your flow rate.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-                  FAQ
-                </h2>
-
-                <div className="mt-6 space-y-5">
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
-                    <h3 className="text-sm font-semibold text-slate-900">
-                      How much pressure do you lose through pressure washer hose?
-                    </h3>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">
-                      It depends on hose length, hose size, flow rate, and
-                      operating pressure. Longer hose and smaller hose size
-                      generally increase pressure loss.
-                    </p>
-                  </div>
-
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
-                    <h3 className="text-sm font-semibold text-slate-900">
-                      Does a larger hose reduce pressure loss?
-                    </h3>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">
-                      Yes. In many setups, increasing hose size can reduce
-                      pressure loss, especially over longer hose runs or higher
-                      flow rates.
-                    </p>
-                  </div>
-
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
-                    <h3 className="text-sm font-semibold text-slate-900">
-                      Why is pressure lower at the gun than at the pump?
-                    </h3>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">
-                      Some pressure is lost through the hose, fittings, reels,
-                      and other components in the setup. Hose pressure loss is
-                      one of the most common reasons the pressure at the gun is
-                      lower than expected.
-                    </p>
-                  </div>
-
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
-                    <h3 className="text-sm font-semibold text-slate-900">
-                      Should I change hose size or nozzle size?
-                    </h3>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">
-                      That depends on what you are trying to fix. If the issue is
-                      pressure loss through the hose, hose size may matter. If
-                      the issue is operating pressure at the gun, nozzle size
-                      also plays a major role.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-                  Related tools
-                </h2>
-
-                <div className="mt-6 grid gap-4 md:grid-cols-3">
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
-                    <h3 className="text-sm font-semibold text-slate-900">
-                      Full Setup Calculator
-                    </h3>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">
-                      Need a fuller answer? Check what your setup is actually
-                      doing with the Full Setup Calculator.
-                    </p>
-                    <Link
-                      to="/calculator"
-                      className="mt-4 inline-block text-sm font-semibold text-slate-900 underline hover:text-slate-700"
-                    >
-                      Open Full Setup Calculator
-                    </Link>
-                  </div>
-
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
-                    <h3 className="text-sm font-semibold text-slate-900">
-                      Nozzle Size Calculator
-                    </h3>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">
-                      Trying to match nozzle size as well? Check nozzle selection
-                      against pressure and flow.
-                    </p>
-                    <Link
-                      to="/nozzle-size-calculator"
-                      className="mt-4 inline-block text-sm font-semibold text-slate-900 underline hover:text-slate-700"
-                    >
-                      Open Nozzle Size Calculator
-                    </Link>
-                  </div>
-
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
-                    <h3 className="text-sm font-semibold text-slate-900">
-                      Nozzle Size Chart
-                    </h3>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">
-                      Want a quick reference first? Use the chart for fast nozzle
-                      lookup before you move into the calculators.
-                    </p>
-                    <Link
-                      to="/nozzle-size-chart"
-                      className="mt-4 inline-block text-sm font-semibold text-slate-900 underline hover:text-slate-700"
-                    >
-                      Open Nozzle Size Chart
-                    </Link>
                   </div>
                 </div>
               </div>
             </section>
 
-            <div className="mt-10 text-center text-xs text-slate-500">
-              Useful estimates for real setup checks. Results do not replace
-              testing, gauge checks, manufacturer limits, or operator judgment.
-            </div>
+            <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+              <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+                Why hose pressure loss matters
+              </h2>
+
+              <div className="mt-4 space-y-4 text-sm leading-7 text-slate-600">
+                <p>
+                  Even if your pump is rated for a certain pressure and flow, that is not always
+                  what you get at the gun. Longer hose runs and smaller hose sizes increase pressure
+                  loss, which can affect cleaning performance, nozzle matching, surface cleaner
+                  performance, and how a setup feels in real use.
+                </p>
+
+                <p>
+                  If pressure feels weak at the gun, hose loss is one of the first things worth
+                  checking. This calculator helps you estimate whether the hose itself is only a small
+                  part of the story or a meaningful contributor to the pressure you are losing before
+                  the nozzle.
+                </p>
+
+                <p>
+                  PressureCal keeps metres, PSI and LPM first, with feet, BAR and GPM still visible
+                  when you need to compare mixed-spec equipment, manuals, or parts.
+                </p>
+              </div>
+            </section>
+
+            <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+              <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+                Common use case
+              </h2>
+
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Pump pressure
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold text-slate-900">4000 PSI</p>
+                  <p className="mt-1 text-sm text-slate-500">(276 BAR)</p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Pump flow
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold text-slate-900">15 LPM</p>
+                  <p className="mt-1 text-sm text-slate-500">(3.96 GPM)</p>
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-2xl border border-blue-200 bg-blue-50 p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-800">
+                  Example check
+                </p>
+                <p className="mt-3 text-sm leading-6 text-blue-900">
+                  A 4000 PSI / 15 LPM machine running 30 metres of 3/8 inch hose will usually lose a
+                  noticeable amount of pressure before the gun. This calculator helps you see whether
+                  that drop is minor, moderate, or meaningful before you start changing other parts of
+                  the setup.
+                </p>
+              </div>
+            </section>
+
+            <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+              <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+                FAQ
+              </h2>
+
+              <div className="mt-5 space-y-5 text-sm leading-7 text-slate-600">
+                <div>
+                  <h3 className="text-base font-semibold text-slate-900">
+                    How much pressure do you lose through pressure washer hose?
+                  </h3>
+                  <p className="mt-2">
+                    It depends on hose length, hose size, flow rate, and operating pressure. Longer
+                    hose and smaller hose size generally increase pressure loss.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="text-base font-semibold text-slate-900">
+                    Does a larger hose reduce pressure loss?
+                  </h3>
+                  <p className="mt-2">
+                    Yes. In many setups, increasing hose size can reduce pressure loss, especially
+                    over longer hose runs or higher flow rates.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="text-base font-semibold text-slate-900">
+                    Why is pressure lower at the gun than at the pump?
+                  </h3>
+                  <p className="mt-2">
+                    Some pressure is lost through the hose, fittings, reels, and other components in
+                    the setup. Hose pressure loss is one of the most common reasons the pressure at
+                    the gun is lower than expected.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="text-base font-semibold text-slate-900">
+                    Should I change hose size or nozzle size?
+                  </h3>
+                  <p className="mt-2">
+                    That depends on what you are trying to fix. If the issue is pressure loss through
+                    the hose, hose size may matter. If the issue is operating pressure at the gun,
+                    nozzle size also plays a major role.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+              <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+                Related tools
+              </h2>
+
+              <p className="mt-4 text-sm leading-7 text-slate-600">
+                Need more than hose loss alone? Move into the live tools:
+              </p>
+
+              <div className="mt-5 flex flex-wrap gap-3">
+                <Link
+                  to="/calculator"
+                  className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+                >
+                  Full Setup Calculator
+                </Link>
+
+                <Link
+                  to="/nozzle-size-calculator"
+                  className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                >
+                  Nozzle Size Calculator
+                </Link>
+
+                <Link
+                  to="/nozzle-size-chart"
+                  className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                >
+                  Nozzle Size Chart
+                </Link>
+              </div>
+
+              <p className="mt-6 text-xs text-slate-500">
+                Useful estimates for real setup checks. Results do not replace testing, gauge checks,
+                manufacturer limits, or operator judgment.
+              </p>
+            </section>
           </div>
 
           <BackToTopButton />
