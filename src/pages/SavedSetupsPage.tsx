@@ -47,6 +47,10 @@ const EMPTY_FORM: SetupFormState = {
   nozzleSizeText: "040",
 };
 
+function formatUnitLabel(unit: SetupFormState["hoseLengthUnit"]) {
+  return unit === "m" ? "Metres" : "Feet";
+}
+
 export default function SavedSetupsPage() {
   const [authUserId, setAuthUserId] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -81,14 +85,8 @@ export default function SavedSetupsPage() {
     };
   }, []);
 
-  const {
-    setups,
-    isReady,
-    saveSetup,
-    deleteSetup,
-    duplicateSetup,
-    getSetupById,
-  } = useSavedSetups(authUserId);
+  const { setups, isReady, saveSetup, deleteSetup, duplicateSetup, getSetupById } =
+    useSavedSetups(authUserId);
 
   const editingSetup = useMemo(() => {
     return selectedSetupId ? getSetupById(selectedSetupId) : null;
@@ -269,6 +267,58 @@ export default function SavedSetupsPage() {
     }
   }
 
+  const signedOutFallback = (
+    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+      <div className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+        PressureCal Pro
+      </div>
+      <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
+        Sign in to use Saved Setups
+      </h2>
+      <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
+        Saved Setups are linked to your PressureCal account. Sign in to access your saved
+        setups and the rest of your Pro workflow.
+      </p>
+      <div className="mt-6 flex flex-wrap gap-3">
+        <Link
+          to="/account"
+          className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+        >
+          Sign In
+        </Link>
+        <Link
+          to="/pro"
+          className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+        >
+          View PressureCal Pro
+        </Link>
+      </div>
+    </div>
+  );
+
+  const nonProFallback = (
+    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+      <div className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+        PressureCal Pro
+      </div>
+      <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
+        Saved Setups is a Pro feature
+      </h2>
+      <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
+        Upgrade to PressureCal Pro to save full setups, compare changes, and keep repeat-job
+        workflow organised.
+      </p>
+      <div className="mt-6">
+        <Link
+          to="/pro"
+          className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+        >
+          View PressureCal Pro Plans
+        </Link>
+      </div>
+    </div>
+  );
+
   return (
     <PressureCalLayout>
       <Helmet>
@@ -279,77 +329,52 @@ export default function SavedSetupsPage() {
         />
       </Helmet>
 
-      <section className="border-b border-slate-200 bg-slate-950 text-white">
-        <div className="mx-auto max-w-6xl px-4 py-14 sm:py-16">
-          <div className="max-w-3xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-300">
-              PressureCal Pro
-            </p>
-            <h1 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">
-              Saved Setups
-            </h1>
-            <p className="mt-5 text-lg leading-8 text-slate-300">
-              Save your pressure, flow, hose, engine, nozzle, and spray-mode assumptions in one place so you can reopen, compare, and reuse setups without re-entering everything.
-            </p>
-          </div>
-        </div>
-      </section>
+      <div className="-mx-4 -my-8 bg-slate-100 px-4 py-8 sm:-my-10 sm:py-10">
+        <div className="mx-auto max-w-6xl space-y-8">
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+            <div className="max-w-3xl">
+              <div className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+                Saved Setups
+              </div>
 
-      <RequirePro
-        signedOutFallback={
-          <section className="bg-slate-50">
-            <div className="mx-auto max-w-3xl px-4 py-16">
-              <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-                <h2 className="text-2xl font-bold text-slate-950">Sign in to use Saved Setups</h2>
-                <p className="mt-3 text-base leading-7 text-slate-600">
-                  Saved Setups are linked to your PressureCal account. Sign in to access your saved setups and Pro tools.
-                </p>
-                <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                  <Link
-                    to="/account"
-                    className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-                  >
-                    Sign in
-                  </Link>
-                  <Link
-                    to="/pro"
-                    className="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                  >
-                    View PressureCal Pro
-                  </Link>
-                </div>
+              <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-950 md:text-5xl">
+                Save the setups you already trust
+              </h1>
+
+              <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
+                Save your pressure, flow, hose, engine, nozzle, and spray-mode assumptions in
+                one place so you can reopen, compare, and reuse setups without re-entering
+                everything.
+              </p>
+
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-500">
+                Useful for repeat jobs, team handoff, and keeping known-good setup references
+                organised inside PressureCal Pro.
+              </p>
+
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link
+                  to="/calculator"
+                  className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                >
+                  Open Full Setup Calculator
+                </Link>
+                <Link
+                  to="/compare-setups"
+                  className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                >
+                  Compare Setups
+                </Link>
               </div>
             </div>
           </section>
-        }
-        nonProFallback={
-          <section className="bg-slate-50">
-            <div className="mx-auto max-w-3xl px-4 py-16">
-              <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-                <h2 className="text-2xl font-bold text-slate-950">Saved Setups is a Pro feature</h2>
-                <p className="mt-3 text-base leading-7 text-slate-600">
-                  Upgrade to PressureCal Pro to save full setups and compare them accurately.
-                </p>
-                <div className="mt-6">
-                  <Link
-                    to="/pro"
-                    className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-                  >
-                    View PressureCal Pro plans
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </section>
-        }
-      >
-        <section className="bg-slate-50">
-          <div className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
-            <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+
+          <RequirePro signedOutFallback={signedOutFallback} nonProFallback={nonProFallback}>
+            <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <h2 className="text-2xl font-bold text-slate-950">
+                    <h2 className="text-2xl font-semibold tracking-tight text-slate-950">
                       {selectedSetupId ? "Edit saved setup" : "Create saved setup"}
                     </h2>
                     <p className="mt-2 text-sm leading-6 text-slate-600">
@@ -361,9 +386,9 @@ export default function SavedSetupsPage() {
                     <button
                       type="button"
                       onClick={resetForm}
-                      className="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                      className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                     >
-                      New setup
+                      New Setup
                     </button>
                   ) : null}
                 </div>
@@ -427,7 +452,9 @@ export default function SavedSetupsPage() {
                   </label>
 
                   <label className="block">
-                    <span className="text-sm font-semibold text-slate-800">Max pressure (unloader)</span>
+                    <span className="text-sm font-semibold text-slate-800">
+                      Max pressure (unloader)
+                    </span>
                     <div className="mt-2 flex gap-3">
                       <input
                         type="number"
@@ -462,7 +489,9 @@ export default function SavedSetupsPage() {
                   </label>
 
                   <label className="block">
-                    <span className="text-sm font-semibold text-slate-800">Hose length</span>
+                    <span className="text-sm font-semibold text-slate-800">
+                      Hose length ({formatUnitLabel(form.hoseLengthUnit)})
+                    </span>
                     <div className="mt-2 flex gap-3">
                       <input
                         type="number"
@@ -478,8 +507,8 @@ export default function SavedSetupsPage() {
                         }
                         className="rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
                       >
-                        <option value="m">m</option>
-                        <option value="ft">ft</option>
+                        <option value="m">Metres</option>
+                        <option value="ft">Feet</option>
                       </select>
                     </div>
                   </label>
@@ -534,7 +563,7 @@ export default function SavedSetupsPage() {
                   </label>
 
                   <label className="block sm:col-span-2">
-                    <span className="text-sm font-semibold text-slate-800">Nozzle size</span>
+                    <span className="text-sm font-semibold text-slate-800">Nozzle / tip code</span>
                     <input
                       type="text"
                       value={form.nozzleSizeText}
@@ -556,30 +585,32 @@ export default function SavedSetupsPage() {
                   </label>
                 </div>
 
-                <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <div className="mt-8 flex flex-wrap gap-3">
                   <button
                     type="button"
                     onClick={handleSave}
                     disabled={authLoading || !isReady}
                     className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {selectedSetupId ? "Update saved setup" : "Save setup"}
+                    {selectedSetupId ? "Update Saved Setup" : "Save Setup"}
                   </button>
 
                   <button
                     type="button"
                     onClick={resetForm}
-                    className="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                    className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                   >
-                    Clear form
+                    Clear Form
                   </button>
                 </div>
               </div>
 
-              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-                <div className="flex items-center justify-between gap-3">
+              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <h2 className="text-2xl font-bold text-slate-950">Your saved setups</h2>
+                    <h2 className="text-2xl font-semibold tracking-tight text-slate-950">
+                      Your saved setups
+                    </h2>
                     <p className="mt-2 text-sm leading-6 text-slate-600">
                       {setups.length} {setups.length === 1 ? "setup" : "setups"} saved
                     </p>
@@ -588,9 +619,9 @@ export default function SavedSetupsPage() {
                   {setups.length >= 2 ? (
                     <Link
                       to={`/compare-setups?a=${setups[0].id}&b=${setups[1].id}`}
-                      className="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                      className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                     >
-                      Compare setups
+                      Compare Setups
                     </Link>
                   ) : null}
                 </div>
@@ -622,33 +653,33 @@ export default function SavedSetupsPage() {
                             <button
                               type="button"
                               onClick={() => handleEdit(setup.id)}
-                              className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                              className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
                             >
                               Edit
                             </button>
                             <Link
                               to={openInCalculatorHref(setup.id)}
-                              className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                              className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
                             >
-                              Open in Full Setup Calculator
+                              Open Full Setup Calculator
                             </Link>
                             <button
                               type="button"
                               onClick={() => copyShareLink(setup.id)}
-                              className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                              className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
                             >
-                              {copiedSetupId === setup.id ? "Copied ✓" : "Copy setup link"}
+                              {copiedSetupId === setup.id ? "Copied ✓" : "Copy Setup Link"}
                             </button>
                             <Link
                               to={compareHref(setup.id)}
-                              className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                              className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
                             >
                               Compare
                             </Link>
                             <button
                               type="button"
                               onClick={() => duplicateSetup(setup.id)}
-                              className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                              className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
                             >
                               Duplicate
                             </button>
@@ -672,29 +703,42 @@ export default function SavedSetupsPage() {
 
                         <dl className="mt-4 grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
                           <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                            <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">Pump</dt>
+                            <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
+                              Pump
+                            </dt>
                             <dd className="mt-1">
-                              {setup.pumpPressure ?? "—"} {setup.pumpPressureUnit.toUpperCase()} · {setup.pumpFlow ?? "—"} {setup.pumpFlowUnit.toUpperCase()}
+                              {setup.pumpPressure ?? "—"} {setup.pumpPressureUnit.toUpperCase()} ·{" "}
+                              {setup.pumpFlow ?? "—"} {setup.pumpFlowUnit.toUpperCase()}
                             </dd>
                           </div>
                           <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                            <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">Hose</dt>
+                            <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
+                              Hose
+                            </dt>
                             <dd className="mt-1">
-                              {setup.hoseLength ?? "—"} {setup.hoseLengthUnit} · {setup.hoseId ?? "—"} {setup.hoseIdUnit}
+                              {setup.hoseLength ?? "—"} {setup.hoseLengthUnit} · {setup.hoseId ?? "—"}{" "}
+                              {setup.hoseIdUnit}
                             </dd>
                           </div>
                           <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                            <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">Engine</dt>
+                            <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
+                              Engine
+                            </dt>
                             <dd className="mt-1">{setup.engineHp ?? "Not provided"}</dd>
                           </div>
                           <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                            <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">Spray</dt>
+                            <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
+                              Spray
+                            </dt>
                             <dd className="mt-1">
-                              {setup.sprayMode === "surfaceCleaner" ? "Surface cleaner" : "Wand"} · {setup.nozzleCount} nozzle{setup.nozzleCount === 1 ? "" : "s"}
+                              {setup.sprayMode === "surfaceCleaner" ? "Surface cleaner" : "Wand"} ·{" "}
+                              {setup.nozzleCount} nozzle{setup.nozzleCount === 1 ? "" : "s"}
                             </dd>
                           </div>
                           <div className="rounded-2xl bg-slate-50 px-4 py-3 sm:col-span-2">
-                            <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">Nozzle</dt>
+                            <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
+                              Nozzle / tip code
+                            </dt>
                             <dd className="mt-1">{setup.nozzleSizeText ?? "—"}</dd>
                           </div>
                         </dl>
@@ -707,12 +751,12 @@ export default function SavedSetupsPage() {
                   </div>
                 )}
               </div>
-            </div>
-          </div>
-        </section>
-      </RequirePro>
+            </section>
+          </RequirePro>
 
-      <BackToTopButton />
+          <BackToTopButton />
+        </div>
+      </div>
     </PressureCalLayout>
   );
 }
