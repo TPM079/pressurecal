@@ -158,6 +158,32 @@ const highPressureRows = buildPressureRows(360, 500, 10);
 const standardNozzleChart = buildChartRows(standardPressureRows, flowHeaders);
 const highPressureNozzleChart = buildChartRows(highPressureRows, flowHeaders);
 
+function SectionCard({
+  eyebrow,
+  title,
+  children,
+}: {
+  eyebrow?: string;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-3xl border border-slate-300 bg-white shadow-sm">
+      <div className="border-b border-slate-300 px-5 py-4 md:px-6">
+        {eyebrow ? (
+          <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+            {eyebrow}
+          </div>
+        ) : null}
+        <h2 className="mt-2 text-xl font-semibold tracking-tight text-slate-900">
+          {title}
+        </h2>
+      </div>
+      <div className="px-5 py-5 md:px-6">{children}</div>
+    </section>
+  );
+}
+
 function ReferenceTable({
   title,
   subtitle,
@@ -218,7 +244,7 @@ function ReferenceTable({
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-              PressureCal Technical Reference
+              Quick Reference Table
             </div>
 
             <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900 print:text-xl">
@@ -428,20 +454,11 @@ function ReferenceTable({
 
 function TechnicalNotesPanel() {
   return (
-    <section className="rounded-3xl border border-slate-300 bg-white shadow-sm">
-      <div className="border-b border-slate-300 px-5 py-4 md:px-6">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-          Notes
-        </div>
-        <h2 className="mt-2 text-xl font-semibold tracking-tight text-slate-900">
-          How to Use This Chart
-        </h2>
-      </div>
-
-      <div className="space-y-4 px-5 py-5 text-sm leading-6 text-slate-600 md:px-6">
+    <SectionCard eyebrow="Notes" title="How to use this chart">
+      <div className="space-y-4 text-sm leading-6 text-slate-600">
         <p>
-          Use this chart as a <strong className="text-slate-900">quick field reference</strong>
-          {" "}for single-nozzle pressure washer setups. Match your machine pressure on the
+          Use this chart as a <strong className="text-slate-900">quick field reference</strong>{" "}
+          for single-nozzle pressure washer setups. Match your machine pressure on the
           left, then move across to your flow column to find the recommended tip code.
         </p>
 
@@ -470,23 +487,14 @@ function TechnicalNotesPanel() {
           wear, and water supply conditions.
         </p>
       </div>
-    </section>
+    </SectionCard>
   );
 }
 
 function ExamplePanel() {
   return (
-    <section className="rounded-3xl border border-slate-300 bg-white shadow-sm">
-      <div className="border-b border-slate-300 px-5 py-4 md:px-6">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-          Worked Example
-        </div>
-        <h2 className="mt-2 text-xl font-semibold tracking-tight text-slate-900">
-          Example Lookup
-        </h2>
-      </div>
-
-      <div className="space-y-5 px-5 py-5 md:px-6">
+    <SectionCard eyebrow="Worked Example" title="Example lookup">
+      <div className="space-y-5">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
             <div className="text-xs font-semibold uppercase tracking-wide text-slate-600">
@@ -503,7 +511,7 @@ function ExamplePanel() {
               Machine Flow
             </div>
             <div className="mt-2 text-2xl font-semibold text-slate-900">
-              15.1 LPM
+              15 LPM
             </div>
             <div className="mt-1 text-sm text-slate-500">(4 GPM)</div>
           </div>
@@ -537,40 +545,29 @@ function ExamplePanel() {
           </div>
         </div>
       </div>
-    </section>
+    </SectionCard>
   );
 }
 
 function PresetExamples() {
   return (
-    <section className="rounded-3xl border border-slate-300 bg-white shadow-sm print:hidden">
-      <div className="border-b border-slate-300 px-5 py-4 md:px-6">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-          Quick Examples
-        </div>
-        <h2 className="mt-2 text-xl font-semibold tracking-tight text-slate-900">
-          Popular Setup Shortcuts
-        </h2>
-      </div>
+    <SectionCard eyebrow="Quick Examples" title="Popular setup shortcuts">
+      <p className="mb-4 text-sm leading-6 text-slate-600">
+        Use these presets to jump straight to common machine pressure and flow combinations. PressureCal keeps PSI and LPM first, with BAR and GPM still available for reference.
+      </p>
 
-      <div className="px-5 py-5 md:px-6">
-        <p className="mb-4 text-sm leading-6 text-slate-600">
-          Use these presets to jump straight to common machine pressure and flow combinations. PressureCal keeps PSI and LPM first, with BAR and GPM still available for reference.
-        </p>
-
-        <div className="flex flex-wrap gap-3">
-          {examplePresets.map((preset) => (
-            <Link
-              key={preset.label}
-              to={buildChartHref(preset.pressure, preset.flow)}
-              className="rounded-2xl border border-slate-300 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-white"
-            >
-              {preset.label}
-            </Link>
-          ))}
-        </div>
+      <div className="flex flex-wrap gap-3">
+        {examplePresets.map((preset) => (
+          <Link
+            key={preset.label}
+            to={buildChartHref(preset.pressure, preset.flow)}
+            className="rounded-2xl border border-slate-300 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-white"
+          >
+            {preset.label}
+          </Link>
+        ))}
       </div>
-    </section>
+    </SectionCard>
   );
 }
 
@@ -637,7 +634,7 @@ function SurfaceCleanerHelper() {
     }
 
     return `${sourceText}, rounded to ${Math.round(pressurePsi)} PSI (${roundedPressureBar} BAR) chart row.`;
-  }, [pressure, pressureUnit, pressureBar, roundedPressureBar]);
+  }, [pressure, pressureUnit, pressureBar, roundedPressureBar, pressurePsi]);
 
   const highlightedChartHref = useMemo(
     () => buildChartHref(roundedPressureBar, nearestFlow.lpm),
@@ -655,156 +652,148 @@ function SurfaceCleanerHelper() {
   }, [pressurePsi, perNozzleGpm]);
 
   return (
-    <section className="rounded-3xl border border-slate-300 bg-white shadow-sm print:hidden">
-      <div className="border-b border-slate-300 px-5 py-4 md:px-6">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-          Surface Cleaner Helper
+    <SectionCard
+      eyebrow="Surface Cleaner Helper"
+      title="Surface cleaner per-nozzle helper"
+    >
+      <p className="text-sm leading-6 text-slate-600">
+        For surface cleaners and other multi-nozzle tools, divide total machine flow by the number of nozzles first. PressureCal then uses per-nozzle flow to point you to the closest chart column and recommended tip code.
+      </p>
+
+      <div className="mt-6 grid gap-4 md:grid-cols-3">
+        <div>
+          <label className="block text-sm font-medium text-slate-700">
+            Machine Pressure
+          </label>
+          <div className="mt-2 flex gap-3">
+            <input
+              type="number"
+              value={pressure}
+              onChange={(e) => setPressure(Number(e.target.value))}
+              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 outline-none focus:border-slate-400"
+            />
+            <select
+              value={pressureUnit}
+              onChange={(e) =>
+                setPressureUnit(e.target.value as PressureUnit)
+              }
+              className="rounded-xl border border-slate-200 px-4 py-3 text-slate-900 outline-none focus:border-slate-400"
+            >
+              <option value="psi">PSI</option>
+              <option value="bar">BAR</option>
+            </select>
+          </div>
         </div>
-        <h2 className="mt-2 text-xl font-semibold tracking-tight text-slate-900">
-          Surface Cleaner Per-Nozzle Helper
-        </h2>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700">
+            Total Machine Flow
+          </label>
+          <div className="mt-2 flex gap-3">
+            <input
+              type="number"
+              step="0.1"
+              value={totalFlow}
+              onChange={(e) => setTotalFlow(Number(e.target.value))}
+              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 outline-none focus:border-slate-400"
+            />
+            <select
+              value={flowUnit}
+              onChange={(e) => setFlowUnit(e.target.value as FlowUnit)}
+              className="rounded-xl border border-slate-200 px-4 py-3 text-slate-900 outline-none focus:border-slate-400"
+            >
+              <option value="lpm">LPM</option>
+              <option value="gpm">GPM</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700">
+            Number of Nozzles
+          </label>
+          <div className="mt-2">
+            <input
+              type="number"
+              min="1"
+              step="1"
+              value={nozzleCount}
+              onChange={(e) => setNozzleCount(Number(e.target.value))}
+              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 outline-none focus:border-slate-400"
+            />
+          </div>
+        </div>
       </div>
 
-      <div className="space-y-6 px-5 py-5 md:px-6">
-        <p className="text-sm leading-6 text-slate-600">
-          For surface cleaners and other multi-nozzle tools, divide total machine flow by the number of nozzles first. PressureCal then uses per-nozzle flow to point you to the closest chart column and recommended tip code.
-        </p>
-
-        <div className="grid gap-4 md:grid-cols-3">
-          <div>
-            <label className="block text-sm font-medium text-slate-700">
-              Machine Pressure
-            </label>
-            <div className="mt-2 flex gap-3">
-              <input
-                type="number"
-                value={pressure}
-                onChange={(e) => setPressure(Number(e.target.value))}
-                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 outline-none focus:border-slate-400"
-              />
-              <select
-                value={pressureUnit}
-                onChange={(e) =>
-                  setPressureUnit(e.target.value as PressureUnit)
-                }
-                className="rounded-xl border border-slate-200 px-4 py-3 text-slate-900 outline-none focus:border-slate-400"
-              >
-                <option value="psi">PSI</option>
-                <option value="bar">BAR</option>
-              </select>
-            </div>
+      <div className="mt-6 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+          <div className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+            Per-Nozzle Result
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700">
-              Total Machine Flow
-            </label>
-            <div className="mt-2 flex gap-3">
-              <input
-                type="number"
-                step="0.1"
-                value={totalFlow}
-                onChange={(e) => setTotalFlow(Number(e.target.value))}
-                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 outline-none focus:border-slate-400"
-              />
-              <select
-                value={flowUnit}
-                onChange={(e) => setFlowUnit(e.target.value as FlowUnit)}
-                className="rounded-xl border border-slate-200 px-4 py-3 text-slate-900 outline-none focus:border-slate-400"
-              >
-                <option value="lpm">LPM</option>
-                <option value="gpm">GPM</option>
-              </select>
-            </div>
+          <div className="mt-3 text-4xl font-bold tracking-tight text-slate-900">
+            {formatRoundedLpm(perNozzleLpm)} LPM
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700">
-              Number of Nozzles
-            </label>
-            <div className="mt-2">
-              <input
-                type="number"
-                min="1"
-                step="1"
-                value={nozzleCount}
-                onChange={(e) => setNozzleCount(Number(e.target.value))}
-                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 outline-none focus:border-slate-400"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-            <div className="text-xs font-semibold uppercase tracking-wide text-slate-600">
-              Per-Nozzle Result
-            </div>
-
-            <div className="mt-3 text-4xl font-bold tracking-tight text-slate-900">
-              {formatRoundedLpm(perNozzleLpm)} LPM
-            </div>
-
-            <div className="mt-2 text-sm text-slate-600">
-              ({formatNumber(perNozzleGpm, 2)} GPM) per nozzle
-            </div>
-
-            <div className="mt-4 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4">
-              <div className="text-xs font-semibold uppercase tracking-wide text-blue-800">
-                Estimated Tip Code
-              </div>
-              <div className="mt-2 text-3xl font-bold tracking-tight text-blue-950">
-                {estimatedTipCode}
-              </div>
-              <p className="mt-2 text-sm leading-6 text-blue-900">
-                Chart uses nearest available column:{" "}
-                <strong>{formatRoundedLpm(nearestFlow.lpm)} LPM</strong> ({nearestFlow.gpm} GPM)
-              </p>
-              <p className="mt-2 text-sm leading-6 text-blue-900">
-                Nearest chart row: <strong>{Math.round(pressurePsi)} PSI</strong> ({roundedPressureBar} BAR)
-              </p>
-              <p className="mt-2 text-sm leading-6 text-blue-900">
-                {pressureRoundingNote}
-              </p>
-              <p className="mt-2 text-sm leading-6 text-blue-900">
-                Chart lookup pair: <strong>{Math.round(pressurePsi)} PSI ({roundedPressureBar} BAR)</strong> ×{" "}
-                <strong>{formatRoundedLpm(nearestFlow.lpm)} LPM</strong> →{" "}
-                <strong>{estimatedTipCode}</strong>
-              </p>
-            </div>
+          <div className="mt-2 text-sm text-slate-600">
+            ({formatNumber(perNozzleGpm, 2)} GPM) per nozzle
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-5">
-            <div className="text-xs font-semibold uppercase tracking-wide text-slate-600">
-              Quick Actions
+          <div className="mt-4 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4">
+            <div className="text-xs font-semibold uppercase tracking-wide text-blue-800">
+              Estimated Tip Code
             </div>
-
-            <div className="mt-4 space-y-3">
-              <Link
-                to={highlightedChartHref}
-                className="flex w-full items-center justify-center rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
-              >
-                Highlight in Chart
-              </Link>
-
-              <Link
-                to={calculatorHref}
-                className="flex w-full items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-              >
-                Open in Calculator
-              </Link>
+            <div className="mt-2 text-3xl font-bold tracking-tight text-blue-950">
+              {estimatedTipCode}
             </div>
-
-            <p className="mt-4 text-sm leading-6 text-slate-600">
-              Example: a machine delivering{" "}
-              <strong>{formatRoundedLpm(totalFlowLpm)} LPM</strong> through{" "}
-              <strong>{nozzleCount}</strong> nozzles gives{" "}
-              <strong>{formatRoundedLpm(perNozzleLpm)} LPM</strong> per nozzle.
+            <p className="mt-2 text-sm leading-6 text-blue-900">
+              Chart uses nearest available column:{" "}
+              <strong>{formatRoundedLpm(nearestFlow.lpm)} LPM</strong> ({nearestFlow.gpm} GPM)
+            </p>
+            <p className="mt-2 text-sm leading-6 text-blue-900">
+              Nearest chart row: <strong>{Math.round(pressurePsi)} PSI</strong> ({roundedPressureBar} BAR)
+            </p>
+            <p className="mt-2 text-sm leading-6 text-blue-900">
+              {pressureRoundingNote}
+            </p>
+            <p className="mt-2 text-sm leading-6 text-blue-900">
+              Chart lookup pair: <strong>{Math.round(pressurePsi)} PSI ({roundedPressureBar} BAR)</strong> ×{" "}
+              <strong>{formatRoundedLpm(nearestFlow.lpm)} LPM</strong> →{" "}
+              <strong>{estimatedTipCode}</strong>
             </p>
           </div>
         </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-5">
+          <div className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+            Quick Actions
+          </div>
+
+          <div className="mt-4 space-y-3">
+            <Link
+              to={highlightedChartHref}
+              className="flex w-full items-center justify-center rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+            >
+              Highlight in Chart
+            </Link>
+
+            <Link
+              to={calculatorHref}
+              className="flex w-full items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            >
+              Open in Calculator
+            </Link>
+          </div>
+
+          <p className="mt-4 text-sm leading-6 text-slate-600">
+            Example: a machine delivering{" "}
+            <strong>{formatRoundedLpm(totalFlowLpm)} LPM</strong> through{" "}
+            <strong>{nozzleCount}</strong> nozzles gives{" "}
+            <strong>{formatRoundedLpm(perNozzleLpm)} LPM</strong> per nozzle.
+          </p>
+        </div>
       </div>
-    </section>
+    </SectionCard>
   );
 }
 
@@ -838,73 +827,56 @@ function NozzleColourGuide() {
   ];
 
   return (
-    <section className="rounded-3xl border border-slate-300 bg-white shadow-sm">
-      <div className="border-b border-slate-300 px-5 py-4 md:px-6">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-          Spray Pattern Reference
-        </div>
-        <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">
-          Pressure Washer Nozzle Colour Guide
-        </h2>
-      </div>
+    <SectionCard eyebrow="Spray Pattern Reference" title="Pressure washer nozzle colour guide">
+      <p className="mb-5 text-sm leading-6 text-slate-600">
+        Spray tips are commonly colour coded to indicate spray angle. The
+        angle influences impact concentration and coverage width.
+      </p>
 
-      <div className="px-5 py-5 md:px-6">
-        <p className="mb-5 text-sm leading-6 text-slate-600">
-          Spray tips are commonly colour coded to indicate spray angle. The
-          angle influences impact concentration and coverage width.
-        </p>
-
-        <div className="overflow-x-auto">
-          <table className="min-w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-slate-300 bg-slate-100">
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">
-                  Colour
-                </th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">
-                  Spray Angle
-                </th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">
-                  Typical Use
-                </th>
+      <div className="overflow-x-auto">
+        <table className="min-w-full border-collapse text-sm">
+          <thead>
+            <tr className="border-b border-slate-300 bg-slate-100">
+              <th className="px-4 py-3 text-left font-semibold text-slate-700">
+                Colour
+              </th>
+              <th className="px-4 py-3 text-left font-semibold text-slate-700">
+                Spray Angle
+              </th>
+              <th className="px-4 py-3 text-left font-semibold text-slate-700">
+                Typical Use
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, idx) => (
+              <tr
+                key={row.angle}
+                className={idx % 2 === 0 ? "bg-white" : "bg-slate-50/60"}
+              >
+                <td className="border-b border-slate-200 px-4 py-3 text-slate-900">
+                  {row.color}
+                </td>
+                <td className="border-b border-slate-200 px-4 py-3 text-slate-700">
+                  {row.angle}
+                </td>
+                <td className="border-b border-slate-200 px-4 py-3 text-slate-700">
+                  {row.use}
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, idx) => (
-                <tr
-                  key={row.angle}
-                  className={idx % 2 === 0 ? "bg-white" : "bg-slate-50/60"}
-                >
-                  <td className="border-b border-slate-200 px-4 py-3 text-slate-900">
-                    {row.color}
-                  </td>
-                  <td className="border-b border-slate-200 px-4 py-3 text-slate-700">
-                    {row.angle}
-                  </td>
-                  <td className="border-b border-slate-200 px-4 py-3 text-slate-700">
-                    {row.use}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
       </div>
-    </section>
+    </SectionCard>
   );
 }
 
 function SEOContentBlocks() {
   return (
     <section className="space-y-8 print:hidden">
-      <section className="rounded-3xl border border-slate-300 bg-white shadow-sm">
-        <div className="border-b border-slate-300 px-5 py-4 md:px-6">
-          <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-            Why this nozzle size chart is useful
-          </h2>
-        </div>
-
-        <div className="space-y-4 px-5 py-5 text-sm leading-7 text-slate-600 md:px-6">
+      <SectionCard title="Why this nozzle size chart is useful">
+        <div className="space-y-4 text-sm leading-7 text-slate-600">
           <p>
             This pressure washer nozzle size chart is built for fast field lookup.
             If you already know your machine pressure and flow, you can use it to
@@ -924,16 +896,10 @@ function SEOContentBlocks() {
             static table.
           </p>
         </div>
-      </section>
+      </SectionCard>
 
-      <section className="rounded-3xl border border-slate-300 bg-white shadow-sm">
-        <div className="border-b border-slate-300 px-5 py-4 md:px-6">
-          <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-            How to use the chart
-          </h2>
-        </div>
-
-        <div className="space-y-4 px-5 py-5 text-sm leading-7 text-slate-600 md:px-6">
+      <SectionCard title="How to use the chart">
+        <div className="space-y-4 text-sm leading-7 text-slate-600">
           <p>
             Start with your machine pressure on the left-hand column, then move across
             to your flow column. The intersecting value is the recommended tip code for
@@ -951,16 +917,10 @@ function SEOContentBlocks() {
             the more exact answer.
           </p>
         </div>
-      </section>
+      </SectionCard>
 
-      <section className="rounded-3xl border border-slate-300 bg-white shadow-sm">
-        <div className="border-b border-slate-300 px-5 py-4 md:px-6">
-          <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-            Common example
-          </h2>
-        </div>
-
-        <div className="space-y-4 px-5 py-5 text-sm leading-7 text-slate-600 md:px-6">
+      <SectionCard title="Common example">
+        <div className="space-y-4 text-sm leading-7 text-slate-600">
           <p>
             A common professional setup is <strong>4000 PSI and 15 LPM</strong>.
             In the chart, that lands on a <strong>040</strong> tip code.
@@ -980,16 +940,10 @@ function SEOContentBlocks() {
             </Link>
           </div>
         </div>
-      </section>
+      </SectionCard>
 
-      <section className="rounded-3xl border border-slate-300 bg-white shadow-sm">
-        <div className="border-b border-slate-300 px-5 py-4 md:px-6">
-          <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-            FAQ
-          </h2>
-        </div>
-
-        <div className="space-y-4 px-5 py-5 text-sm leading-7 text-slate-600 md:px-6">
+      <SectionCard title="FAQ">
+        <div className="space-y-4 text-sm leading-7 text-slate-600">
           <div>
             <h3 className="text-base font-semibold text-slate-900">
               How do I choose the right pressure washer nozzle size?
@@ -1022,42 +976,34 @@ function SEOContentBlocks() {
             </p>
           </div>
         </div>
-      </section>
+      </SectionCard>
 
-      <section className="rounded-3xl border border-slate-300 bg-white shadow-sm">
-        <div className="border-b border-slate-300 px-5 py-4 md:px-6">
-          <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-            Related tools
-          </h2>
+      <SectionCard title="Related tools">
+        <p className="text-sm leading-7 text-slate-600">
+          Need a more exact answer? Move from quick reference into the live tools:
+        </p>
+
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Link
+            to="/nozzle-size-calculator"
+            className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+          >
+            Nozzle Size Calculator
+          </Link>
+          <Link
+            to="/hose-pressure-loss-calculator"
+            className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          >
+            Hose Pressure Loss Calculator
+          </Link>
+          <Link
+            to="/calculator"
+            className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          >
+            Full Setup Calculator
+          </Link>
         </div>
-
-        <div className="space-y-4 px-5 py-5 text-sm leading-7 text-slate-600 md:px-6">
-          <p>
-            Need a more exact answer? Move from quick reference into the live tools:
-          </p>
-
-          <div className="flex flex-wrap gap-3">
-            <Link
-              to="/nozzle-size-calculator"
-              className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
-            >
-              Nozzle Size Calculator
-            </Link>
-            <Link
-              to="/hose-pressure-loss-calculator"
-              className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-            >
-              Hose Pressure Loss Calculator
-            </Link>
-            <Link
-              to="/calculator"
-              className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-            >
-              Full Setup Calculator
-            </Link>
-          </div>
-        </div>
-      </section>
+      </SectionCard>
     </section>
   );
 }
@@ -1132,99 +1078,105 @@ export default function NozzleSizeChartPage() {
   return (
     <>
       <Helmet>
-  <title>Pressure Washer Nozzle Size Chart | PSI, LPM, BAR & GPM | PressureCal</title>
-  <meta
-    name="description"
-    content="Use this pressure washer nozzle size chart to match nozzle tips to PSI and LPM, compare common sizes, and choose a suitable nozzle for your pressure washer setup."
-  />
-  <link
-    rel="canonical"
-    href="https://www.pressurecal.com/nozzle-size-chart"
-  />
-  <meta
-    property="og:title"
-    content="Pressure Washer Nozzle Size Chart | PSI, LPM, BAR & GPM | PressureCal"
-  />
-  <meta
-    property="og:description"
-    content="Use this pressure washer nozzle size chart to match nozzle tips to PSI and LPM, compare common sizes, and choose a suitable nozzle for your pressure washer setup."
-  />
-  <meta
-    property="og:url"
-    content="https://www.pressurecal.com/nozzle-size-chart"
-  />
-  <meta property="og:type" content="website" />
-  <meta
-    name="twitter:title"
-    content="Pressure Washer Nozzle Size Chart | PSI, LPM, BAR & GPM | PressureCal"
-  />
-  <meta
-    name="twitter:description"
-    content="Use this pressure washer nozzle size chart to match nozzle tips to PSI and LPM, compare common sizes, and choose a suitable nozzle for your pressure washer setup."
-  />
-  <script type="application/ld+json">
-    {JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "WebPage",
-      name: "Pressure Washer Nozzle Size Chart",
-      url: "https://www.pressurecal.com/nozzle-size-chart",
-      description:
-        "Pressure washer nozzle size chart for matching nozzle tips to PSI and LPM, comparing common sizes, and choosing a suitable nozzle for your pressure washer setup.",
-    })}
-  </script>
-</Helmet>
+        <title>Pressure Washer Nozzle Size Chart | PSI, LPM, BAR & GPM | PressureCal</title>
+        <meta
+          name="description"
+          content="Use this pressure washer nozzle size chart to match nozzle tips to PSI and LPM, compare common sizes, and choose a suitable nozzle for your pressure washer setup."
+        />
+        <link
+          rel="canonical"
+          href="https://www.pressurecal.com/nozzle-size-chart"
+        />
+        <meta
+          property="og:title"
+          content="Pressure Washer Nozzle Size Chart | PSI, LPM, BAR & GPM | PressureCal"
+        />
+        <meta
+          property="og:description"
+          content="Use this pressure washer nozzle size chart to match nozzle tips to PSI and LPM, compare common sizes, and choose a suitable nozzle for your pressure washer setup."
+        />
+        <meta
+          property="og:url"
+          content="https://www.pressurecal.com/nozzle-size-chart"
+        />
+        <meta property="og:type" content="website" />
+        <meta
+          name="twitter:title"
+          content="Pressure Washer Nozzle Size Chart | PSI, LPM, BAR & GPM | PressureCal"
+        />
+        <meta
+          name="twitter:description"
+          content="Use this pressure washer nozzle size chart to match nozzle tips to PSI and LPM, compare common sizes, and choose a suitable nozzle for your pressure washer setup."
+        />
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            name: "Pressure Washer Nozzle Size Chart",
+            url: "https://www.pressurecal.com/nozzle-size-chart",
+            description:
+              "Pressure washer nozzle size chart for matching nozzle tips to PSI and LPM, comparing common sizes, and choosing a suitable nozzle for your pressure washer setup.",
+          })}
+        </script>
+      </Helmet>
 
       <PressureCalLayout>
         <main className="-mx-4 -my-8 bg-slate-100 print:bg-white sm:-my-10">
-          <section className="border-b border-slate-200 bg-white print:hidden">
-            <div className="mx-auto max-w-7xl px-4 py-10 md:px-6 md:py-12">
-              <div className="max-w-4xl">
-                <div className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
-                  PressureCal Quick Reference
-                </div>
-
-                <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-900 md:text-5xl">
-  Pressure Washer Nozzle Size Chart
-</h1>
-
-<p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">
-  Use this pressure washer nozzle size chart to match nozzle tips to PSI and LPM first, compare common sizes, and move into the live calculator when you need a more exact answer.
-</p>
-
-                <div className="mt-6 flex flex-wrap gap-3">
-                  <Link
-                    to="/nozzle-size-calculator"
-                    className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
-                  >
-                    Open Nozzle Calculator
-                  </Link>
-                  <a
-                    href="#standard-chart"
-                    className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                  >
-                    Jump to Chart
-                  </a>
-                  <button
-                    type="button"
-                    onClick={handlePrint}
-                    className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                  >
-                    Print / Save PDF
-                  </button>
-                </div>
-
-                {selectedCell && (
-                  <div className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4 text-sm text-blue-900">
-                    Highlighted from your link:{" "}
-                    <strong>{selectedCell.pressureBar} BAR</strong> and{" "}
-                    <strong>{formatRoundedLpm(selectedCell.flowLpm)} LPM</strong>.
+          <section className="px-4 py-8 md:px-6 md:py-10 print:hidden">
+            <div className="mx-auto max-w-5xl">
+              <div className="rounded-3xl border border-slate-300 bg-white p-6 shadow-sm md:p-8">
+                <div className="max-w-4xl">
+                  <div className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+                    Nozzle Size Chart
                   </div>
-                )}
+
+                  <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-900 md:text-5xl">
+                    Pressure Washer Nozzle Size Chart
+                  </h1>
+
+                  <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">
+                    Use this pressure washer nozzle size chart to match nozzle tips to PSI and LPM first, compare common sizes, and move into the live calculator when you need a more exact answer.
+                  </p>
+
+                  <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-500">
+                    Built for fast field reference, with PSI and LPM first and BAR and GPM still visible when you need to cross-check mixed-spec equipment.
+                  </p>
+
+                  <div className="mt-6 flex flex-wrap gap-3">
+                    <Link
+                      to="/nozzle-size-calculator"
+                      className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+                    >
+                      Open Nozzle Calculator
+                    </Link>
+                    <a
+                      href="#standard-chart"
+                      className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                    >
+                      Jump to Chart
+                    </a>
+                    <button
+                      type="button"
+                      onClick={handlePrint}
+                      className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                    >
+                      Print / Save PDF
+                    </button>
+                  </div>
+
+                  {selectedCell && (
+                    <div className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4 text-sm text-blue-900">
+                      Highlighted from your link:{" "}
+                      <strong>{selectedCell.pressureBar} BAR</strong> and{" "}
+                      <strong>{formatRoundedLpm(selectedCell.flowLpm)} LPM</strong>.
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </section>
 
-          <div className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-10 print:max-w-none print:px-0 print:py-0">
+          <div className="mx-auto max-w-[1320px] px-4 pb-8 md:px-6 md:pb-10 print:max-w-none print:px-0 print:py-0">
             <div className="grid gap-6 lg:grid-cols-[1.35fr_0.9fr] print:hidden">
               <TechnicalNotesPanel />
               <ExamplePanel />
@@ -1240,7 +1192,7 @@ export default function NozzleSizeChartPage() {
 
             <div id="standard-chart" className="mt-8 print:mt-0">
               <ReferenceTable
-                title="Standard Pressure Washer Nozzle Reference Table"
+                title="Standard pressure washer nozzle reference table"
                 subtitle="Quick reference chart for standard single-nozzle pressure washer setups from 70 BAR to 350 BAR, with pressure shown as PSI (BAR) and flow shown as LPM (GPM)."
                 flowHeaders={flowHeaders}
                 rows={standardNozzleChart}
@@ -1259,7 +1211,7 @@ export default function NozzleSizeChartPage() {
 
             <div id="high-chart" className="mt-8 print:mt-6">
               <ReferenceTable
-                title="High Pressure / Industrial Nozzle Reference Table"
+                title="High pressure / industrial nozzle reference table"
                 subtitle="Quick reference chart for higher-pressure single-nozzle setups from 360 BAR to 500 BAR, with pressure shown as PSI (BAR) and flow shown as LPM (GPM)."
                 flowHeaders={flowHeaders}
                 rows={highPressureNozzleChart}
@@ -1319,4 +1271,3 @@ export default function NozzleSizeChartPage() {
     </>
   );
 }
-
