@@ -1,8 +1,7 @@
 import { Helmet } from "react-helmet-async";
-import { Link } from "react-router-dom";
 import BackToTopButton from "../components/BackToTopButton";
 import PressureCalLayout from "../components/PressureCalLayout";
-import TargetPressureNozzleCalculator from "../components/TargetPressureNozzleCalculator";
+import TargetPressureNozzleCalculator from "./TargetPressureNozzleCalculator";
 
 export default function TargetPressureNozzleCalculatorPage() {
   return (
@@ -40,18 +39,6 @@ export default function TargetPressureNozzleCalculatorPage() {
           name="twitter:description"
           content="Enter your pump flow and target pressure to find the nozzle size that best matches your setup. Useful for working backwards from your target PSI before changing nozzle size."
         />
-        <script type="application/ld+json">
-          {JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "WebApplication",
-            name: "Target Pressure Nozzle Calculator",
-            url: "https://www.pressurecal.com/target-pressure-nozzle-calculator",
-            applicationCategory: "Calculator",
-            operatingSystem: "Web",
-            description:
-              "Enter your pump flow and target pressure to find the nozzle size that best matches your setup. Useful for working backwards from your target PSI before changing nozzle size.",
-          })}
-        </script>
       </Helmet>
 
       <PressureCalLayout>
@@ -171,46 +158,6 @@ export default function TargetPressureNozzleCalculatorPage() {
                     behaviour, move into the related PressureCal tools below.
                   </p>
                 </div>
-              </div>
-            </section>
-
-            <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
-              <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-                Related tools
-              </h2>
-
-              <p className="mt-4 text-sm leading-7 text-slate-600">
-                Need more than a target-pressure answer? Move into the live tools:
-              </p>
-
-              <div className="mt-5 flex flex-wrap gap-3">
-                <Link
-                  to="/nozzle-size-calculator"
-                  className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
-                >
-                  Nozzle Size Calculator
-                </Link>
-
-                <Link
-                  to="/hose-pressure-loss-calculator"
-                  className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                >
-                  Hose Pressure Loss Calculator
-                </Link>
-
-                <Link
-                  to="/nozzle-size-chart"
-                  className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                >
-                  Nozzle Size Chart
-                </Link>
-
-                <Link
-                  to="/calculator"
-                  className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                >
-                  Full Setup Calculator
-                </Link>
               </div>
             </section>
           </div>
