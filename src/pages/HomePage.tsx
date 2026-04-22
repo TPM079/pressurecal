@@ -412,6 +412,71 @@ export default function HomePage() {
     el.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  const homepageStructuredData = useMemo(
+    () => ({
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://www.pressurecal.com/#organization",
+          name: "PressureCal",
+          url: "https://www.pressurecal.com/",
+          description:
+            "PressureCal is a pressure washer calculator and setup modelling tool for nozzle sizing, hose loss, at-gun pressure, flow, and full setup checks.",
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://www.pressurecal.com/#website",
+          url: "https://www.pressurecal.com/",
+          name: "PressureCal",
+          description:
+            "PressureCal is a pressure washer calculator and setup modelling tool for nozzle sizing, hose loss, at-gun pressure, flow, and full setup checks.",
+          publisher: {
+            "@id": "https://www.pressurecal.com/#organization",
+          },
+        },
+        {
+          "@type": "WebPage",
+          "@id": "https://www.pressurecal.com/#webpage",
+          url: "https://www.pressurecal.com/",
+          name: "Pressure Washer Calculator | Nozzle Size, Hose Loss & At-Gun Pressure | PressureCal",
+          description:
+            "Check what your pressure washer setup is really doing at the gun with nozzle sizing, hose loss, at-gun pressure, flow, and full setup checks.",
+          isPartOf: {
+            "@id": "https://www.pressurecal.com/#website",
+          },
+          about: {
+            "@id": "https://www.pressurecal.com/#organization",
+          },
+          mainEntity: {
+            "@id": "https://www.pressurecal.com/#webapplication",
+          },
+        },
+        {
+          "@type": "WebApplication",
+          "@id": "https://www.pressurecal.com/#webapplication",
+          name: "PressureCal",
+          url: "https://www.pressurecal.com/",
+          applicationCategory: "EngineeringApplication",
+          operatingSystem: "Web",
+          isAccessibleForFree: true,
+          description:
+            "PressureCal is a pressure washer calculator for nozzle sizing, hose pressure loss, PSI and LPM conversions, at-gun pressure, flow, and bypass behaviour.",
+          publisher: {
+            "@id": "https://www.pressurecal.com/#organization",
+          },
+          offers: {
+            "@type": "Offer",
+            price: "0",
+            priceCurrency: "AUD",
+            availability: "https://schema.org/InStock",
+          },
+        },
+      ],
+    }),
+    []
+  );
+
   async function copySetupLink() {
     trackEvent("copy_setup_link_clicked", {
       page: "home",
@@ -465,16 +530,7 @@ export default function HomePage() {
     content="Check what your pressure washer setup is really doing at the gun with nozzle sizing, hose loss, at-gun pressure, flow, and full setup checks."
   />
   <script type="application/ld+json">
-    {JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      name: "PressureCal",
-      url: "https://www.pressurecal.com/",
-      applicationCategory: "EngineeringApplication",
-      operatingSystem: "Web",
-      description:
-        "PressureCal is a pressure washer calculator for nozzle sizing, hose pressure loss, PSI and LPM conversions, at-gun pressure, flow, and bypass behaviour.",
-    })}
+    {JSON.stringify(homepageStructuredData)}
   </script>
 </Helmet>
 
