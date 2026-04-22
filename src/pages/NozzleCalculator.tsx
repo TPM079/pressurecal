@@ -8,6 +8,13 @@ import { roundTipCodeToFive } from "../pressurecal";
 type PressureUnit = "psi" | "bar";
 type FlowUnit = "gpm" | "lpm";
 
+const SITE_URL = "https://www.pressurecal.com";
+const PAGE_URL = `${SITE_URL}/nozzle-size-calculator`;
+const PAGE_TITLE =
+  "Pressure Washer Nozzle Size Calculator | Match PSI, LPM & Tip Code | PressureCal";
+const PAGE_DESCRIPTION =
+  "Calculate the right pressure washer nozzle size from pump pressure and flow, then check the matching nozzle / tip code before you fit the wrong nozzle to the machine.";
+
 const PSI_PER_BAR = 14.5037738;
 const LPM_PER_GPM = 3.785411784;
 
@@ -19,10 +26,34 @@ const DEFAULTS = {
 };
 
 const commonSetupPresets = [
-  { label: "4000 PSI / 15 LPM", pressure: 4000, pressureUnit: "psi" as PressureUnit, flow: 15, flowUnit: "lpm" as FlowUnit },
-  { label: "3000 PSI / 21 LPM", pressure: 3000, pressureUnit: "psi" as PressureUnit, flow: 21, flowUnit: "lpm" as FlowUnit },
-  { label: "200 BAR / 15 LPM", pressure: 200, pressureUnit: "bar" as PressureUnit, flow: 15, flowUnit: "lpm" as FlowUnit },
-  { label: "250 BAR / 21 LPM", pressure: 250, pressureUnit: "bar" as PressureUnit, flow: 21, flowUnit: "lpm" as FlowUnit },
+  {
+    label: "4000 PSI / 15 LPM",
+    pressure: 4000,
+    pressureUnit: "psi" as PressureUnit,
+    flow: 15,
+    flowUnit: "lpm" as FlowUnit,
+  },
+  {
+    label: "3000 PSI / 21 LPM",
+    pressure: 3000,
+    pressureUnit: "psi" as PressureUnit,
+    flow: 21,
+    flowUnit: "lpm" as FlowUnit,
+  },
+  {
+    label: "200 BAR / 15 LPM",
+    pressure: 200,
+    pressureUnit: "bar" as PressureUnit,
+    flow: 15,
+    flowUnit: "lpm" as FlowUnit,
+  },
+  {
+    label: "250 BAR / 21 LPM",
+    pressure: 250,
+    pressureUnit: "bar" as PressureUnit,
+    flow: 21,
+    flowUnit: "lpm" as FlowUnit,
+  },
 ];
 
 function fmt(n: number, dp = 2) {
@@ -52,7 +83,7 @@ function orificeDiameterMmFromFlowAndPressure(
   flowLpm: number,
   pressurePsi: number,
   cd = 0.62,
-  rho = 1000,
+  rho = 1000
 ) {
   if (!(pressurePsi > 0) || !(flowLpm > 0) || !(cd > 0)) return 0;
 
@@ -222,7 +253,13 @@ function CalculatorCore({
         </section>
       )}
 
-      <section className={embedded ? "rounded-3xl border border-slate-200 bg-white p-6 shadow-sm" : "rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8"}>
+      <section
+        className={
+          embedded
+            ? "rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+            : "rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8"
+        }
+      >
         <div className="grid gap-8 lg:grid-cols-[1.02fr_0.98fr]">
           <div className="space-y-6">
             <div>
@@ -575,15 +612,36 @@ export default function NozzleCalculator({ embedded = false }: NozzleCalculatorP
   const flowLpm = useMemo(() => flowGpm * LPM_PER_GPM, [flowGpm]);
   const gpmAt4000 = useMemo(
     () => gpmAt4000FromFlowAtPressure(flowGpm, pressurePsi),
-    [flowGpm, pressurePsi],
+    [flowGpm, pressurePsi]
   );
   const tip = useMemo(() => tipFromGpmAt4000(gpmAt4000), [gpmAt4000]);
   const orificeMm = useMemo(
     () => orificeDiameterMmFromFlowAndPressure(flowLpm, pressurePsi),
-    [flowLpm, pressurePsi],
+    [flowLpm, pressurePsi]
   );
   const orificeIn = useMemo(() => orificeMm / 25.4, [orificeMm]);
   const tipFlowLabel = useMemo(() => flowLabel(gpmAt4000), [gpmAt4000]);
+
+  const structuredData = useMemo(
+    () => ({
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "@id": `${PAGE_URL}#webapplication`,
+      name: "Pressure Washer Nozzle Size Calculator",
+      url: PAGE_URL,
+      applicationCategory: "Calculator",
+      operatingSystem: "Web",
+      isAccessibleForFree: true,
+      description: PAGE_DESCRIPTION,
+      publisher: {
+        "@type": "Organization",
+        "@id": `${SITE_URL}/#organization`,
+        name: "PressureCal",
+        url: `${SITE_URL}/`,
+      },
+    }),
+    []
+  );
 
   function resetAll() {
     setPressure(DEFAULTS.pressure);
@@ -605,8 +663,12 @@ export default function NozzleCalculator({ embedded = false }: NozzleCalculatorP
 
     setPressureUnit(nextPressureUnit);
     setFlowUnit(nextFlowUnit);
-    setPressure(Number(fromPsi(currentPressurePsi, nextPressureUnit).toFixed(nextPressureUnit === "psi" ? 0 : 1)));
-    setFlow(Number(fromGpm(currentFlowGpm, nextFlowUnit).toFixed(nextFlowUnit === "gpm" ? 2 : 1)));
+    setPressure(
+      Number(fromPsi(currentPressurePsi, nextPressureUnit).toFixed(nextPressureUnit === "psi" ? 0 : 1))
+    );
+    setFlow(
+      Number(fromGpm(currentFlowGpm, nextFlowUnit).toFixed(nextFlowUnit === "gpm" ? 2 : 1))
+    );
     setCopyMessage("");
   }
 
@@ -670,44 +732,17 @@ export default function NozzleCalculator({ embedded = false }: NozzleCalculatorP
   return (
     <>
       <Helmet>
-        <title>Pressure Washer Nozzle Size Calculator | Match PSI, LPM & Tip Code | PressureCal</title>
-        <meta
-          name="description"
-          content="Calculate the right pressure washer nozzle size from pump pressure and flow, then check the matching nozzle / tip code before you fit the wrong nozzle to the machine."
-        />
-        <link rel="canonical" href="https://www.pressurecal.com/nozzle-size-calculator" />
-        <meta
-          property="og:title"
-          content="Pressure Washer Nozzle Size Calculator | Match PSI, LPM & Tip Code | PressureCal"
-        />
-        <meta
-          property="og:description"
-          content="Calculate the right pressure washer nozzle size from pump pressure and flow, then check the matching nozzle / tip code before you fit the wrong nozzle to the machine."
-        />
-        <meta
-          property="og:url"
-          content="https://www.pressurecal.com/nozzle-size-calculator"
-        />
+        <title>{PAGE_TITLE}</title>
+        <meta name="description" content={PAGE_DESCRIPTION} />
+        <link rel="canonical" href={PAGE_URL} />
+        <meta property="og:title" content={PAGE_TITLE} />
+        <meta property="og:description" content={PAGE_DESCRIPTION} />
+        <meta property="og:url" content={PAGE_URL} />
         <meta property="og:type" content="website" />
-        <meta
-          name="twitter:title"
-          content="Pressure Washer Nozzle Size Calculator | Match PSI, LPM & Tip Code | PressureCal"
-        />
-        <meta
-          name="twitter:description"
-          content="Calculate the right pressure washer nozzle size from pump pressure and flow, then check the matching nozzle / tip code before you fit the wrong nozzle to the machine."
-        />
+        <meta name="twitter:title" content={PAGE_TITLE} />
+        <meta name="twitter:description" content={PAGE_DESCRIPTION} />
         <script type="application/ld+json">
-          {JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "WebApplication",
-            name: "Pressure Washer Nozzle Size Calculator",
-            url: "https://www.pressurecal.com/nozzle-size-calculator",
-            applicationCategory: "Calculator",
-            operatingSystem: "Web",
-            description:
-              "Calculate the right pressure washer nozzle size from pump pressure and flow, then check the matching nozzle / tip code before you fit the wrong nozzle to the machine.",
-          })}
+          {JSON.stringify(structuredData)}
         </script>
       </Helmet>
 
