@@ -113,7 +113,7 @@ export default function PressureCalLayout({
 <img
   src="/pressurecal-logo.svg"
   alt="PressureCal"
-  className="h-12 w-auto sm:h-14"
+  className="block w-[240px] h-auto shrink-0 sm:w-[280px] lg:w-[310px]"
 />
           </Link>
 
