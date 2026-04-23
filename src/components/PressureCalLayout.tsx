@@ -2,7 +2,7 @@ import { type ReactNode, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { supabase } from "../lib/supabase-browser";
 import FeedbackWidget from "./FeedbackWidget";
-import pressureCalPrimaryLogo from "../assets/PressureCal_primary_logo.png";
+import pressureCalPrimaryLogo from "../assets/PressureCal_primary_logo.svg";
 
 type PressureCalLayoutProps = {
   children: ReactNode;
