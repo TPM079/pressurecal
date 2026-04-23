@@ -99,7 +99,7 @@ export default function PressureCalLayout({
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3"
           <Link
             to="/"
             className="inline-flex items-center"
@@ -111,9 +111,9 @@ export default function PressureCalLayout({
             }}
           >
 <img
-  src="/pressurecal-logo.svg"
+  src="/pressurecal-logo.png"
   alt="PressureCal"
-  className="block w-[240px] h-auto shrink-0 sm:w-[280px] lg:w-[310px]"
+  className="block w-[220px] h-auto shrink-0 sm:w-[250px] lg:w-[270px]"
 />
           </Link>
 
