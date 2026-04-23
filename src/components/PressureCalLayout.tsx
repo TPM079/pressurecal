@@ -110,10 +110,10 @@ export default function PressureCalLayout({
             }}
           >
             <img
-              src="/pressurecal-logo.png"
-              alt="PressureCal"
-              className="block w-[220px] h-auto shrink-0 sm:w-[250px] lg:w-[270px]"
-            />
+  src="/pressurecal-logo-primary.svg"
+  alt="PressureCal"
+  className="h-12 w-auto sm:h-14"
+/>
           </Link>
 
           <nav className="hidden items-center gap-5 md:flex">
