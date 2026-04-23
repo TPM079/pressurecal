@@ -3,7 +3,6 @@ import { Link, useLocation } from "react-router-dom";
 import { supabase } from "../lib/supabase-browser";
 import FeedbackWidget from "./FeedbackWidget";
 
-
 type PressureCalLayoutProps = {
   children: ReactNode;
   hideFeedbackWidget?: boolean;
@@ -99,7 +98,7 @@ export default function PressureCalLayout({
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3"
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
           <Link
             to="/"
             className="inline-flex items-center"
@@ -110,11 +109,11 @@ export default function PressureCalLayout({
               }
             }}
           >
-<img
-  src="/pressurecal-logo.png"
-  alt="PressureCal"
-  className="block w-[220px] h-auto shrink-0 sm:w-[250px] lg:w-[270px]"
-/>
+            <img
+              src="/pressurecal-logo.png"
+              alt="PressureCal"
+              className="block w-[220px] h-auto shrink-0 sm:w-[250px] lg:w-[270px]"
+            />
           </Link>
 
           <nav className="hidden items-center gap-5 md:flex">
@@ -126,7 +125,10 @@ export default function PressureCalLayout({
               <button
                 type="button"
                 onClick={() => setToolsOpen((current) => !current)}
-                className={["inline-flex items-center gap-1 text-sm font-medium transition", toolsOpen ? "text-slate-950" : "text-slate-600 hover:text-slate-900"].join(" ")}
+                className={[
+                  "inline-flex items-center gap-1 text-sm font-medium transition",
+                  toolsOpen ? "text-slate-950" : "text-slate-600 hover:text-slate-900",
+                ].join(" ")}
                 aria-expanded={toolsOpen}
                 aria-haspopup="menu"
               >
