@@ -108,6 +108,9 @@ export default function UpdatePasswordPage() {
                     placeholder="Enter your new password"
                     className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none ring-0 transition focus:border-slate-950"
                   />
+                  <p className="mt-2 text-sm text-slate-500">
+                    At least 8 characters. Longer is better.
+                  </p>
                 </div>
 
                 <div>
