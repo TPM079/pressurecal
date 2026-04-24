@@ -1,5 +1,5 @@
 import { Helmet } from "react-helmet-async";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import PressureCalLayout from "../components/PressureCalLayout";
 import BackToTopButton from "../components/BackToTopButton";
@@ -10,8 +10,14 @@ import {
   savePendingCheckout,
   type CheckoutPlan,
 } from "../lib/pendingCheckout";
+import {
+  sendPasswordReset,
+  signInWithEmailPassword,
+  signUpWithEmailPassword,
+} from "../lib/supabasePasswordAuth";
 
 type ViewState = "loading" | "signed_out" | "signed_in";
+type AuthMode = "login" | "signup" | "forgot";
 
 function withTimeout<T>(
   promise: Promise<T>,
@@ -49,7 +55,10 @@ function getRequestedNextPathFromUrl() {
 }
 
 export default function AccountPage() {
+  const [authMode, setAuthMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [viewState, setViewState] = useState<ViewState>("loading");
   const [currentEmail, setCurrentEmail] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -71,14 +80,6 @@ export default function AccountPage() {
     setPendingPlan(pending?.plan ?? requestedPlan ?? null);
     setPendingResumePath(pending?.resumePath ?? requestedNext ?? null);
   }, []);
-
-  const redirectTo = useMemo(() => {
-    if (pendingResumePath) {
-      return `${window.location.origin}${pendingResumePath}`;
-    }
-
-    return `${window.location.origin}/account`;
-  }, [pendingResumePath]);
 
   useEffect(() => {
     let mounted = true;
@@ -140,7 +141,7 @@ export default function AccountPage() {
     };
   }, []);
 
-  async function sendMagicLink(event: React.FormEvent<HTMLFormElement>) {
+  async function handleAuthSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
     setMessage(null);
@@ -153,35 +154,77 @@ export default function AccountPage() {
         throw new Error("Enter your email address first.");
       }
 
+      if (authMode === "login") {
+        if (!password) {
+          throw new Error("Enter your password.");
+        }
+
+        const { error } = await withTimeout(
+          signInWithEmailPassword(cleanedEmail, password),
+          8000,
+          "Signing in"
+        );
+
+        if (error) {
+          throw error;
+        }
+
+        setPassword("");
+        return;
+      }
+
+      if (authMode === "signup") {
+        if (!password) {
+          throw new Error("Enter a password.");
+        }
+
+        if (password.length < 8) {
+          throw new Error("Password must be at least 8 characters.");
+        }
+
+        if (password !== confirmPassword) {
+          throw new Error("Passwords do not match.");
+        }
+
+        const { error } = await withTimeout(
+          signUpWithEmailPassword(cleanedEmail, password),
+          8000,
+          "Creating account"
+        );
+
+        if (error) {
+          throw error;
+        }
+
+        setMessage(
+          pendingPlan
+            ? `Account created. Check your email if confirmation is required, then sign in with your password to continue your ${pendingPlan} checkout.`
+            : "Account created. Check your email if confirmation is required, then sign in with your password."
+        );
+        setAuthMode("login");
+        setPassword("");
+        setConfirmPassword("");
+        return;
+      }
+
       const { error } = await withTimeout(
-        supabase.auth.signInWithOtp({
-          email: cleanedEmail,
-          options: {
-            emailRedirectTo: redirectTo,
-          },
-        }),
+        sendPasswordReset(cleanedEmail),
         8000,
-        "Sending magic link"
+        "Sending reset email"
       );
 
       if (error) {
         throw error;
       }
 
-      if (pendingPlan) {
-        setMessage(
-          `Magic link sent. Check your email and click the link — your ${pendingPlan} checkout will continue automatically when you come back.`
-        );
-      } else {
-        setMessage(
-          "Magic link sent. Check your email, then come back here after you click it."
-        );
-      }
+      setMessage("Password reset email sent. Check your inbox.");
+      setPassword("");
+      setConfirmPassword("");
     } catch (error) {
       const text =
         error instanceof Error
           ? error.message
-          : "Unable to send the sign-in link right now.";
+          : "Unable to complete that request right now.";
       setErrorMessage(text);
     } finally {
       setBusy(false);
@@ -224,6 +267,14 @@ export default function AccountPage() {
     setErrorMessage(null);
   }
 
+  function switchMode(mode: AuthMode) {
+    setAuthMode(mode);
+    setMessage(null);
+    setErrorMessage(null);
+    setPassword("");
+    setConfirmPassword("");
+  }
+
   const showHelpBox = viewState === "signed_out" || Boolean(errorMessage);
 
   return (
@@ -232,7 +283,7 @@ export default function AccountPage() {
         <title>Account | PressureCal</title>
         <meta
           name="description"
-          content="Sign in to PressureCal with a secure magic link so Pro subscriptions can be linked to your account."
+          content="Log in to PressureCal with your email and password so Pro subscriptions can be linked to your account."
         />
       </Helmet>
 
@@ -249,8 +300,8 @@ export default function AccountPage() {
               </h1>
 
               <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
-                Use a secure magic link sent to your email. Once you are signed in,
-                your Pro subscription can be linked to your account properly.
+                Use your email and password to sign in. Once you are signed in,
+                your Pro subscription and saved setups stay connected to your account.
               </p>
 
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
@@ -309,36 +360,134 @@ export default function AccountPage() {
             {viewState === "signed_out" ? (
               <div>
                 <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-                  Sign in with email
+                  {authMode === "login"
+                    ? "Log in with email and password"
+                    : authMode === "signup"
+                    ? "Create your account"
+                    : "Reset your password"}
                 </h2>
+
                 <p className="mt-3 max-w-2xl text-slate-600">
-                  Enter your email and PressureCal will send you a magic link.
-                  Click the link in your inbox to finish signing in.
+                  {authMode === "login"
+                    ? "Enter your email and password to sign in."
+                    : authMode === "signup"
+                    ? "Create a PressureCal account with your email and a password."
+                    : "Enter your email and PressureCal will send you a reset link."}
                 </p>
 
-                <form onSubmit={sendMagicLink} className="mt-8">
-                  <label
-                    className="block text-sm font-medium text-slate-700"
-                    htmlFor="email"
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={() => switchMode("login")}
+                    className={`rounded-2xl px-4 py-2 text-sm font-semibold transition ${
+                      authMode === "login"
+                        ? "bg-slate-950 text-white"
+                        : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                    }`}
                   >
-                    Email address
-                  </label>
-                  <input
-                    id="email"
-                    type="email"
-                    autoComplete="email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    placeholder="you@example.com"
-                    className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none ring-0 transition focus:border-slate-950"
-                  />
+                    Log In
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => switchMode("signup")}
+                    className={`rounded-2xl px-4 py-2 text-sm font-semibold transition ${
+                      authMode === "signup"
+                        ? "bg-slate-950 text-white"
+                        : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    Create Account
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => switchMode("forgot")}
+                    className={`rounded-2xl px-4 py-2 text-sm font-semibold transition ${
+                      authMode === "forgot"
+                        ? "bg-slate-950 text-white"
+                        : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    Forgot Password
+                  </button>
+                </div>
+
+                <form onSubmit={handleAuthSubmit} className="mt-8 space-y-4">
+                  <div>
+                    <label
+                      className="block text-sm font-medium text-slate-700"
+                      htmlFor="email"
+                    >
+                      Email address
+                    </label>
+                    <input
+                      id="email"
+                      type="email"
+                      autoComplete="email"
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
+                      placeholder="you@example.com"
+                      className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none ring-0 transition focus:border-slate-950"
+                    />
+                  </div>
+
+                  {authMode !== "forgot" ? (
+                    <div>
+                      <label
+                        className="block text-sm font-medium text-slate-700"
+                        htmlFor="password"
+                      >
+                        Password
+                      </label>
+                      <input
+                        id="password"
+                        type="password"
+                        autoComplete={authMode === "signup" ? "new-password" : "current-password"}
+                        value={password}
+                        onChange={(event) => setPassword(event.target.value)}
+                        placeholder="Enter your password"
+                        className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none ring-0 transition focus:border-slate-950"
+                      />
+                    </div>
+                  ) : null}
+
+                  {authMode === "signup" ? (
+                    <div>
+                      <label
+                        className="block text-sm font-medium text-slate-700"
+                        htmlFor="confirmPassword"
+                      >
+                        Confirm password
+                      </label>
+                      <input
+                        id="confirmPassword"
+                        type="password"
+                        autoComplete="new-password"
+                        value={confirmPassword}
+                        onChange={(event) => setConfirmPassword(event.target.value)}
+                        placeholder="Confirm your password"
+                        className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none ring-0 transition focus:border-slate-950"
+                      />
+                    </div>
+                  ) : null}
 
                   <button
                     type="submit"
                     disabled={busy}
-                    className="mt-4 inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {busy ? "Sending magic link…" : "Send magic link"}
+                    {busy
+                      ? authMode === "login"
+                        ? "Signing in…"
+                        : authMode === "signup"
+                        ? "Creating account…"
+                        : "Sending reset email…"
+                      : authMode === "login"
+                      ? "Log In"
+                      : authMode === "signup"
+                      ? "Create Account"
+                      : "Send Reset Email"}
                   </button>
                 </form>
               </div>
@@ -397,8 +546,8 @@ export default function AccountPage() {
               <div className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-600">
                 <p className="font-semibold text-slate-950">Need help signing in?</p>
                 <p className="mt-2">
-                  Try requesting a new magic link, and check your spam or promotions folder if it
-                  does not arrive right away.
+                  If you already have an account, use your password. If you do not know it yet,
+                  use Forgot Password to set a new one.
                 </p>
               </div>
             ) : null}

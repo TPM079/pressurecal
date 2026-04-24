@@ -19,6 +19,7 @@ import PressureCalProPage from "./pages/PressureCalProPage";
 import SavedSetupsPage from "./pages/SavedSetupsPage";
 import CompareSetupsPage from "./pages/CompareSetupsPage";
 import AccountPage from "./pages/AccountPage";
+import UpdatePasswordPage from "./pages/UpdatePasswordPage";
 import HomePage from "./pages/HomePage";
 import FullRigCalculatorPage from "./pages/FullRigCalculator";
 import AdminFeedbackPage from "./pages/AdminFeedbackPage";
@@ -106,16 +107,22 @@ export default function App() {
             }
           />
 
-          <Route
-            path="/pro"
-            element={<Navigate to="/pricing" replace />}
-          />
+          <Route path="/pro" element={<Navigate to="/pricing" replace />} />
 
           <Route
             path="/account"
             element={
               <PageTransition>
                 <AccountPage />
+              </PageTransition>
+            }
+          />
+
+          <Route
+            path="/reset-password"
+            element={
+              <PageTransition>
+                <UpdatePasswordPage />
               </PageTransition>
             }
           />
@@ -146,14 +153,16 @@ export default function App() {
               </PageTransition>
             }
           />
-<Route
-  path="/target-pressure-nozzle-calculator"
-  element={
-    <PageTransition>
-      <TargetPressureNozzleCalculatorPage />
-    </PageTransition>
-  }
-/>
+
+          <Route
+            path="/target-pressure-nozzle-calculator"
+            element={
+              <PageTransition>
+                <TargetPressureNozzleCalculatorPage />
+              </PageTransition>
+            }
+          />
+
           <Route
             path="/nozzle-size-chart"
             element={
