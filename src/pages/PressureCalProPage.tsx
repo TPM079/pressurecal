@@ -163,7 +163,7 @@ export default function PressureCalProPage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentEmail, setCurrentEmail] = useState<string | null>(null);
   const [busyPlan, setBusyPlan] = useState<CheckoutPlan | null>(null);
-  const [selectedPlan, setSelectedPlan] = useState<CheckoutPlan | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<CheckoutPlan | null>("monthly");
   const [selectedLocation, setSelectedLocation] = useState<string>("plans");
   const [signInEmail, setSignInEmail] = useState("");
   const [signInBusy, setSignInBusy] = useState(false);
@@ -646,6 +646,14 @@ export default function PressureCalProPage() {
 
   const showCheckoutOverlay = Boolean(transitionMessage);
   const alreadyPro = subscriptionState === "active";
+  const activeCheckoutPlan: CheckoutPlan = selectedPlan ?? "monthly";
+  const activePlanLabel = activeCheckoutPlan === "yearly" ? "Yearly" : "Monthly";
+  const activePlanPrice = activeCheckoutPlan === "yearly" ? "$99.95" : "$9.95";
+  const activePlanPeriod = activeCheckoutPlan === "yearly" ? "/ year" : "/ month";
+  const activePlanSupportingCopy =
+    activeCheckoutPlan === "yearly"
+      ? "Best value — around 27¢/day billed annually."
+      : "Switch to yearly for $99.95/year — around 27¢/day.";
   const billingProvider = getBillingProvider(subscription);
   const subscriptionSettingsLabel =
     billingProvider === "paypal" ? "Manage in PayPal" : "Manage Subscription";
@@ -860,17 +868,18 @@ export default function PressureCalProPage() {
                   </p>
 
                   <div className="mt-6 flex flex-wrap items-end gap-3">
-                    <p className="text-4xl font-bold tracking-tight">$9.95</p>
-                    <p className="pb-1 text-sm text-slate-300">/ month</p>
+                    <p className="text-4xl font-bold tracking-tight">{activePlanPrice}</p>
+                    <p className="pb-1 text-sm text-slate-300">{activePlanPeriod}</p>
                   </div>
 
                   <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <p className="text-sm text-slate-300">or $99 / year</p>
-                    <span className="inline-flex items-center rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-xs font-semibold tracking-wide text-emerald-200">
-                      Best value
-                    </span>
+                    <p className="text-sm text-slate-300">{activePlanSupportingCopy}</p>
+                    {activeCheckoutPlan === "yearly" ? (
+                      <span className="inline-flex items-center rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-xs font-semibold tracking-wide text-emerald-200">
+                        Best value
+                      </span>
+                    ) : null}
                   </div>
-                  <p className="mt-2 text-sm text-slate-200">Around 27¢/day billed annually</p>
 
                   <ul className="mt-8 space-y-3 text-base leading-7 text-slate-100">
                     {proFeatures.map((feature) => (
@@ -878,24 +887,45 @@ export default function PressureCalProPage() {
                     ))}
                   </ul>
 
-                  <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                    <button
-                      type="button"
-                      onClick={() => startCheckout("monthly", "plans")}
-                      disabled={busyPlan !== null || signInBusy || portalBusy}
-                      className="inline-flex items-center justify-center rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {busyPlan === "monthly" ? "Starting…" : "Choose monthly"}
-                    </button>
+                  <div className="mt-8 rounded-2xl border border-white/15 bg-white/5 px-4 py-5 text-sm text-slate-200">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      1. Choose billing
+                    </p>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedPlan("monthly");
+                          setSelectedLocation("plans");
+                          setSignInError(null);
+                          setSignInMessage(null);
+                        }}
+                        className={`inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold transition ${
+                          activeCheckoutPlan === "monthly"
+                            ? "bg-white text-slate-950"
+                            : "border border-white/20 bg-white/5 text-white hover:bg-white/10"
+                        }`}
+                      >
+                        Monthly
+                      </button>
 
-                    <button
-                      type="button"
-                      onClick={() => startCheckout("yearly", "plans")}
-                      disabled={busyPlan !== null || signInBusy || portalBusy}
-                      className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {busyPlan === "yearly" ? "Starting…" : "Choose yearly"}
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedPlan("yearly");
+                          setSelectedLocation("plans");
+                          setSignInError(null);
+                          setSignInMessage(null);
+                        }}
+                        className={`inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold transition ${
+                          activeCheckoutPlan === "yearly"
+                            ? "bg-white text-slate-950"
+                            : "border border-white/20 bg-white/5 text-white hover:bg-white/10"
+                        }`}
+                      >
+                        Yearly <span className="ml-2 text-xs opacity-80">Best value</span>
+                      </button>
+                    </div>
                   </div>
 
                   {authState !== "signed_in" ? (
@@ -904,9 +934,7 @@ export default function PressureCalProPage() {
                       className="mt-6 rounded-2xl border border-white/15 bg-white/5 px-4 py-5 text-sm text-slate-200"
                     >
                       <p className="font-semibold text-white">
-                        {selectedPlan
-                          ? `Continue with ${selectedPlan === "monthly" ? "Monthly" : "Yearly"} Pro`
-                          : "Choose a plan to continue"}
+                        Continue with {activePlanLabel} Pro
                       </p>
                       <p className="mt-2 text-slate-300">
                         Enter your email and we will send you a magic link. After you sign in, checkout will continue automatically.
@@ -928,12 +956,16 @@ export default function PressureCalProPage() {
 
                         <button
                           type="submit"
-                          disabled={signInBusy || !selectedPlan || busyPlan !== null || portalBusy}
+                          disabled={signInBusy || busyPlan !== null || portalBusy}
                           className="mt-4 inline-flex items-center justify-center rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           {signInBusy ? "Sending magic link…" : "Continue with email"}
                         </button>
                       </form>
+
+                      <p className="mt-3 text-xs leading-5 text-slate-400">
+                        Card checkout is processed by Stripe. PayPal checkout is available after sign-in.
+                      </p>
 
                       {signInMessage ? (
                         <div className="mt-4 rounded-2xl border border-green-200 bg-green-50 px-4 py-4 text-sm text-green-900">
@@ -949,47 +981,38 @@ export default function PressureCalProPage() {
                     </div>
                   ) : (
                     <div className="mt-6 rounded-2xl border border-white/15 bg-white/5 px-4 py-5 text-sm text-slate-200">
-                      <p className="font-semibold text-white">Pay with PayPal</p>
-                      <p className="mt-2 text-slate-300">
-                        Prefer PayPal? Choose a monthly or yearly Pro subscription below.
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                        2. Choose payment method
+                      </p>
+                      <p className="mt-2 text-white">
+                        {activePlanLabel} Pro — {activePlanPrice} {activePlanPeriod}
                       </p>
 
-                      <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                        <div>
-                          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                            Monthly
-                          </p>
-                          <PayPalCheckoutSlot
-                            plan="monthly"
-                            location="plans"
-                            busyPlan={busyPlan}
-                            signInBusy={signInBusy}
-                            portalBusy={portalBusy}
-                            startPayPalCheckout={startPayPalCheckout}
-                            handlePayPalApproved={handlePayPalApproved}
-                            handlePayPalError={handlePayPalError}
-                          />
-                        </div>
+                      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                        <button
+                          type="button"
+                          onClick={() => startCheckout(activeCheckoutPlan, "plans")}
+                          disabled={busyPlan !== null || signInBusy || portalBusy}
+                          className="inline-flex min-h-[48px] items-center justify-center rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {busyPlan === activeCheckoutPlan ? "Starting…" : "Pay by card"}
+                        </button>
 
-                        <div>
-                          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                            Yearly
-                          </p>
-                          <PayPalCheckoutSlot
-                            plan="yearly"
-                            location="plans"
-                            busyPlan={busyPlan}
-                            signInBusy={signInBusy}
-                            portalBusy={portalBusy}
-                            startPayPalCheckout={startPayPalCheckout}
-                            handlePayPalApproved={handlePayPalApproved}
-                            handlePayPalError={handlePayPalError}
-                          />
-                        </div>
+                        <PayPalCheckoutSlot
+                          key={activeCheckoutPlan}
+                          plan={activeCheckoutPlan}
+                          location="plans"
+                          busyPlan={busyPlan}
+                          signInBusy={signInBusy}
+                          portalBusy={portalBusy}
+                          startPayPalCheckout={startPayPalCheckout}
+                          handlePayPalApproved={handlePayPalApproved}
+                          handlePayPalError={handlePayPalError}
+                        />
                       </div>
 
                       <p className="mt-4 text-xs leading-5 text-slate-400">
-                        Card checkout is processed by Stripe. PayPal checkout is processed by PayPal.
+                        Card checkout is processed securely by Stripe. PayPal checkout is processed securely by PayPal.
                       </p>
 
                       {signInMessage ? (
@@ -1086,6 +1109,10 @@ function PayPalCheckoutSlot({
   const [buyer, setBuyer] = useState<{ userId: string; email: string } | null>(null);
   const disabled = busyPlan !== null || signInBusy || portalBusy;
 
+  useEffect(() => {
+    setBuyer(null);
+  }, [plan]);
+
   async function preparePayPal() {
     const result = await startPayPalCheckout(plan, location);
     setBuyer(result);
@@ -1099,7 +1126,7 @@ function PayPalCheckoutSlot({
         disabled={disabled}
         className="inline-flex w-full items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        Continue with PayPal
+        Pay with PayPal
       </button>
     );
   }
