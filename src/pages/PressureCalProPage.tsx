@@ -35,8 +35,14 @@ const proFeatures = [
 type AuthState = "loading" | "signed_out" | "signed_in";
 type SubscriptionState = "loading" | "none" | "active" | "non_active";
 
+type BillingProvider = "stripe" | "paypal" | "unknown";
+
 type SubscriptionSummary = {
   status: string | null;
+  provider: string | null;
+  stripe_subscription_id: string | null;
+  paypal_subscription_id: string | null;
+  provider_subscription_id: string | null;
   price_id: string | null;
   plan_interval: string | null;
   current_period_end: string | null;
@@ -103,8 +109,50 @@ function pickBestSubscription(rows: SubscriptionSummary[]): SubscriptionSummary 
     const endA = a.current_period_end ? new Date(a.current_period_end).getTime() : 0;
     const endB = b.current_period_end ? new Date(b.current_period_end).getTime() : 0;
 
-    return endB - endA;
+    if (endA !== endB) {
+      return endB - endA;
+    }
+
+    // If there are two active rows from testing, prefer the PayPal row when dates tie.
+    if (getBillingProvider(a) === "paypal" && getBillingProvider(b) !== "paypal") {
+      return -1;
+    }
+
+    if (getBillingProvider(b) === "paypal" && getBillingProvider(a) !== "paypal") {
+      return 1;
+    }
+
+    return 0;
   })[0];
+}
+
+function getBillingProvider(subscription?: SubscriptionSummary | null): BillingProvider {
+  if (!subscription) {
+    return "unknown";
+  }
+
+  const provider = subscription.provider?.toLowerCase();
+
+  if (provider === "paypal" || subscription.paypal_subscription_id) {
+    return "paypal";
+  }
+
+  if (provider === "stripe" || subscription.stripe_subscription_id || subscription.price_id) {
+    return "stripe";
+  }
+
+  return "unknown";
+}
+
+function formatBillingProvider(provider: BillingProvider) {
+  switch (provider) {
+    case "paypal":
+      return "PayPal";
+    case "stripe":
+      return "Stripe";
+    default:
+      return "Unknown";
+  }
 }
 
 export default function PressureCalProPage() {
@@ -174,7 +222,7 @@ export default function PressureCalProPage() {
 
         const subscriptionRequest = supabase
           .from("subscriptions")
-          .select("status, price_id, plan_interval, current_period_end, cancel_at_period_end")
+          .select("status, provider, stripe_subscription_id, paypal_subscription_id, provider_subscription_id, price_id, plan_interval, current_period_end, cancel_at_period_end")
           .eq("user_id", user.id)
           .then((result) => result as SubscriptionQueryResult);
 
@@ -371,6 +419,22 @@ export default function PressureCalProPage() {
     } finally {
       setPortalBusy(false);
     }
+  }
+
+  function openSubscriptionSettings() {
+    const provider = getBillingProvider(subscription);
+
+    if (provider === "paypal") {
+      setSignInError(null);
+      setTransitionMessage(null);
+      setSignInMessage(
+        "Opening PayPal. Manage or cancel PressureCal Pro under PayPal Automatic Payments."
+      );
+      window.location.href = "https://www.paypal.com/myaccount/autopay/";
+      return;
+    }
+
+    void openCustomerPortal();
   }
 
   function promptInlineSignIn(plan: CheckoutPlan, location: string) {
@@ -582,6 +646,11 @@ export default function PressureCalProPage() {
 
   const showCheckoutOverlay = Boolean(transitionMessage);
   const alreadyPro = subscriptionState === "active";
+  const billingProvider = getBillingProvider(subscription);
+  const subscriptionSettingsLabel =
+    billingProvider === "paypal" ? "Manage in PayPal" : "Manage Subscription";
+  const subscriptionSettingsBusyLabel =
+    billingProvider === "paypal" ? "Opening PayPal…" : "Opening billing…";
 
   return (
     <PressureCalLayout>
@@ -662,11 +731,11 @@ export default function PressureCalProPage() {
               {alreadyPro ? (
                 <button
                   type="button"
-                  onClick={openCustomerPortal}
+                  onClick={openSubscriptionSettings}
                   disabled={portalBusy}
                   className="hidden sm:inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {portalBusy ? "Opening billing…" : "Manage subscription"}
+                  {portalBusy ? subscriptionSettingsBusyLabel : subscriptionSettingsLabel}
                 </button>
               ) : (
                 <Link
@@ -746,6 +815,9 @@ export default function PressureCalProPage() {
                     <p className="mt-2">
                       Status: <span className="font-medium uppercase">{subscription?.status ?? "unknown"}</span>
                     </p>
+                    <p className="mt-1">
+                      Billing provider: <span className="font-medium">{formatBillingProvider(billingProvider)}</span>
+                    </p>
                     {subscription?.plan_interval ? (
                       <p className="mt-1">
                         Billing interval:{" "}
@@ -772,11 +844,11 @@ export default function PressureCalProPage() {
 
                     <button
                       type="button"
-                      onClick={openCustomerPortal}
+                      onClick={openSubscriptionSettings}
                       disabled={portalBusy}
                       className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      {portalBusy ? "Opening billing…" : "Manage Subscription"}
+                      {portalBusy ? subscriptionSettingsBusyLabel : subscriptionSettingsLabel}
                     </button>
                   </div>
                 </>
@@ -962,11 +1034,11 @@ export default function PressureCalProPage() {
             {alreadyPro ? (
               <button
                 type="button"
-                onClick={openCustomerPortal}
+                onClick={openSubscriptionSettings}
                 disabled={portalBusy}
                 className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {portalBusy ? "Opening billing…" : "Manage Subscription"}
+                {portalBusy ? subscriptionSettingsBusyLabel : subscriptionSettingsLabel}
               </button>
             ) : (
               <button
