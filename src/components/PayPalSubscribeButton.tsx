@@ -30,6 +30,7 @@ export default function PayPalSubscribeButton({
   onError,
 }: PayPalSubscribeButtonProps) {
   const [busy, setBusy] = useState(false);
+
   const planId = planIds[plan];
 
   if (!clientId || !planId) {
@@ -48,6 +49,7 @@ export default function PayPalSubscribeButton({
           vault: true,
           intent: "subscription",
           components: "buttons",
+          currency: "AUD",
           disableFunding: "card",
         }}
       >
@@ -59,21 +61,18 @@ export default function PayPalSubscribeButton({
             label: "subscribe",
           }}
           disabled={disabled || busy}
-          forceReRender={[planId, userId, email, disabled, busy]}
           createSubscription={(_, actions) => {
             onStarted?.();
 
+            // Keep this intentionally minimal.
+            // PayPal's official subscription SDK example creates the subscription
+            // with the plan ID only. custom_id safely links the PayPal subscription
+            // back to the Supabase user without forcing buyer email details into
+            // PayPal's approval flow.
             return actions.subscription.create({
               plan_id: planId,
               custom_id: userId,
-              subscriber: {
-                email_address: email,
-              },
-              application_context: {
-                brand_name: "PressureCal",
-                user_action: "SUBSCRIBE_NOW",
-              },
-            } as any);
+            });
           }}
           onApprove={async (data) => {
             const subscriptionID = data.subscriptionID;
