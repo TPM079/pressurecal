@@ -64,20 +64,19 @@ export default function PayPalSubscribeButton({
           createSubscription={(_, actions) => {
             onStarted?.();
 
-            // Keep this intentionally minimal.
-            // PayPal's official subscription SDK example creates the subscription
-            // with the plan ID only. custom_id safely links the PayPal subscription
-            // back to the Supabase user without forcing buyer email details into
-            // PayPal's approval flow.
+            const origin = window.location.origin;
+
             return actions.subscription.create({
-                plan_id: planId,
-                custom_id: userId,
-                application_context: {
-                  brand_name: "PressureCal",
-                  shipping_preference: "NO_SHIPPING",
-                  user_action: "SUBSCRIBE_NOW",
-                },
-              });
+              plan_id: planId,
+              custom_id: userId,
+              application_context: {
+                brand_name: "PressureCal",
+                shipping_preference: "NO_SHIPPING",
+                user_action: "SUBSCRIBE_NOW",
+                return_url: `${origin}/pricing?checkout=success`,
+                cancel_url: `${origin}/pricing?checkout=cancelled`,
+              },
+            });
           }}
           onApprove={async (data) => {
             const subscriptionID = data.subscriptionID;
