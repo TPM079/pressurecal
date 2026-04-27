@@ -70,9 +70,14 @@ export default function PayPalSubscribeButton({
             // back to the Supabase user without forcing buyer email details into
             // PayPal's approval flow.
             return actions.subscription.create({
-              plan_id: planId,
-              custom_id: userId,
-            });
+                plan_id: planId,
+                custom_id: userId,
+                application_context: {
+                  brand_name: "PressureCal",
+                  shipping_preference: "NO_SHIPPING",
+                  user_action: "SUBSCRIBE_NOW",
+                },
+              });
           }}
           onApprove={async (data) => {
             const subscriptionID = data.subscriptionID;
