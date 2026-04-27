@@ -48,6 +48,7 @@ export default function PayPalSubscribeButton({
           vault: true,
           intent: "subscription",
           components: "buttons",
+          disableFunding: "card",
         }}
       >
         <PayPalButtons
