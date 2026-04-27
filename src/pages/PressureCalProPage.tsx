@@ -1,9 +1,10 @@
 import { Helmet } from "react-helmet-async";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import PressureCalLayout from "../components/PressureCalLayout";
 import BackToTopButton from "../components/BackToTopButton";
 import PricingComparisonSectionPressureCal from "../components/PricingComparisonSectionPressureCal";
+import PayPalSubscribeButton from "../components/PayPalSubscribeButton";
 import { trackEvent } from "../lib/analytics";
 import { supabase } from "../lib/supabase-browser";
 import {
@@ -420,7 +421,60 @@ export default function PressureCalProPage() {
     await createCheckoutSession(plan, location, user.id, user.email);
   }
 
-  async function sendMagicLink(event: React.FormEvent<HTMLFormElement>) {
+  async function startPayPalCheckout(plan: CheckoutPlan, location: string) {
+    trackEvent(
+      plan === "monthly" ? "pricing_choose_monthly_clicked" : "pricing_choose_yearly_clicked",
+      {
+        page: "pricing",
+        location: `${location}_paypal`,
+      }
+    );
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    const user = session?.user;
+
+    if (!user?.id || !user?.email) {
+      promptInlineSignIn(plan, location);
+      setSignInMessage("Sign in first, then choose PayPal checkout again.");
+      return null;
+    }
+
+    if (subscriptionState === "active") {
+      setSignInMessage("You already have PressureCal Pro.");
+      return null;
+    }
+
+    setSelectedPlan(plan);
+    setSelectedLocation(location);
+    setSignInMessage(null);
+    setSignInError(null);
+
+    return {
+      userId: user.id,
+      email: user.email,
+    };
+  }
+
+  function handlePayPalApproved() {
+    clearPendingCheckout();
+    setTransitionMessage(null);
+    setSignInError(null);
+    setSignInMessage("PayPal subscription confirmed. Refreshing your Pro access…");
+
+    window.setTimeout(() => {
+      window.location.href = "/pricing?checkout=success";
+    }, 1200);
+  }
+
+  function handlePayPalError(message: string) {
+    setTransitionMessage(null);
+    setSignInError(message);
+  }
+
+  async function sendMagicLink(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSignInBusy(true);
     setSignInMessage(null);
@@ -822,8 +876,61 @@ export default function PressureCalProPage() {
                       ) : null}
                     </div>
                   ) : (
-                    <div className="mt-4 rounded-2xl border border-white/15 bg-white/5 px-4 py-4 text-sm text-slate-200">
-                      You are signed in, so choosing a plan now will take you straight to secure checkout.
+                    <div className="mt-6 rounded-2xl border border-white/15 bg-white/5 px-4 py-5 text-sm text-slate-200">
+                      <p className="font-semibold text-white">Pay with PayPal</p>
+                      <p className="mt-2 text-slate-300">
+                        Prefer PayPal? Choose a monthly or yearly Pro subscription below.
+                      </p>
+
+                      <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                        <div>
+                          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                            Monthly
+                          </p>
+                          <PayPalCheckoutSlot
+                            plan="monthly"
+                            location="plans"
+                            busyPlan={busyPlan}
+                            signInBusy={signInBusy}
+                            portalBusy={portalBusy}
+                            startPayPalCheckout={startPayPalCheckout}
+                            handlePayPalApproved={handlePayPalApproved}
+                            handlePayPalError={handlePayPalError}
+                          />
+                        </div>
+
+                        <div>
+                          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                            Yearly
+                          </p>
+                          <PayPalCheckoutSlot
+                            plan="yearly"
+                            location="plans"
+                            busyPlan={busyPlan}
+                            signInBusy={signInBusy}
+                            portalBusy={portalBusy}
+                            startPayPalCheckout={startPayPalCheckout}
+                            handlePayPalApproved={handlePayPalApproved}
+                            handlePayPalError={handlePayPalError}
+                          />
+                        </div>
+                      </div>
+
+                      <p className="mt-4 text-xs leading-5 text-slate-400">
+                        Card checkout is processed by Stripe. PayPal checkout is processed by PayPal.
+                      </p>
+
+                      {signInMessage ? (
+                        <div className="mt-4 rounded-2xl border border-green-200 bg-green-50 px-4 py-4 text-sm text-green-900">
+                          {signInMessage}
+                        </div>
+                      ) : null}
+
+                      {signInError ? (
+                        <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
+                          {signInError}
+                        </div>
+                      ) : null}
                     </div>
                   )}
                 </>
@@ -877,5 +984,65 @@ export default function PressureCalProPage() {
 
       <BackToTopButton />
     </PressureCalLayout>
+  );
+}
+
+type PayPalCheckoutSlotProps = {
+  plan: CheckoutPlan;
+  location: string;
+  busyPlan: CheckoutPlan | null;
+  signInBusy: boolean;
+  portalBusy: boolean;
+  startPayPalCheckout: (
+    plan: CheckoutPlan,
+    location: string
+  ) => Promise<{ userId: string; email: string } | null>;
+  handlePayPalApproved: () => void;
+  handlePayPalError: (message: string) => void;
+};
+
+function PayPalCheckoutSlot({
+  plan,
+  location,
+  busyPlan,
+  signInBusy,
+  portalBusy,
+  startPayPalCheckout,
+  handlePayPalApproved,
+  handlePayPalError,
+}: PayPalCheckoutSlotProps) {
+  const [buyer, setBuyer] = useState<{ userId: string; email: string } | null>(null);
+  const disabled = busyPlan !== null || signInBusy || portalBusy;
+
+  async function preparePayPal() {
+    const result = await startPayPalCheckout(plan, location);
+    setBuyer(result);
+  }
+
+  if (!buyer) {
+    return (
+      <button
+        type="button"
+        onClick={preparePayPal}
+        disabled={disabled}
+        className="inline-flex w-full items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        Continue with PayPal
+      </button>
+    );
+  }
+
+  return (
+    <PayPalSubscribeButton
+      plan={plan}
+      userId={buyer.userId}
+      email={buyer.email}
+      disabled={disabled}
+      onStarted={() => {
+        // Keep the checkout overlay off so the PayPal modal can render normally.
+      }}
+      onApproved={handlePayPalApproved}
+      onError={handlePayPalError}
+    />
   );
 }
