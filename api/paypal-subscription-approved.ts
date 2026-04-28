@@ -15,6 +15,25 @@ type PayPalTokenResponse = {
   expires_in?: number;
 };
 
+type PayPalProvider = "paypal";
+
+type PurchasePayload = {
+  transactionId: string;
+  value: number;
+  currency: string;
+  provider: PayPalProvider;
+  plan: Plan;
+  items: Array<{
+    item_id: string;
+    item_name: string;
+    item_category: string;
+    item_brand: string;
+    item_variant: string;
+    price: number;
+    quantity: number;
+  }>;
+};
+
 type PayPalSubscriptionResponse = {
   id?: string;
   status?: string;
@@ -57,6 +76,34 @@ function getPayPalBaseUrl() {
 
 function normalisePlan(value?: string | null): Plan | null {
   return value === "monthly" || value === "yearly" ? value : null;
+}
+
+function getPlanValue(plan: Plan) {
+  return plan === "yearly" ? 99.95 : 9.95;
+}
+
+function buildPurchasePayload(plan: Plan, priceId: string, subscriptionID: string): PurchasePayload {
+  const value = getPlanValue(plan);
+  const label = plan === "yearly" ? "PressureCal Pro Yearly" : "PressureCal Pro Monthly";
+
+  return {
+    transactionId: subscriptionID,
+    value,
+    currency: "AUD",
+    provider: "paypal",
+    plan,
+    items: [
+      {
+        item_id: priceId,
+        item_name: label,
+        item_category: "subscription",
+        item_brand: "PressureCal",
+        item_variant: plan,
+        price: value,
+        quantity: 1,
+      },
+    ],
+  };
 }
 
 async function getPayPalAccessToken(): Promise<string> {
@@ -165,6 +212,8 @@ export default async function handler(req: any, res: any) {
     const paypalEmail = paypalSubscription.subscriber?.email_address || email;
     const paypalPayerId = paypalSubscription.subscriber?.payer_id ?? null;
 
+    const purchase = buildPurchasePayload(plan, expectedPlanId, subscriptionID);
+
     const subscriptionPayload = {
       user_id: userId,
       email: paypalEmail,
@@ -214,6 +263,7 @@ export default async function handler(req: any, res: any) {
       status: "active",
       plan,
       subscriptionID,
+      purchase,
     });
   } catch (error: any) {
     console.error("PayPal subscription approval error:", error);

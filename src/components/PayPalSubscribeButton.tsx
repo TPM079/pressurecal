@@ -1,5 +1,6 @@
 import { PayPalButtons, PayPalScriptProvider } from "@paypal/react-paypal-js";
 import { useState } from "react";
+import type { PressureCalPurchasePayload } from "../lib/analytics";
 
 type Plan = "monthly" | "yearly";
 
@@ -9,7 +10,7 @@ type PayPalSubscribeButtonProps = {
   email: string;
   disabled?: boolean;
   onStarted?: () => void;
-  onApproved?: () => void;
+  onApproved?: (purchase?: PressureCalPurchasePayload) => void;
   onError?: (message: string) => void;
 };
 
@@ -73,8 +74,8 @@ export default function PayPalSubscribeButton({
                 brand_name: "PressureCal",
                 shipping_preference: "NO_SHIPPING",
                 user_action: "SUBSCRIBE_NOW",
-                return_url: `${origin}/pricing?checkout=success`,
-                cancel_url: `${origin}/pricing?checkout=cancelled`,
+                return_url: `${origin}/pricing?checkout=success&provider=paypal`,
+                cancel_url: `${origin}/pricing?checkout=cancelled&provider=paypal`,
               },
             });
           }}
@@ -108,7 +109,7 @@ export default function PayPalSubscribeButton({
                 throw new Error(result.error || "Unable to confirm PayPal subscription.");
               }
 
-              onApproved?.();
+              onApproved?.(result.purchase);
             } catch (error) {
               console.error(error);
               onError?.(

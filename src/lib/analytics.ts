@@ -14,6 +14,26 @@ export type PressureCalEventName =
 
 export type PressureCalEventParams = Record<string, string | number | boolean | null | undefined>;
 
+export type PressureCalPurchaseItem = {
+  item_id: string;
+  item_name: string;
+  item_category?: string;
+  item_brand?: string;
+  item_variant?: string;
+  price: number;
+  quantity: number;
+};
+
+export type PressureCalPurchasePayload = {
+  transactionId: string;
+  value: number;
+  currency: string;
+  provider: "stripe" | "paypal";
+  plan: "monthly" | "yearly";
+  coupon?: string | null;
+  items: PressureCalPurchaseItem[];
+};
+
 declare global {
   interface Window {
     gtag?: (...args: any[]) => void;
@@ -42,5 +62,37 @@ export function trackEvent(
 
   if (import.meta.env.DEV) {
     console.info("[analytics]", name, params);
+  }
+}
+
+export function trackPurchase(payload: PressureCalPurchasePayload) {
+  if (typeof window === "undefined") return;
+
+  const eventParams = {
+    transaction_id: payload.transactionId,
+    value: payload.value,
+    currency: payload.currency,
+    coupon: payload.coupon ?? undefined,
+    payment_type: payload.provider,
+    plan_interval: payload.plan,
+    affiliation: "PressureCal",
+    items: payload.items,
+  };
+
+  if (typeof window.gtag === "function") {
+    window.gtag("event", "purchase", eventParams);
+    return;
+  }
+
+  if (Array.isArray(window.dataLayer)) {
+    window.dataLayer.push({
+      event: "purchase",
+      ecommerce: eventParams,
+    });
+    return;
+  }
+
+  if (import.meta.env.DEV) {
+    console.info("[analytics] purchase", eventParams);
   }
 }

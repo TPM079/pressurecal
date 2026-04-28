@@ -192,8 +192,8 @@ export default async function handler(req: any, res: any) {
       subscription_data: {
         metadata,
       },
-      success_url: `${origin}/pricing?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/pricing?checkout=cancelled`,
+      success_url: `${origin}/pricing?checkout=success&provider=stripe&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/pricing?checkout=cancelled&provider=stripe`,
     });
 
     return res.status(200).json({ url: session.url });

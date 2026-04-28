@@ -5,7 +5,11 @@ import PressureCalLayout from "../components/PressureCalLayout";
 import BackToTopButton from "../components/BackToTopButton";
 import PricingComparisonSectionPressureCal from "../components/PricingComparisonSectionPressureCal";
 import PayPalSubscribeButton from "../components/PayPalSubscribeButton";
-import { trackEvent } from "../lib/analytics";
+import {
+  trackEvent,
+  trackPurchase,
+  type PressureCalPurchasePayload,
+} from "../lib/analytics";
 import { supabase } from "../lib/supabase-browser";
 import {
   clearPendingCheckout,
@@ -15,6 +19,84 @@ import {
 } from "../lib/pendingCheckout";
 
 const FREE_CALCULATOR_HREF = "/calculator";
+const VERIFIED_PURCHASE_STORAGE_KEY = "pressurecal_verified_purchase";
+const TRACKED_PURCHASE_IDS_STORAGE_KEY = "pressurecal_tracked_purchase_ids";
+
+function readTrackedPurchaseIds(): string[] {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  try {
+    const raw = window.sessionStorage.getItem(TRACKED_PURCHASE_IDS_STORAGE_KEY);
+
+    if (!raw) {
+      return [];
+    }
+
+    const parsed = JSON.parse(raw);
+
+    return Array.isArray(parsed)
+      ? parsed.filter((value): value is string => typeof value === "string")
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function hasTrackedPurchase(transactionId: string) {
+  return readTrackedPurchaseIds().includes(transactionId);
+}
+
+function markPurchaseTracked(transactionId: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const next = Array.from(new Set([...readTrackedPurchaseIds(), transactionId])).slice(-20);
+  window.sessionStorage.setItem(TRACKED_PURCHASE_IDS_STORAGE_KEY, JSON.stringify(next));
+}
+
+function saveVerifiedPurchase(purchase: PressureCalPurchasePayload) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.sessionStorage.setItem(VERIFIED_PURCHASE_STORAGE_KEY, JSON.stringify(purchase));
+}
+
+function readVerifiedPurchase(): PressureCalPurchasePayload | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const raw = window.sessionStorage.getItem(VERIFIED_PURCHASE_STORAGE_KEY);
+
+    if (!raw) {
+      return null;
+    }
+
+    const parsed = JSON.parse(raw) as PressureCalPurchasePayload | null;
+
+    if (!parsed?.transactionId || !Array.isArray(parsed.items)) {
+      return null;
+    }
+
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function clearVerifiedPurchase() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.sessionStorage.removeItem(VERIFIED_PURCHASE_STORAGE_KEY);
+}
+
 
 const freeFeatures = [
   "Full setup calculator",
@@ -173,6 +255,7 @@ export default function PressureCalProPage() {
   const [transitionMessage, setTransitionMessage] = useState<string | null>(null);
   const signInCardRef = useRef<HTMLDivElement | null>(null);
   const autoResumeHandledRef = useRef(false);
+  const purchaseVerificationHandledRef = useRef<string | null>(null);
 
   useEffect(() => {
     trackEvent("pricing_page_viewed", { page: "pricing" });
@@ -182,12 +265,89 @@ export default function PressureCalProPage() {
     const params = new URLSearchParams(window.location.search);
     const checkout = params.get("checkout");
 
+    if (checkout === "cancelled") {
+      clearVerifiedPurchase();
+    }
+
     if (checkout === "success" || checkout === "cancelled") {
       setCheckoutState(checkout);
     } else {
       setCheckoutState(null);
     }
   }, []);
+
+  useEffect(() => {
+    if (checkoutState !== "success") {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function verifySuccessfulCheckout() {
+      const params = new URLSearchParams(window.location.search);
+      const provider = params.get("provider");
+      const sessionId = params.get("session_id");
+      const storedPurchase = readVerifiedPurchase();
+
+      if (sessionId) {
+        if (purchaseVerificationHandledRef.current === sessionId) {
+          return;
+        }
+
+        purchaseVerificationHandledRef.current = sessionId;
+
+        try {
+          const response = await fetch("/api/verify-stripe-checkout-session", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              sessionId,
+            }),
+          });
+
+          const result = await response.json();
+
+          if (!response.ok || !result.purchase) {
+            throw new Error(result.error || "Unable to verify Stripe purchase.");
+          }
+
+          if (cancelled) {
+            return;
+          }
+
+          const purchase = result.purchase as PressureCalPurchasePayload;
+
+          if (!hasTrackedPurchase(purchase.transactionId)) {
+            trackPurchase(purchase);
+            markPurchaseTracked(purchase.transactionId);
+          }
+
+          clearVerifiedPurchase();
+        } catch (error) {
+          console.error(error);
+        }
+
+        return;
+      }
+
+      if (provider === "paypal" && storedPurchase) {
+        if (!hasTrackedPurchase(storedPurchase.transactionId)) {
+          trackPurchase(storedPurchase);
+          markPurchaseTracked(storedPurchase.transactionId);
+        }
+
+        clearVerifiedPurchase();
+      }
+    }
+
+    void verifySuccessfulCheckout();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [checkoutState]);
 
   useEffect(() => {
     let mounted = true;
@@ -522,14 +682,22 @@ export default function PressureCalProPage() {
     };
   }
 
-  function handlePayPalApproved() {
+  function handlePayPalApproved(purchase?: PressureCalPurchasePayload) {
     clearPendingCheckout();
     setTransitionMessage(null);
     setSignInError(null);
     setSignInMessage("PayPal subscription confirmed. Refreshing your Pro access…");
 
+    if (purchase) {
+      saveVerifiedPurchase(purchase);
+    }
+
+    const purchaseRef = purchase?.transactionId
+      ? `&purchase_ref=${encodeURIComponent(purchase.transactionId)}`
+      : "";
+
     window.setTimeout(() => {
-      window.location.href = "/pricing?checkout=success";
+      window.location.href = `/pricing?checkout=success&provider=paypal${purchaseRef}`;
     }, 1200);
   }
 
@@ -1092,7 +1260,7 @@ type PayPalCheckoutSlotProps = {
     plan: CheckoutPlan,
     location: string
   ) => Promise<{ userId: string; email: string } | null>;
-  handlePayPalApproved: () => void;
+  handlePayPalApproved: (purchase?: PressureCalPurchasePayload) => void;
   handlePayPalError: (message: string) => void;
 };
 
