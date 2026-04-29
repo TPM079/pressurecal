@@ -1,11 +1,47 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  barFromPsi,
+  lpmFromGpm,
+  roundTipCodeToFive,
+  solvePressureCal,
+} from "../pressurecal";
 import type {
+  ANZSClass,
   DiameterUnit,
   FlowUnit,
   Inputs,
   LengthUnit,
   PressureUnit,
 } from "../pressurecal";
+
+export type SavedSetupCalculatedResult = {
+  schemaVersion: 1;
+  atGunPressurePsi: number;
+  atGunPressureBar: number;
+  hoseLossPsi: number;
+  hoseLossBar: number;
+  hoseLossPercent: number;
+  operatingFlowLpm: number;
+  operatingFlowGpm: number;
+  selectedTipCode: string;
+  calibratedTipCode: string;
+  selectedOrificeMm: number;
+  requiredHp: number;
+  usableEngineHp: number | null;
+  engineStatus: "Not provided" | "Undersized" | "Near limit" | "Healthy";
+  ratedPQ: number;
+  ratedClass: ANZSClass;
+  gunPQ: number;
+  gunClass: ANZSClass;
+  nozzleStatus: "Calibrated" | "Under-calibrated" | "Over-calibrated";
+  statusMessage: string;
+  pressureLimited: boolean;
+  bypassFlowGpm: number;
+  bypassPercent: number;
+  resultSummary: string;
+  warnings: string[];
+  calculatedAt: string;
+};
 
 export type SavedSetup = {
   id: string;
@@ -38,6 +74,7 @@ export type SavedSetup = {
   dischargeCoeffCd: number | null;
   waterDensity: number | null;
   hoseRoughnessMm: number | null;
+  calculatedResult?: SavedSetupCalculatedResult | null;
 
   createdAt: string;
   updatedAt: string;
@@ -73,6 +110,7 @@ type SaveSetupInput = {
   dischargeCoeffCd?: number | null;
   waterDensity?: number | null;
   hoseRoughnessMm?: number | null;
+  calculatedResult?: SavedSetupCalculatedResult | null;
 };
 
 const DEFAULT_SNAPSHOT = {
@@ -146,6 +184,19 @@ function toNullableNumber(value: unknown, fallback: number | null) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function toRequiredNumber(value: unknown, fallback: number) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function roundNumber(value: number, decimals: number) {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+
+  return Number(value.toFixed(decimals));
+}
+
 function toPressureUnit(value: unknown, fallback: PressureUnit): PressureUnit {
   return value === "psi" || value === "bar" ? value : fallback;
 }
@@ -167,6 +218,279 @@ function toSprayMode(
   fallback: "wand" | "surfaceCleaner"
 ): "wand" | "surfaceCleaner" {
   return value === "wand" || value === "surfaceCleaner" ? value : fallback;
+}
+
+function toANZSClass(value: unknown, fallback: ANZSClass): ANZSClass {
+  return value === "Class A" || value === "Class B" ? value : fallback;
+}
+
+function calculateRequiredHp(pressurePsi: number, flowGpm: number, efficiency = 0.9) {
+  if (!Number.isFinite(pressurePsi) || !Number.isFinite(flowGpm) || efficiency <= 0) {
+    return 0;
+  }
+
+  return (pressurePsi * flowGpm) / (1714 * efficiency);
+}
+
+function calculateUsableEngineHp(ratedHp: number, factor = 0.85) {
+  return !Number.isFinite(ratedHp) || ratedHp <= 0 ? null : ratedHp * factor;
+}
+
+function getEngineStatus(
+  requiredHp: number,
+  usableHp: number | null
+): SavedSetupCalculatedResult["engineStatus"] {
+  if (usableHp === null) {
+    return "Not provided";
+  }
+
+  if (usableHp < requiredHp) {
+    return "Undersized";
+  }
+
+  if (usableHp < requiredHp * 1.1) {
+    return "Near limit";
+  }
+
+  return "Healthy";
+}
+
+function getNozzleStatusLabel(
+  status: "calibrated" | "under-calibrated" | "over-calibrated"
+): SavedSetupCalculatedResult["nozzleStatus"] {
+  if (status === "calibrated") {
+    return "Calibrated";
+  }
+
+  if (status === "under-calibrated") {
+    return "Under-calibrated";
+  }
+
+  return "Over-calibrated";
+}
+
+function buildResultSummary(args: {
+  atGunPressurePsi: number;
+  operatingFlowLpm: number;
+  hoseLossPsi: number;
+  selectedTipCode: string;
+  nozzleStatus: SavedSetupCalculatedResult["nozzleStatus"];
+}) {
+  const {
+    atGunPressurePsi,
+    operatingFlowLpm,
+    hoseLossPsi,
+    selectedTipCode,
+    nozzleStatus,
+  } = args;
+
+  return `${roundNumber(atGunPressurePsi, 0)} PSI at gun · ${roundNumber(
+    operatingFlowLpm,
+    1
+  )} LPM · ${roundNumber(hoseLossPsi, 0)} PSI hose loss · nozzle ${selectedTipCode} · ${nozzleStatus}`;
+}
+
+function buildWarnings(args: {
+  hoseLossPercent: number;
+  pressureLimited: boolean;
+  nozzleStatus: SavedSetupCalculatedResult["nozzleStatus"];
+  engineStatus: SavedSetupCalculatedResult["engineStatus"];
+}) {
+  const warnings: string[] = [];
+
+  if (args.hoseLossPercent >= 20) {
+    warnings.push("Severe hose loss — check hose ID, length, or flow.");
+  } else if (args.hoseLossPercent >= 10) {
+    warnings.push("High hose loss — consider a larger hose ID or shorter hose run.");
+  }
+
+  if (args.pressureLimited) {
+    warnings.push("Pressure-limited setup — unloader bypass is likely.");
+  }
+
+  if (args.nozzleStatus !== "Calibrated") {
+    warnings.push(`Nozzle status: ${args.nozzleStatus}.`);
+  }
+
+  if (args.engineStatus === "Undersized") {
+    warnings.push("Engine appears undersized for the calculated operating point.");
+  } else if (args.engineStatus === "Near limit") {
+    warnings.push("Engine is operating near the calculated requirement.");
+  } else if (args.engineStatus === "Not provided") {
+    warnings.push("Engine HP not provided — power status was not checked.");
+  }
+
+  return warnings;
+}
+
+export function buildCalculatedResultFromInputs(
+  inputs: Inputs,
+  calculatedAt = new Date().toISOString()
+): SavedSetupCalculatedResult {
+  const safeInputs: Inputs = {
+    ...INPUT_DEFAULTS,
+    ...inputs,
+    pumpPressure: Number(inputs.pumpPressure || 0),
+    pumpFlow: Number(inputs.pumpFlow || 0),
+    maxPressure: Number(inputs.maxPressure || 0),
+    hoseLength: Number(inputs.hoseLength || 0),
+    hoseId: Number(inputs.hoseId || 0),
+    engineHp: inputs.engineHp === "" ? "" : Number(inputs.engineHp || 0),
+    nozzleCount: Math.max(
+      inputs.sprayMode === "surfaceCleaner" ? 2 : 1,
+      Number(inputs.nozzleCount || 1)
+    ),
+    orificeMm: Number(inputs.orificeMm || INPUT_DEFAULTS.orificeMm),
+    dischargeCoeffCd: Number(inputs.dischargeCoeffCd || INPUT_DEFAULTS.dischargeCoeffCd),
+    waterDensity: Number(inputs.waterDensity || INPUT_DEFAULTS.waterDensity),
+    hoseRoughnessMm: Number(inputs.hoseRoughnessMm || INPUT_DEFAULTS.hoseRoughnessMm),
+  };
+
+  const result = solvePressureCal(safeInputs);
+  const atGunPressureBar = barFromPsi(result.gunPressurePsi);
+  const hoseLossBar = barFromPsi(result.hoseLossPsi);
+  const operatingFlowLpm = lpmFromGpm(result.gunFlowGpm);
+  const requiredHp = calculateRequiredHp(result.gunPressurePsi, result.gunFlowGpm, 0.9);
+  const rawEngineHp = safeInputs.engineHp === "" ? null : Number(safeInputs.engineHp);
+  const usableEngineHp = calculateUsableEngineHp(rawEngineHp ?? NaN, 0.85);
+  const engineStatus = getEngineStatus(requiredHp, usableEngineHp);
+  const nozzleStatus = getNozzleStatusLabel(result.status);
+  const selectedTipCode = roundTipCodeToFive(result.selectedTipCode);
+  const calibratedTipCode = roundTipCodeToFive(result.calibratedTipCode);
+  const hoseLossPercent = roundNumber(result.hoseLossPct, 1);
+  const pressureLimited = result.isPressureLimited;
+
+  const summary = buildResultSummary({
+    atGunPressurePsi: result.gunPressurePsi,
+    operatingFlowLpm,
+    hoseLossPsi: result.hoseLossPsi,
+    selectedTipCode,
+    nozzleStatus,
+  });
+
+  return {
+    schemaVersion: 1,
+    atGunPressurePsi: roundNumber(result.gunPressurePsi, 0),
+    atGunPressureBar: roundNumber(atGunPressureBar, 1),
+    hoseLossPsi: roundNumber(result.hoseLossPsi, 0),
+    hoseLossBar: roundNumber(hoseLossBar, 1),
+    hoseLossPercent,
+    operatingFlowLpm: roundNumber(operatingFlowLpm, 1),
+    operatingFlowGpm: roundNumber(result.gunFlowGpm, 2),
+    selectedTipCode,
+    calibratedTipCode,
+    selectedOrificeMm: roundNumber(result.selectedOrificeMm, 2),
+    requiredHp: roundNumber(requiredHp, 1),
+    usableEngineHp: usableEngineHp === null ? null : roundNumber(usableEngineHp, 1),
+    engineStatus,
+    ratedPQ: roundNumber(result.ratedPQ, 0),
+    ratedClass: result.ratedClass,
+    gunPQ: roundNumber(result.gunPQ, 0),
+    gunClass: result.gunClass,
+    nozzleStatus,
+    statusMessage: result.statusMessage,
+    pressureLimited,
+    bypassFlowGpm: roundNumber(result.bypassFlowGpm, 2),
+    bypassPercent: roundNumber(result.bypassPct, 0),
+    resultSummary: summary,
+    warnings: buildWarnings({
+      hoseLossPercent,
+      pressureLimited,
+      nozzleStatus,
+      engineStatus,
+    }),
+    calculatedAt,
+  };
+}
+
+function normalizeCalculatedResult(raw: unknown): SavedSetupCalculatedResult | null {
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
+
+  const item = raw as Record<string, unknown>;
+  const atGunPressurePsi = toRequiredNumber(item.atGunPressurePsi, NaN);
+  const hoseLossPsi = toRequiredNumber(item.hoseLossPsi, NaN);
+  const operatingFlowLpm = toRequiredNumber(item.operatingFlowLpm, NaN);
+
+  if (
+    !Number.isFinite(atGunPressurePsi) ||
+    !Number.isFinite(hoseLossPsi) ||
+    !Number.isFinite(operatingFlowLpm)
+  ) {
+    return null;
+  }
+
+  const nozzleStatus =
+    item.nozzleStatus === "Calibrated" ||
+    item.nozzleStatus === "Under-calibrated" ||
+    item.nozzleStatus === "Over-calibrated"
+      ? item.nozzleStatus
+      : "Calibrated";
+
+  const engineStatus =
+    item.engineStatus === "Undersized" ||
+    item.engineStatus === "Near limit" ||
+    item.engineStatus === "Healthy" ||
+    item.engineStatus === "Not provided"
+      ? item.engineStatus
+      : "Not provided";
+
+  return {
+    schemaVersion: 1,
+    atGunPressurePsi: roundNumber(atGunPressurePsi, 0),
+    atGunPressureBar: roundNumber(toRequiredNumber(item.atGunPressureBar, barFromPsi(atGunPressurePsi)), 1),
+    hoseLossPsi: roundNumber(hoseLossPsi, 0),
+    hoseLossBar: roundNumber(toRequiredNumber(item.hoseLossBar, barFromPsi(hoseLossPsi)), 1),
+    hoseLossPercent: roundNumber(toRequiredNumber(item.hoseLossPercent, 0), 1),
+    operatingFlowLpm: roundNumber(operatingFlowLpm, 1),
+    operatingFlowGpm: roundNumber(toRequiredNumber(item.operatingFlowGpm, 0), 2),
+    selectedTipCode:
+      typeof item.selectedTipCode === "string" && item.selectedTipCode.trim()
+        ? item.selectedTipCode.trim()
+        : "—",
+    calibratedTipCode:
+      typeof item.calibratedTipCode === "string" && item.calibratedTipCode.trim()
+        ? item.calibratedTipCode.trim()
+        : "—",
+    selectedOrificeMm: roundNumber(toRequiredNumber(item.selectedOrificeMm, 0), 2),
+    requiredHp: roundNumber(toRequiredNumber(item.requiredHp, 0), 1),
+    usableEngineHp:
+      item.usableEngineHp === null || item.usableEngineHp === undefined
+        ? null
+        : roundNumber(toRequiredNumber(item.usableEngineHp, 0), 1),
+    engineStatus,
+    ratedPQ: roundNumber(toRequiredNumber(item.ratedPQ, 0), 0),
+    ratedClass: toANZSClass(item.ratedClass, "Class A"),
+    gunPQ: roundNumber(toRequiredNumber(item.gunPQ, 0), 0),
+    gunClass: toANZSClass(item.gunClass, "Class A"),
+    nozzleStatus,
+    statusMessage:
+      typeof item.statusMessage === "string" && item.statusMessage.trim()
+        ? item.statusMessage.trim()
+        : "Calculated result saved with this setup.",
+    pressureLimited: Boolean(item.pressureLimited),
+    bypassFlowGpm: roundNumber(toRequiredNumber(item.bypassFlowGpm, 0), 2),
+    bypassPercent: roundNumber(toRequiredNumber(item.bypassPercent, 0), 0),
+    resultSummary:
+      typeof item.resultSummary === "string" && item.resultSummary.trim()
+        ? item.resultSummary.trim()
+        : buildResultSummary({
+            atGunPressurePsi,
+            operatingFlowLpm,
+            hoseLossPsi,
+            selectedTipCode:
+              typeof item.selectedTipCode === "string" ? item.selectedTipCode : "—",
+            nozzleStatus,
+          }),
+    warnings: Array.isArray(item.warnings)
+      ? item.warnings.filter((warning): warning is string => typeof warning === "string")
+      : [],
+    calculatedAt:
+      typeof item.calculatedAt === "string" && item.calculatedAt
+        ? item.calculatedAt
+        : new Date().toISOString(),
+  };
 }
 
 function normalizeSavedSetup(raw: unknown, userId: string): SavedSetup | null {
@@ -223,7 +547,7 @@ function normalizeSavedSetup(raw: unknown, userId: string): SavedSetup | null {
       ? item.nozzleSizeText.trim()
       : nozzleSize ?? DEFAULT_SNAPSHOT.nozzleSizeText;
 
-  return {
+  const setup: SavedSetup = {
     id: typeof item.id === "string" && item.id ? item.id : makeId(),
     userId,
     name:
@@ -269,6 +593,12 @@ function normalizeSavedSetup(raw: unknown, userId: string): SavedSetup | null {
     updatedAt:
       typeof item.updatedAt === "string" && item.updatedAt ? item.updatedAt : now,
   };
+
+  setup.calculatedResult =
+    normalizeCalculatedResult(item.calculatedResult ?? item.calculated_result) ??
+    buildCalculatedResultFromInputs(inputsFromSavedSetup(setup), setup.updatedAt);
+
+  return setup;
 }
 
 export function inputsFromSavedSetup(setup: SavedSetup): Inputs {
@@ -412,6 +742,9 @@ export function useSavedSetups(userId: string | null) {
         createdAt: existing?.createdAt ?? timestamp,
         updatedAt: timestamp,
       };
+
+      nextSetup.calculatedResult =
+        input.calculatedResult ?? buildCalculatedResultFromInputs(inputsFromSavedSetup(nextSetup), timestamp);
 
       const nextSetups = existing
         ? setups.map((setup) => (setup.id === existing.id ? nextSetup : setup))

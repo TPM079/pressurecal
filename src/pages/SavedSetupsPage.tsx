@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import BackToTopButton from "../components/BackToTopButton";
 import PressureCalLayout from "../components/PressureCalLayout";
 import RequirePro from "../components/RequirePro";
-import { useSavedSetups } from "../hooks/useSavedSetups";
+import { useSavedSetups, type SavedSetupCalculatedResult } from "../hooks/useSavedSetups";
 import { buildFullRigSearchParams } from "../lib/rigUrlState";
 import { savedSetupToInputs } from "../lib/savedSetupToInputs";
 import { supabase } from "../lib/supabase-browser";
@@ -49,6 +49,40 @@ const EMPTY_FORM: SetupFormState = {
 
 function formatUnitLabel(unit: SetupFormState["hoseLengthUnit"]) {
   return unit === "m" ? "Metres" : "Feet";
+}
+
+
+function formatResultNumber(value: number, decimals = 0) {
+  if (!Number.isFinite(value)) {
+    return "—";
+  }
+
+  return value.toLocaleString(undefined, {
+    maximumFractionDigits: decimals,
+    minimumFractionDigits: decimals,
+  });
+}
+
+function formatCalculatedDate(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "calculation saved";
+  }
+
+  return `calculated ${date.toLocaleString()}`;
+}
+
+function nozzleStatusClass(status: SavedSetupCalculatedResult["nozzleStatus"]) {
+  if (status === "Calibrated") {
+    return "border-green-200 bg-green-50 text-green-800";
+  }
+
+  if (status === "Under-calibrated") {
+    return "border-amber-200 bg-amber-50 text-amber-900";
+  }
+
+  return "border-red-200 bg-red-50 text-red-800";
 }
 
 export default function SavedSetupsPage() {
@@ -700,6 +734,83 @@ export default function SavedSetupsPage() {
                             </button>
                           </div>
                         </div>
+
+
+                        {setup.calculatedResult ? (
+                          <div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50/60 p-4">
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                              <div>
+                                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-blue-900/60">
+                                  Calculated result snapshot
+                                </p>
+                                <p className="mt-1 text-sm font-medium text-slate-800">
+                                  {setup.calculatedResult.resultSummary}
+                                </p>
+                                <p className="mt-1 text-xs text-slate-500">
+                                  {formatCalculatedDate(setup.calculatedResult.calculatedAt)}
+                                </p>
+                              </div>
+
+                              <span
+                                className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${nozzleStatusClass(
+                                  setup.calculatedResult.nozzleStatus
+                                )}`}
+                              >
+                                {setup.calculatedResult.nozzleStatus}
+                              </span>
+                            </div>
+
+                            <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+                              <div className="rounded-2xl bg-white/80 px-4 py-3">
+                                <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
+                                  At-gun pressure
+                                </dt>
+                                <dd className="mt-1 font-medium text-slate-900">
+                                  {formatResultNumber(setup.calculatedResult.atGunPressurePsi)} PSI · {formatResultNumber(setup.calculatedResult.atGunPressureBar, 1)} bar
+                                </dd>
+                              </div>
+
+                              <div className="rounded-2xl bg-white/80 px-4 py-3">
+                                <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
+                                  Operating flow
+                                </dt>
+                                <dd className="mt-1 font-medium text-slate-900">
+                                  {formatResultNumber(setup.calculatedResult.operatingFlowLpm, 1)} LPM · {formatResultNumber(setup.calculatedResult.operatingFlowGpm, 2)} GPM
+                                </dd>
+                              </div>
+
+                              <div className="rounded-2xl bg-white/80 px-4 py-3">
+                                <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
+                                  Hose loss
+                                </dt>
+                                <dd className="mt-1 font-medium text-slate-900">
+                                  {formatResultNumber(setup.calculatedResult.hoseLossPsi)} PSI · {formatResultNumber(setup.calculatedResult.hoseLossPercent, 1)}%
+                                </dd>
+                              </div>
+
+                              <div className="rounded-2xl bg-white/80 px-4 py-3">
+                                <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
+                                  Nozzle guide
+                                </dt>
+                                <dd className="mt-1 font-medium text-slate-900">
+                                  Selected {setup.calculatedResult.selectedTipCode} · rated match {setup.calculatedResult.calibratedTipCode}
+                                </dd>
+                              </div>
+                            </dl>
+
+                            {setup.calculatedResult.warnings.length > 0 ? (
+                              <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                                <p className="font-semibold">Review notes</p>
+                                <ul className="mt-2 list-disc space-y-1 pl-5">
+                                  {setup.calculatedResult.warnings.slice(0, 3).map((warning) => (
+                                    <li key={warning}>{warning}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            ) : null}
+                          </div>
+                        ) : null}
+
 
                         <dl className="mt-4 grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
                           <div className="rounded-2xl bg-slate-50 px-4 py-3">
