@@ -101,10 +101,14 @@ const DEFAULT_FORM: FormState = {
 };
 
 const hosePresets = [
-  { label: '6.35 mm (1/4")', value: 6.35 },
-  { label: '7.94 mm (5/16")', value: 7.94 },
-  { label: '9.53 mm (3/8")', value: 9.53 },
-  { label: '12.70 mm (1/2")', value: 12.7 },
+  { label: '1/8" (3.18 mm)', value: 3.18 },
+  { label: '3/16" (4.76 mm)', value: 4.76 },
+  { label: '1/4" (6.35 mm)', value: 6.35 },
+  { label: '5/16" (7.94 mm)', value: 7.94 },
+  { label: '3/8" (9.53 mm)', value: 9.53 },
+  { label: '1/2" (12.70 mm)', value: 12.7 },
+  { label: '3/4" (19.05 mm)', value: 19.05 },
+  { label: '1" (25.40 mm)', value: 25.4 },
 ];
 
 function formatNumber(value: number, decimals = 2): string {
