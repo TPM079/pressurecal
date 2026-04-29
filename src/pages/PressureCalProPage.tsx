@@ -1111,7 +1111,7 @@ export default function PressureCalProPage() {
                         Continue with {activePlanLabel} Pro
                       </p>
                       <p className="mt-2 text-slate-300">
-                        Enter your email and we’ll send a sign-in link. Checkout continues after sign-in.
+                      Enter your email for a sign-in link. Checkout continues after sign-in.
                       </p>
 
                       <form onSubmit={sendMagicLink} className="mt-4">
