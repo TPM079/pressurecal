@@ -26,11 +26,14 @@ const DEFAULTS = {
 };
 
 const hosePresets = [
+  { label: '1/8" (3.18 mm)', value: 3.18, unit: "mm" as DiameterUnit },
   { label: '3/16" (4.76 mm)', value: 4.76, unit: "mm" as DiameterUnit },
   { label: '1/4" (6.35 mm)', value: 6.35, unit: "mm" as DiameterUnit },
   { label: '5/16" (7.94 mm)', value: 7.94, unit: "mm" as DiameterUnit },
   { label: '3/8" (9.53 mm)', value: 9.53, unit: "mm" as DiameterUnit },
   { label: '1/2" (12.70 mm)', value: 12.7, unit: "mm" as DiameterUnit },
+  { label: '3/4" (19.05 mm)', value: 19.05, unit: "mm" as DiameterUnit },
+  { label: '1" (25.40 mm)', value: 25.4, unit: "mm" as DiameterUnit },
 ];
 
 function fmt(n: number, dp = 2) {
