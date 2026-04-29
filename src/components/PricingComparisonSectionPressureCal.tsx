@@ -60,6 +60,7 @@ function buildFeatureRows(freeSaveSetupsLabel: string): FeatureRow[] {
     { feature: "Share setup links", free: "—", pro: "Included" },
     { feature: "Saved setup library", free: "—", pro: "Included" },
     { feature: "Professional setup workflow tools", free: "—", pro: "Included" },
+    { feature: "Professional PDF setup reports", free: "—", pro: "Coming soon" },
   ];
 }
 
@@ -92,6 +93,14 @@ function renderDesktopValue(value: string, plan: PlanKey) {
       <span className="inline-flex items-center gap-1 text-sm font-medium text-slate-400">
         <MinusIcon className="h-4 w-4" />
         Not included
+      </span>
+    );
+  }
+
+  if (value === "Coming soon") {
+    return (
+      <span className="inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-700">
+        Coming soon
       </span>
     );
   }
@@ -134,6 +143,18 @@ function renderCompactValue(value: string, plan: PlanKey) {
     return (
       <span className="inline-flex min-w-[2.25rem] items-center justify-center rounded-full bg-[#1C408C] px-2 py-1 text-[11px] font-semibold text-white">
         All
+      </span>
+    );
+  }
+
+  if (value === "Coming soon") {
+    return (
+      <span
+        className="inline-flex min-w-[2.25rem] items-center justify-center rounded-full bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-700"
+        aria-label="Coming soon"
+        title="Coming soon"
+      >
+        Soon
       </span>
     );
   }
