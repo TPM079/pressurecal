@@ -16,10 +16,14 @@ import { solvePressureCal, barFromPsi, lpmFromGpm, roundTipCodeToFive } from "..
 import type { Inputs, PressureUnit, FlowUnit, LengthUnit } from "../pressurecal";
 
 const hosePresets = [
+  { label: '1/8" (3.18 mm)', valueMm: 3.18 },
+  { label: '3/16" (4.76 mm)', valueMm: 4.76 },
   { label: '1/4" (6.35 mm)', valueMm: 6.35 },
   { label: '5/16" (7.94 mm)', valueMm: 7.94 },
   { label: '3/8" (9.53 mm)', valueMm: 9.53 },
   { label: '1/2" (12.70 mm)', valueMm: 12.7 },
+  { label: '3/4" (19.05 mm)', valueMm: 19.05 },
+  { label: '1" (25.40 mm)', valueMm: 25.4 },
 ];
 
 const defaultInputs: Inputs = {
@@ -1546,7 +1550,10 @@ export default function FullRigCalculatorPage() {
                   <div className="mt-2 flex gap-3">
                     <select
                       value={String(inputs.hoseId)}
-                      onChange={(event) => updateInput("hoseId", Number(event.target.value) as Inputs["hoseId"])}
+                      onChange={(event) => {
+                        updateInput("hoseId", Number(event.target.value) as Inputs["hoseId"]);
+                        updateInput("hoseIdUnit", "mm");
+                      }}
                       className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
                     >
                       {hosePresets.map((preset) => (
