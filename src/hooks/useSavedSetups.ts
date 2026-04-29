@@ -14,6 +14,16 @@ import type {
   PressureUnit,
 } from "../pressurecal";
 
+export type SavedSetupHealthLevel = "excellent" | "good" | "review" | "warning";
+
+export type SavedSetupHealth = {
+  level: SavedSetupHealthLevel;
+  label: string;
+  score: number;
+  summary: string;
+  reasons: string[];
+};
+
 export type SavedSetupCalculatedResult = {
   schemaVersion: 1;
   atGunPressurePsi: number;
@@ -40,6 +50,7 @@ export type SavedSetupCalculatedResult = {
   bypassPercent: number;
   resultSummary: string;
   warnings: string[];
+  setupHealth?: SavedSetupHealth | null;
   calculatedAt: string;
 };
 
@@ -323,6 +334,121 @@ function buildWarnings(args: {
   return warnings;
 }
 
+
+function buildSetupHealth(args: {
+  hoseLossPercent: number;
+  pressureLimited: boolean;
+  nozzleStatus: SavedSetupCalculatedResult["nozzleStatus"];
+  engineStatus: SavedSetupCalculatedResult["engineStatus"];
+}): SavedSetupHealth {
+  const reasons: string[] = [];
+  let score = 100;
+
+  if (args.hoseLossPercent >= 20) {
+    score -= 30;
+    reasons.push("Severe hose loss.");
+  } else if (args.hoseLossPercent >= 10) {
+    score -= 20;
+    reasons.push("High hose loss.");
+  } else if (args.hoseLossPercent >= 5) {
+    score -= 8;
+    reasons.push("Moderate hose loss.");
+  }
+
+  if (args.pressureLimited) {
+    score -= 25;
+    reasons.push("Pressure-limited setup / unloader bypass likely.");
+  }
+
+  if (args.nozzleStatus !== "Calibrated") {
+    score -= 15;
+    reasons.push(`Nozzle is ${args.nozzleStatus.toLowerCase()}.`);
+  }
+
+  if (args.engineStatus === "Undersized") {
+    score -= 30;
+    reasons.push("Engine appears undersized.");
+  } else if (args.engineStatus === "Near limit") {
+    score -= 15;
+    reasons.push("Engine is near the calculated requirement.");
+  } else if (args.engineStatus === "Not provided") {
+    score -= 5;
+    reasons.push("Engine HP has not been checked.");
+  }
+
+  score = Math.max(0, Math.min(100, Math.round(score)));
+
+  if (score >= 90 && !args.pressureLimited && args.nozzleStatus === "Calibrated") {
+    return {
+      level: "excellent",
+      label: "Excellent match",
+      score,
+      summary: "Low loss and setup match look strong.",
+      reasons: reasons.length > 0 ? reasons : ["No major setup issues detected."],
+    };
+  }
+
+  if (score >= 75) {
+    return {
+      level: "good",
+      label: "Good working setup",
+      score,
+      summary: "Useful working setup with minor items to keep an eye on.",
+      reasons: reasons.length > 0 ? reasons : ["No major setup issues detected."],
+    };
+  }
+
+  if (score >= 55) {
+    return {
+      level: "review",
+      label: "Review setup",
+      score,
+      summary: "Check the notes below before treating this as a known-good setup.",
+      reasons,
+    };
+  }
+
+  return {
+    level: "warning",
+    label: "Check setup",
+    score,
+    summary: "This setup needs attention before being treated as known-good.",
+    reasons,
+  };
+}
+
+function normalizeSetupHealth(raw: unknown): SavedSetupHealth | null {
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
+
+  const item = raw as Record<string, unknown>;
+  const level =
+    item.level === "excellent" ||
+    item.level === "good" ||
+    item.level === "review" ||
+    item.level === "warning"
+      ? item.level
+      : null;
+
+  if (!level) {
+    return null;
+  }
+
+  return {
+    level,
+    label: typeof item.label === "string" && item.label.trim() ? item.label.trim() : "Setup health",
+    score: Math.max(0, Math.min(100, Math.round(toRequiredNumber(item.score, 0)))),
+    summary:
+      typeof item.summary === "string" && item.summary.trim()
+        ? item.summary.trim()
+        : "Calculated setup health snapshot.",
+    reasons: Array.isArray(item.reasons)
+      ? item.reasons.filter((reason): reason is string => typeof reason === "string")
+      : [],
+  };
+}
+
 export function buildCalculatedResultFromInputs(
   inputs: Inputs,
   calculatedAt = new Date().toISOString()
@@ -367,6 +493,18 @@ export function buildCalculatedResultFromInputs(
     selectedTipCode,
     nozzleStatus,
   });
+  const warnings = buildWarnings({
+    hoseLossPercent,
+    pressureLimited,
+    nozzleStatus,
+    engineStatus,
+  });
+  const setupHealth = buildSetupHealth({
+    hoseLossPercent,
+    pressureLimited,
+    nozzleStatus,
+    engineStatus,
+  });
 
   return {
     schemaVersion: 1,
@@ -393,12 +531,8 @@ export function buildCalculatedResultFromInputs(
     bypassFlowGpm: roundNumber(result.bypassFlowGpm, 2),
     bypassPercent: roundNumber(result.bypassPct, 0),
     resultSummary: summary,
-    warnings: buildWarnings({
-      hoseLossPercent,
-      pressureLimited,
-      nozzleStatus,
-      engineStatus,
-    }),
+    warnings,
+    setupHealth,
     calculatedAt,
   };
 }
@@ -486,6 +620,14 @@ function normalizeCalculatedResult(raw: unknown): SavedSetupCalculatedResult | n
     warnings: Array.isArray(item.warnings)
       ? item.warnings.filter((warning): warning is string => typeof warning === "string")
       : [],
+    setupHealth:
+      normalizeSetupHealth(item.setupHealth) ??
+      buildSetupHealth({
+        hoseLossPercent: roundNumber(toRequiredNumber(item.hoseLossPercent, 0), 1),
+        pressureLimited: Boolean(item.pressureLimited),
+        nozzleStatus,
+        engineStatus,
+      }),
     calculatedAt:
       typeof item.calculatedAt === "string" && item.calculatedAt
         ? item.calculatedAt

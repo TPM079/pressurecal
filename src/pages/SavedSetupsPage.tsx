@@ -4,7 +4,11 @@ import { Link } from "react-router-dom";
 import BackToTopButton from "../components/BackToTopButton";
 import PressureCalLayout from "../components/PressureCalLayout";
 import RequirePro from "../components/RequirePro";
-import { useSavedSetups, type SavedSetupCalculatedResult } from "../hooks/useSavedSetups";
+import {
+  useSavedSetups,
+  type SavedSetupCalculatedResult,
+  type SavedSetupHealth,
+} from "../hooks/useSavedSetups";
 import { buildFullRigSearchParams } from "../lib/rigUrlState";
 import { savedSetupToInputs } from "../lib/savedSetupToInputs";
 import { supabase } from "../lib/supabase-browser";
@@ -83,6 +87,163 @@ function nozzleStatusClass(status: SavedSetupCalculatedResult["nozzleStatus"]) {
   }
 
   return "border-red-200 bg-red-50 text-red-800";
+}
+
+function healthStatusClass(level: SavedSetupHealth["level"]) {
+  if (level === "excellent") {
+    return "border-green-200 bg-green-50 text-green-800";
+  }
+
+  if (level === "good") {
+    return "border-blue-200 bg-blue-50 text-blue-900";
+  }
+
+  if (level === "review") {
+    return "border-amber-200 bg-amber-50 text-amber-900";
+  }
+
+  return "border-red-200 bg-red-50 text-red-800";
+}
+
+function getDisplaySetupHealth(result: SavedSetupCalculatedResult): SavedSetupHealth {
+  if (result.setupHealth) {
+    return result.setupHealth;
+  }
+
+  const reasons = result.warnings.length > 0 ? result.warnings : ["Calculated from saved result snapshot."];
+
+  if (result.pressureLimited || result.engineStatus === "Undersized" || result.hoseLossPercent >= 20) {
+    return {
+      level: "warning",
+      label: "Check setup",
+      score: 50,
+      summary: "This setup needs attention before being treated as known-good.",
+      reasons,
+    };
+  }
+
+  if (result.nozzleStatus !== "Calibrated" || result.engineStatus === "Near limit" || result.hoseLossPercent >= 10) {
+    return {
+      level: "review",
+      label: "Review setup",
+      score: 70,
+      summary: "Check the notes below before treating this as a known-good setup.",
+      reasons,
+    };
+  }
+
+  if (result.hoseLossPercent < 5) {
+    return {
+      level: "excellent",
+      label: "Excellent match",
+      score: 95,
+      summary: "Low loss and setup match look strong.",
+      reasons,
+    };
+  }
+
+  return {
+    level: "good",
+    label: "Good working setup",
+    score: 85,
+    summary: "Useful working setup with minor items to keep an eye on.",
+    reasons,
+  };
+}
+
+function CalculatedResultSnapshot({ result }: { result: SavedSetupCalculatedResult }) {
+  const health = getDisplaySetupHealth(result);
+
+  return (
+    <div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50/60 p-4">
+      <div className={["rounded-2xl border px-4 py-3", healthStatusClass(health.level)].join(" ")}>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.15em] opacity-70">
+              Setup health
+            </p>
+            <p className="mt-1 text-base font-semibold">{health.label}</p>
+          </div>
+          <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-semibold">
+            {health.score}/100
+          </span>
+        </div>
+        <p className="mt-2 text-sm leading-6">{health.summary}</p>
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-blue-900/60">
+            Calculated result snapshot
+          </p>
+          <p className="mt-1 text-sm font-medium text-slate-800">
+            {result.resultSummary}
+          </p>
+          <p className="mt-1 text-xs text-slate-500">
+            {formatCalculatedDate(result.calculatedAt)}
+          </p>
+        </div>
+
+        <span
+          className={[
+            "inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold",
+            nozzleStatusClass(result.nozzleStatus),
+          ].join(" ")}
+        >
+          {result.nozzleStatus}
+        </span>
+      </div>
+
+      <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+        <div className="rounded-2xl bg-white/80 px-4 py-3">
+          <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
+            At-gun pressure
+          </dt>
+          <dd className="mt-1 font-medium text-slate-900">
+            {formatResultNumber(result.atGunPressurePsi)} PSI · {formatResultNumber(result.atGunPressureBar, 1)} bar
+          </dd>
+        </div>
+
+        <div className="rounded-2xl bg-white/80 px-4 py-3">
+          <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
+            Operating flow
+          </dt>
+          <dd className="mt-1 font-medium text-slate-900">
+            {formatResultNumber(result.operatingFlowLpm, 1)} LPM · {formatResultNumber(result.operatingFlowGpm, 2)} GPM
+          </dd>
+        </div>
+
+        <div className="rounded-2xl bg-white/80 px-4 py-3">
+          <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
+            Hose loss
+          </dt>
+          <dd className="mt-1 font-medium text-slate-900">
+            {formatResultNumber(result.hoseLossPsi)} PSI · {formatResultNumber(result.hoseLossPercent, 1)}%
+          </dd>
+        </div>
+
+        <div className="rounded-2xl bg-white/80 px-4 py-3">
+          <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
+            Nozzle guide
+          </dt>
+          <dd className="mt-1 font-medium text-slate-900">
+            Selected {result.selectedTipCode} · rated match {result.calibratedTipCode}
+          </dd>
+        </div>
+      </dl>
+
+      {result.warnings.length > 0 ? (
+        <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <p className="font-semibold">Review notes</p>
+          <ul className="mt-2 list-disc space-y-1 pl-5">
+            {result.warnings.slice(0, 4).map((warning, index) => (
+              <li key={warning + "-" + index}>{warning}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 export default function SavedSetupsPage() {
@@ -737,80 +898,8 @@ export default function SavedSetupsPage() {
 
 
                         {setup.calculatedResult ? (
-                          <div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50/60 p-4">
-                            <div className="flex flex-wrap items-start justify-between gap-3">
-                              <div>
-                                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-blue-900/60">
-                                  Calculated result snapshot
-                                </p>
-                                <p className="mt-1 text-sm font-medium text-slate-800">
-                                  {setup.calculatedResult.resultSummary}
-                                </p>
-                                <p className="mt-1 text-xs text-slate-500">
-                                  {formatCalculatedDate(setup.calculatedResult.calculatedAt)}
-                                </p>
-                              </div>
-
-                              <span
-                                className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${nozzleStatusClass(
-                                  setup.calculatedResult.nozzleStatus
-                                )}`}
-                              >
-                                {setup.calculatedResult.nozzleStatus}
-                              </span>
-                            </div>
-
-                            <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-                              <div className="rounded-2xl bg-white/80 px-4 py-3">
-                                <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
-                                  At-gun pressure
-                                </dt>
-                                <dd className="mt-1 font-medium text-slate-900">
-                                  {formatResultNumber(setup.calculatedResult.atGunPressurePsi)} PSI · {formatResultNumber(setup.calculatedResult.atGunPressureBar, 1)} bar
-                                </dd>
-                              </div>
-
-                              <div className="rounded-2xl bg-white/80 px-4 py-3">
-                                <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
-                                  Operating flow
-                                </dt>
-                                <dd className="mt-1 font-medium text-slate-900">
-                                  {formatResultNumber(setup.calculatedResult.operatingFlowLpm, 1)} LPM · {formatResultNumber(setup.calculatedResult.operatingFlowGpm, 2)} GPM
-                                </dd>
-                              </div>
-
-                              <div className="rounded-2xl bg-white/80 px-4 py-3">
-                                <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
-                                  Hose loss
-                                </dt>
-                                <dd className="mt-1 font-medium text-slate-900">
-                                  {formatResultNumber(setup.calculatedResult.hoseLossPsi)} PSI · {formatResultNumber(setup.calculatedResult.hoseLossPercent, 1)}%
-                                </dd>
-                              </div>
-
-                              <div className="rounded-2xl bg-white/80 px-4 py-3">
-                                <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
-                                  Nozzle guide
-                                </dt>
-                                <dd className="mt-1 font-medium text-slate-900">
-                                  Selected {setup.calculatedResult.selectedTipCode} · rated match {setup.calculatedResult.calibratedTipCode}
-                                </dd>
-                              </div>
-                            </dl>
-
-                            {setup.calculatedResult.warnings.length > 0 ? (
-                              <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                                <p className="font-semibold">Review notes</p>
-                                <ul className="mt-2 list-disc space-y-1 pl-5">
-                                  {setup.calculatedResult.warnings.slice(0, 3).map((warning) => (
-                                    <li key={warning}>{warning}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            ) : null}
-                          </div>
+                          <CalculatedResultSnapshot result={setup.calculatedResult} />
                         ) : null}
-
 
                         <dl className="mt-4 grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
                           <div className="rounded-2xl bg-slate-50 px-4 py-3">
