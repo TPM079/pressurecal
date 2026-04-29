@@ -1612,13 +1612,20 @@ export default function FullRigCalculatorPage() {
                 ) : null}
 
                 <div className="lg:col-span-2">
-                  <label className="block text-sm font-semibold text-slate-800">Nozzle size</label>
+                  <label className="block text-sm font-semibold text-slate-800">
+                    {inputs.sprayMode === "surfaceCleaner" ? "Nozzle size per nozzle" : "Nozzle size"}
+                  </label>
                   <input
                     type="text"
                     value={inputs.nozzleSizeText}
                     onChange={(event) => updateInput("nozzleSizeText", event.target.value as Inputs["nozzleSizeText"])}
                     className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
                   />
+                  {inputs.sprayMode === "surfaceCleaner" ? (
+                    <p className="mt-2 text-xs leading-5 text-slate-500">
+                      Enter the size of each individual nozzle. PressureCal multiplies this by the nozzle count.
+                    </p>
+                  ) : null}
                 </div>
               </div>
             </section>
