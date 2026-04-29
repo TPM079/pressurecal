@@ -135,7 +135,7 @@ export default function PricingComparisonSectionPressureCal({
   const featureRows = buildFeatureRows(freeSaveSetupsLabel);
 
   return (
-    <section className="relative overflow-hidden bg-white py-16 pb-28 sm:py-20 sm:pb-20">
+    <section className="relative scroll-mt-28 overflow-hidden bg-white py-16 pb-28 sm:py-20 sm:pb-20">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(28,64,140,0.08),transparent_35%)]" />
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

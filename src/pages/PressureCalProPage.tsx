@@ -112,6 +112,7 @@ const proFeatures = [
   "Compare changes before you swap parts",
   "Keep your repeat-job setups organised",
   "Share proven setups with the team",
+  "Professional PDF setup reports coming soon",
 ];
 
 type AuthState = "loading" | "signed_out" | "signed_in";
@@ -801,7 +802,7 @@ export default function PressureCalProPage() {
       return {
         cls: "border-amber-200 bg-amber-50 text-amber-900",
         title: `Continue with ${selectedPlan === "monthly" ? "Monthly" : "Yearly"} Pro`,
-        body: "Sign in below and we will continue straight to secure checkout after you click the magic link.",
+        body: "Sign in below and checkout will continue after the magic link.",
       };
     }
 
@@ -862,17 +863,22 @@ export default function PressureCalProPage() {
       ) : null}
 
       <section className="-mx-4 border-b border-slate-200 bg-slate-950 px-4 text-white">
-        <div className="mx-auto max-w-6xl py-16 sm:py-20">
+        <div className="mx-auto max-w-6xl py-14 sm:py-20">
           <div className="max-w-3xl">
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
+            <h1 className="text-3xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
               Stop working out the same setup over and over
             </h1>
 
-            <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-300 sm:text-xl">
-              PressureCal Pro helps you save known-good setups, compare changes, and keep your repeat-job setups organised.
+            <p className="mt-5 max-w-2xl text-base leading-7 text-slate-300 sm:text-xl sm:leading-8">
+              <span className="sm:hidden">
+                Save known-good setups, compare changes, and keep repeat-job work organised.
+              </span>
+              <span className="hidden sm:inline">
+                PressureCal Pro helps you save known-good setups, compare changes, and keep your repeat-job setups organised.
+              </span>
             </p>
 
-            <div className={`mt-6 rounded-2xl border px-4 py-4 sm:px-5 ${authBanner.cls}`}>
+            <div className={`mt-6 hidden rounded-2xl border px-4 py-4 sm:block sm:px-5 ${authBanner.cls}`}>
               <p className="text-sm font-semibold">{authBanner.title}</p>
               <p className="mt-1 text-sm leading-6">{authBanner.body}</p>
             </div>
@@ -939,19 +945,19 @@ export default function PressureCalProPage() {
         />
       </div>
 
-      <section id="plans" className="border-b border-slate-200 bg-slate-50/70">
-        <div className="mx-auto max-w-6xl px-4 py-16">
+      <section id="plans" className="scroll-mt-28 border-b border-slate-200 bg-slate-50/70">
+        <div className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
           <div className="max-w-3xl">
-            <h2 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
+            <h2 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-4xl">
               What stays free, and what Pro adds
             </h2>
-            <p className="mt-4 text-lg leading-8 text-slate-600">
+            <p className="mt-4 text-base leading-7 text-slate-600 sm:text-lg sm:leading-8">
               PressureCal keeps the core calculator useful on its own. Pro adds the features that make repeat-job setup work faster, easier, and more organised.
             </p>
           </div>
 
           <div className="mt-10 grid gap-6 lg:grid-cols-2">
-            <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
               <h3 className="text-2xl font-semibold text-slate-950">
                 PressureCal Free
               </h3>
@@ -978,7 +984,7 @@ export default function PressureCalProPage() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-slate-950 bg-slate-950 p-8 text-white shadow-sm">
+            <div className="rounded-3xl border border-slate-950 bg-slate-950 p-6 text-white shadow-sm sm:p-8">
               {alreadyPro ? (
                 <>
                   <h3 className="text-2xl font-semibold">You already have PressureCal Pro</h3>
@@ -1099,13 +1105,13 @@ export default function PressureCalProPage() {
                   {authState !== "signed_in" ? (
                     <div
                       ref={signInCardRef}
-                      className="mt-6 rounded-2xl border border-white/15 bg-white/5 px-4 py-5 text-sm text-slate-200"
+                      className="mt-6 rounded-2xl border border-white/15 bg-white/5 px-4 py-4 text-sm text-slate-200 sm:py-5"
                     >
                       <p className="font-semibold text-white">
                         Continue with {activePlanLabel} Pro
                       </p>
                       <p className="mt-2 text-slate-300">
-                        Enter your email and we will send you a magic link. After you sign in, checkout will continue automatically.
+                        Enter your email and we’ll send a sign-in link. Checkout continues after sign-in.
                       </p>
 
                       <form onSubmit={sendMagicLink} className="mt-4">

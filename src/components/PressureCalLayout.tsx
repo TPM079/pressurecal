@@ -98,7 +98,7 @@ export default function PressureCalLayout({
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:gap-4">
           <Link
             to="/"
             className="inline-flex items-center"
@@ -112,7 +112,7 @@ export default function PressureCalLayout({
  <img
   src="/pressurecal-logo-primary.png"
   alt="PressureCal"
-  className="block w-[220px] h-auto shrink-0 sm:w-[250px] lg:w-[270px]"
+  className="block h-auto w-[170px] shrink-0 sm:w-[250px] lg:w-[270px]"
 />
           </Link>
 
@@ -206,7 +206,7 @@ export default function PressureCalLayout({
                 to="/calculator"
                 className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
               >
-                Open Calculator
+                Calculator
               </Link>
             ) : (
               <span className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-500">
