@@ -54,11 +54,12 @@ function buildFeatureRows(freeSaveSetupsLabel: string): FeatureRow[] {
     { feature: "Full setup modelling", free: "Included", pro: "Included" },
     { feature: "Core calculators and conversions", free: "Included", pro: "Included" },
     { feature: "Real at-gun performance outputs", free: "Included", pro: "Included" },
-    { feature: "Save setups", free: freeSaveSetupsLabel, pro: "Included" },
+    { feature: "Save pressure washer setups", free: freeSaveSetupsLabel, pro: "Included" },
+    { feature: "Duplicate and reuse setups", free: "—", pro: "Included" },
     { feature: "Compare saved setups", free: "—", pro: "Included" },
-    { feature: "Share saved setups", free: "—", pro: "Included" },
+    { feature: "Share setup links", free: "—", pro: "Included" },
     { feature: "Saved setup library", free: "—", pro: "Included" },
-    { feature: "Repeat-use workflow tools", free: "—", pro: "Included" },
+    { feature: "Professional setup workflow tools", free: "—", pro: "Included" },
   ];
 }
 
@@ -191,13 +192,14 @@ export default function PricingComparisonSectionPressureCal({
           </div>
 
           <h2 className="mt-5 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
-            Start free. Upgrade when it becomes part of your workflow.
+            Start free. Upgrade when PressureCal becomes part of your workflow.
           </h2>
 
           <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
-            PressureCal gives working pressure washing operators fast, practical
-            setup modelling. PressureCal Pro adds the workflow tools that help
-            you save proven setups, compare options, and work faster over time.
+            PressureCal keeps the core calculators and full setup modelling
+            available for free. PressureCal Pro adds the setup management layer:
+            save, duplicate, compare, and share the pressure washer setups you
+            use again and again.
           </p>
         </div>
 
@@ -209,11 +211,12 @@ export default function PricingComparisonSectionPressureCal({
                   PressureCal
                 </p>
                 <h3 className="mt-2 text-2xl font-bold text-slate-900">
-                  Free core modelling
+                  Free calculators and setup modelling
                 </h3>
                 <p className="mt-3 text-sm leading-6 text-slate-600">
-                  Ideal for operators who want accurate setup checks and quick,
-                  real-world calculations in the field.
+                  Ideal for operators who want fast, practical setup checks
+                  without needing to save every machine, hose, and nozzle
+                  combination.
                 </p>
               </div>
 
@@ -226,7 +229,7 @@ export default function PricingComparisonSectionPressureCal({
             <ul className="mt-8 space-y-3">
               <li className="flex items-start gap-3 text-sm text-slate-700">
                 <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#1C408C]" />
-                Full access to core calculators and conversions
+                Use the core calculators and conversions whenever you need them
               </li>
               <li className="flex items-start gap-3 text-sm text-slate-700">
                 <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#1C408C]" />
@@ -234,7 +237,7 @@ export default function PricingComparisonSectionPressureCal({
               </li>
               <li className="flex items-start gap-3 text-sm text-slate-700">
                 <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#1C408C]" />
-                Best for quick checks, testing, and one-off jobs
+                Best for quick checks, testing, and one-off setup decisions
               </li>
             </ul>
 
@@ -258,11 +261,12 @@ export default function PricingComparisonSectionPressureCal({
                     PressureCal Pro
                   </p>
                   <h3 className="mt-2 text-2xl font-bold text-slate-900">
-                    Saved workflow for serious operators
+                    Setup management for repeat work
                   </h3>
                   <p className="mt-3 text-sm leading-6 text-slate-600">
-                    Built for operators who want to save setups, compare options,
-                    and build a reusable setup library.
+                    Built for operators who want to save proven setups, compare
+                    options, share setup links, and build a reusable pressure
+                    washer setup library.
                   </p>
                 </div>
 
@@ -275,15 +279,15 @@ export default function PricingComparisonSectionPressureCal({
               <ul className="mt-8 space-y-3">
                 <li className="flex items-start gap-3 text-sm text-slate-700">
                   <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#1C408C]" />
-                  Save proven setups for repeat jobs and standard machines
+                  Save named pressure washer setups for repeat jobs and machines
                 </li>
                 <li className="flex items-start gap-3 text-sm text-slate-700">
                   <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#1C408C]" />
-                  Compare setups and share saved results more easily
+                  Duplicate setups to test different hoses, nozzles, and spray modes
                 </li>
                 <li className="flex items-start gap-3 text-sm text-slate-700">
                   <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#1C408C]" />
-                  Designed for regular users who want to save time
+                  Compare saved setups and share setup links with others
                 </li>
               </ul>
 
