@@ -2,17 +2,19 @@ import { Link } from "react-router-dom";
 
 type PlanKey = "free" | "pro";
 
+type FeatureStatus = "Included" | "Coming soon" | "—";
+
 type FeatureRow = {
   feature: string;
-  free: string;
-  pro: string;
+  free: FeatureStatus;
+  pro: FeatureStatus;
 };
 
 export type PricingComparisonSectionPressureCalProps = {
   alreadyPro?: boolean;
   freeCalculatorHref?: string;
   proHref?: string;
-  freeSaveSetupsLabel?: string;
+  freeSaveSetupsLabel?: FeatureStatus;
 };
 
 function CheckIcon({ className = "h-4 w-4" }: { className?: string }) {
@@ -49,7 +51,7 @@ function MinusIcon({ className = "h-4 w-4" }: { className?: string }) {
   );
 }
 
-function buildFeatureRows(freeSaveSetupsLabel: string): FeatureRow[] {
+function buildFeatureRows(freeSaveSetupsLabel: FeatureStatus): FeatureRow[] {
   return [
     { feature: "Full setup modelling", free: "Included", pro: "Included" },
     { feature: "Core calculators and conversions", free: "Included", pro: "Included" },
@@ -64,7 +66,7 @@ function buildFeatureRows(freeSaveSetupsLabel: string): FeatureRow[] {
   ];
 }
 
-function renderDesktopValue(value: string, plan: PlanKey) {
+function renderDesktopValue(value: FeatureStatus, plan: PlanKey) {
   if (value === "Included") {
     return (
       <span
@@ -80,23 +82,6 @@ function renderDesktopValue(value: string, plan: PlanKey) {
     );
   }
 
-  if (value === "Unlimited") {
-    return (
-      <span className="inline-flex items-center rounded-full bg-[#1C408C] px-3 py-1 text-sm font-semibold text-white">
-        Unlimited
-      </span>
-    );
-  }
-
-  if (value === "—") {
-    return (
-      <span className="inline-flex items-center gap-1 text-sm font-medium text-slate-400">
-        <MinusIcon className="h-4 w-4" />
-        Not included
-      </span>
-    );
-  }
-
   if (value === "Coming soon") {
     return (
       <span className="inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-700">
@@ -106,62 +91,9 @@ function renderDesktopValue(value: string, plan: PlanKey) {
   }
 
   return (
-    <span className="inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-700">
-      {value}
-    </span>
-  );
-}
-
-function renderCompactValue(value: string, plan: PlanKey) {
-  if (value === "Included") {
-    return (
-      <span
-        className={`inline-flex h-8 w-8 items-center justify-center rounded-full ${
-          plan === "pro" ? "bg-[#1C408C] text-white" : "bg-slate-100 text-slate-700"
-        }`}
-        aria-label="Included"
-        title="Included"
-      >
-        <CheckIcon className="h-4 w-4" />
-      </span>
-    );
-  }
-
-  if (value === "—") {
-    return (
-      <span
-        className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-400"
-        aria-label="Not included"
-        title="Not included"
-      >
-        <MinusIcon className="h-4 w-4" />
-      </span>
-    );
-  }
-
-  if (value === "Unlimited") {
-    return (
-      <span className="inline-flex min-w-[2.25rem] items-center justify-center rounded-full bg-[#1C408C] px-2 py-1 text-[11px] font-semibold text-white">
-        All
-      </span>
-    );
-  }
-
-  if (value === "Coming soon") {
-    return (
-      <span
-        className="inline-flex min-w-[2.25rem] items-center justify-center rounded-full bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-700"
-        aria-label="Coming soon"
-        title="Coming soon"
-      >
-        Soon
-      </span>
-    );
-  }
-
-  return (
-    <span className="inline-flex min-w-[2.25rem] items-center justify-center rounded-full bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-700">
-      {value}
+    <span className="inline-flex items-center gap-1 text-sm font-medium text-slate-400">
+      <MinusIcon className="h-4 w-4" />
+      Not included
     </span>
   );
 }
@@ -217,10 +149,9 @@ export default function PricingComparisonSectionPressureCal({
           </h2>
 
           <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
-            PressureCal keeps the core calculators and full setup modelling
-            available for free. PressureCal Pro adds the setup management layer:
-            save, duplicate, compare, and share the pressure washer setups you
-            use again and again.
+            PressureCal gives working pressure washing operators fast, practical
+            setup modelling. PressureCal Pro adds the tools to save, duplicate,
+            compare, and share real pressure washer setups over time.
           </p>
         </div>
 
@@ -235,9 +166,8 @@ export default function PricingComparisonSectionPressureCal({
                   Free calculators and setup modelling
                 </h3>
                 <p className="mt-3 text-sm leading-6 text-slate-600">
-                  Ideal for operators who want fast, practical setup checks
-                  without needing to save every machine, hose, and nozzle
-                  combination.
+                  Ideal for operators who want accurate setup checks and quick,
+                  real-world calculations in the field.
                 </p>
               </div>
 
@@ -250,7 +180,7 @@ export default function PricingComparisonSectionPressureCal({
             <ul className="mt-8 space-y-3">
               <li className="flex items-start gap-3 text-sm text-slate-700">
                 <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#1C408C]" />
-                Use the core calculators and conversions whenever you need them
+                Full access to core calculators and conversions
               </li>
               <li className="flex items-start gap-3 text-sm text-slate-700">
                 <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#1C408C]" />
@@ -258,7 +188,7 @@ export default function PricingComparisonSectionPressureCal({
               </li>
               <li className="flex items-start gap-3 text-sm text-slate-700">
                 <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#1C408C]" />
-                Best for quick checks, testing, and one-off setup decisions
+                Best for quick checks, testing, and one-off jobs
               </li>
             </ul>
 
@@ -286,8 +216,7 @@ export default function PricingComparisonSectionPressureCal({
                   </h3>
                   <p className="mt-3 text-sm leading-6 text-slate-600">
                     Built for operators who want to save proven setups, compare
-                    options, share setup links, and build a reusable pressure
-                    washer setup library.
+                    options, share setup links, and build a reusable setup library.
                   </p>
                 </div>
 
@@ -300,15 +229,19 @@ export default function PricingComparisonSectionPressureCal({
               <ul className="mt-8 space-y-3">
                 <li className="flex items-start gap-3 text-sm text-slate-700">
                   <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#1C408C]" />
-                  Save named pressure washer setups for repeat jobs and machines
+                  Save pressure washer setups for repeat jobs and standard machines
                 </li>
                 <li className="flex items-start gap-3 text-sm text-slate-700">
                   <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#1C408C]" />
-                  Duplicate setups to test different hoses, nozzles, and spray modes
+                  Duplicate, compare, and reuse setups without starting again
                 </li>
                 <li className="flex items-start gap-3 text-sm text-slate-700">
                   <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#1C408C]" />
-                  Compare saved setups and share setup links with others
+                  Share saved setup links for faster recommendations and handovers
+                </li>
+                <li className="flex items-start gap-3 text-sm text-slate-700">
+                  <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#1C408C]" />
+                  Professional PDF setup reports coming soon
                 </li>
               </ul>
 
@@ -317,80 +250,45 @@ export default function PricingComparisonSectionPressureCal({
           </div>
         </div>
 
-        <div className="mt-8 overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
-          <div className="md:hidden">
-            <div className="grid grid-cols-[minmax(0,1fr)_72px_72px] border-b border-slate-200 bg-slate-50">
-              <div className="px-4 py-4 text-left text-sm font-semibold text-slate-900">
-                Feature
-              </div>
-              <div className="px-2 py-4 text-center text-xs font-semibold uppercase tracking-[0.12em] text-slate-600">
-                Free
-              </div>
-              <div className="bg-[#1C408C]/5 px-2 py-4 text-center text-xs font-semibold uppercase tracking-[0.12em] text-[#1C408C]">
-                Pro
-              </div>
-            </div>
+        <div className="mt-8 hidden overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm md:block">
+          <table className="min-w-[860px] w-full border-separate border-spacing-0">
+            <thead>
+              <tr className="bg-slate-50">
+                <th className="border-b border-slate-200 px-6 py-5 text-left text-sm font-semibold text-slate-900 sm:text-base">
+                  Feature
+                </th>
+                <th className="border-b border-slate-200 px-6 py-5 text-center text-sm font-semibold text-slate-900 sm:text-base">
+                  PressureCal
+                </th>
+                <th className="border-b border-[#1C408C]/10 bg-[#1C408C]/5 px-6 py-5 text-center text-sm font-semibold text-[#1C408C] sm:text-base">
+                  PressureCal Pro
+                </th>
+              </tr>
+            </thead>
 
-            {featureRows.map((row, index) => (
-              <div
-                key={row.feature}
-                className={`grid grid-cols-[minmax(0,1fr)_72px_72px] items-center border-b border-slate-200 ${
-                  index % 2 === 0 ? "bg-white" : "bg-slate-50/60"
-                }`}
-              >
-                <div className="px-4 py-4 text-sm font-medium leading-6 text-slate-900">
-                  {row.feature}
-                </div>
-                <div className="flex justify-center px-2 py-4">
-                  {renderCompactValue(row.free, "free")}
-                </div>
-                <div className="flex justify-center bg-[#1C408C]/5 px-2 py-4">
-                  {renderCompactValue(row.pro, "pro")}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="hidden overflow-x-auto md:block">
-            <table className="min-w-[860px] w-full border-separate border-spacing-0">
-              <thead>
-                <tr className="bg-slate-50">
-                  <th className="border-b border-slate-200 px-6 py-5 text-left text-sm font-semibold text-slate-900 sm:text-base">
-                    Feature
-                  </th>
-                  <th className="border-b border-slate-200 px-6 py-5 text-center text-sm font-semibold text-slate-900 sm:text-base">
-                    PressureCal
-                  </th>
-                  <th className="border-b border-[#1C408C]/10 bg-[#1C408C]/5 px-6 py-5 text-center text-sm font-semibold text-[#1C408C] sm:text-base">
-                    PressureCal Pro
-                  </th>
+            <tbody>
+              {featureRows.map((row, index) => (
+                <tr
+                  key={row.feature}
+                  className={index % 2 === 0 ? "bg-white" : "bg-slate-50/60"}
+                >
+                  <td className="border-b border-slate-200 px-6 py-4 text-sm font-medium text-slate-900 sm:text-base">
+                    {row.feature}
+                  </td>
+                  <td className="border-b border-slate-200 px-6 py-4 text-center">
+                    <div className="flex items-center justify-center">
+                      {renderDesktopValue(row.free, "free")}
+                    </div>
+                  </td>
+                  <td className="border-b border-[#1C408C]/10 bg-[#1C408C]/5 px-6 py-4 text-center">
+                    <div className="flex items-center justify-center">
+                      {renderDesktopValue(row.pro, "pro")}
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-
-              <tbody>
-                {featureRows.map((row, index) => (
-                  <tr
-                    key={row.feature}
-                    className={index % 2 === 0 ? "bg-white" : "bg-slate-50/60"}
-                  >
-                    <td className="border-b border-slate-200 px-6 py-4 text-sm font-medium text-slate-900 sm:text-base">
-                      {row.feature}
-                    </td>
-                    <td className="border-b border-slate-200 px-6 py-4 text-center">
-                      <div className="flex items-center justify-center">
-                        {renderDesktopValue(row.free, "free")}
-                      </div>
-                    </td>
-                    <td className="border-b border-[#1C408C]/10 bg-[#1C408C]/5 px-6 py-4 text-center">
-                      <div className="flex items-center justify-center">
-                        {renderDesktopValue(row.pro, "pro")}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </section>
