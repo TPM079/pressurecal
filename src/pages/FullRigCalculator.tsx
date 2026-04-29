@@ -531,6 +531,7 @@ export default function FullRigCalculatorPage() {
   const pqClassGun = pqAtGun >= 5600 ? "Class B" : "Class A";
   const selectedDisplayTipCode = roundTipCodeToFive(r.selectedTipCode);
   const calibratedDisplayTipCode = roundTipCodeToFive(r.calibratedTipCode);
+  const nozzleDisplaySuffix = inputs.sprayMode === "surfaceCleaner" ? " each" : "";
 
   const liveSetupItems = [
     {
@@ -878,8 +879,8 @@ export default function FullRigCalculatorPage() {
 
       ctx.fillStyle = "#0F172A";
       ctx.font = `700 24px ${EXPORT_CARD.fontFamily}`;
-      ctx.fillText(`Selected nozzle ${selectedDisplayTipCode}`, innerX + 24, footerY + 48);
-      ctx.fillText(`Recommended nozzle ${calibratedDisplayTipCode}`, innerX + 24, footerY + 80);
+      ctx.fillText(`Selected nozzle ${selectedDisplayTipCode}${nozzleDisplaySuffix}`, innerX + 24, footerY + 48);
+      ctx.fillText(`Recommended nozzle for rated pump output ${calibratedDisplayTipCode}${nozzleDisplaySuffix}`, innerX + 24, footerY + 80);
 
       ctx.fillStyle = "#475569";
       ctx.font = `500 22px ${EXPORT_CARD.fontFamily}`;
@@ -1655,9 +1656,9 @@ export default function FullRigCalculatorPage() {
                     <div className="mt-1 text-sm text-slate-600">{fmt(lossBar, 1)} bar · {efficiencyTier}</div>
                   </div>
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Recommended nozzle</div>
-                    <div className="mt-2 text-2xl font-semibold text-slate-950">{calibratedDisplayTipCode}</div>
-                    <div className="mt-1 text-sm text-slate-600">Selected nozzle {selectedDisplayTipCode}</div>
+                    <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Recommended nozzle for rated pump output</div>
+                    <div className="mt-2 text-2xl font-semibold text-slate-950">{calibratedDisplayTipCode}{nozzleDisplaySuffix}</div>
+                    <div className="mt-1 text-sm text-slate-600">Selected nozzle {selectedDisplayTipCode}{nozzleDisplaySuffix}</div>
                   </div>
                 </div>
 
