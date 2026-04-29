@@ -1666,6 +1666,9 @@ export default function FullRigCalculatorPage() {
                     <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Recommended nozzle for rated pump output</div>
                     <div className="mt-2 text-2xl font-semibold text-slate-950">{calibratedDisplayTipCode}{nozzleDisplaySuffix}</div>
                     <div className="mt-1 text-sm text-slate-600">Selected nozzle {selectedDisplayTipCode}{nozzleDisplaySuffix}</div>
+                    <p className="mt-3 text-xs leading-5 text-slate-500">
+                      Recommended size is based on rated pump pressure and flow. At-gun pressure may be lower once hose loss is included.
+                    </p>
                   </div>
                 </div>
 
