@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useEffect, useMemo, useState, type FocusEvent } from "react";
 import { Link } from "react-router-dom";
 import BackToTopButton from "../components/BackToTopButton";
+import CalculationExplainer from "../components/CalculationExplainer";
 import PressureCalLayout from "../components/PressureCalLayout";
 import {
   barFromPsi,
@@ -96,8 +97,8 @@ const converterLinks = [
   },
   {
     href: "/lpm-gpm-calculator",
-    title: "LPM ↔ GPM Converter",
-    description: "Quick flow conversion for specs, nozzle checks, and setup work.",
+    title: "LPM ↔ GPM (US) Converter",
+    description: "Quick flow conversion using US gallons per minute for specs, nozzle checks, and setup work.",
   },
 ];
 
@@ -876,8 +877,11 @@ export default function HomePage() {
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700">
-                    Pump flow ({inputs.pumpFlowUnit === "lpm" ? "LPM" : "GPM"})
+                    Pump flow ({inputs.pumpFlowUnit === "lpm" ? "LPM" : "GPM (US)"})
                   </label>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    GPM means US gallons per minute in PressureCal.
+                  </p>
                   <div className="mt-2 flex gap-3">
                     <input
                       className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-slate-900 outline-none focus:border-slate-400"
@@ -920,7 +924,7 @@ export default function HomePage() {
                       }
                     >
                       <option value="lpm">LPM</option>
-                      <option value="gpm">GPM</option>
+                      <option value="gpm">GPM (US)</option>
                     </select>
                   </div>
                 </div>
@@ -989,6 +993,83 @@ export default function HomePage() {
                     {fmt(solved.hoseLossPsi, 0)} PSI
                   </span>
                 </p>
+
+                <CalculationExplainer
+                  className="mt-6"
+                  formula={
+                    <div className="space-y-2">
+                      <p>
+                        PressureCal converts the entered flow to US GPM, converts pressure to PSI,
+                        estimates the matching nozzle / tip code using the 4000 PSI nozzle convention,
+                        then estimates hose loss and likely at-gun pressure.
+                      </p>
+                      <p className="font-mono text-xs text-slate-600">
+                        Pressure at gun = Pump pressure - Estimated hose loss
+                      </p>
+                    </div>
+                  }
+                  inputs={[
+                    {
+                      label: "Pump pressure",
+                      value: `${fmt(Number(inputs.pumpPressure || 0), inputs.pumpPressureUnit === "psi" ? 0 : 1)} ${
+                        inputs.pumpPressureUnit === "psi" ? "PSI" : "BAR"
+                      }`,
+                      note: `${fmt(pressurePsi, 0)} PSI used internally.`,
+                    },
+                    {
+                      label: "Pump flow",
+                      value:
+                        inputs.pumpFlowUnit === "lpm"
+                          ? `${fmt(Number(inputs.pumpFlow || 0), 1)} LPM`
+                          : `${fmt(Number(inputs.pumpFlow || 0), 2)} GPM (US)`,
+                      note: `${fmt(flowLpm, 1)} LPM / ${fmt(flowGpm, 2)} US GPM after unit conversion.`,
+                    },
+                    {
+                      label: "Hose length",
+                      value: `${fmt(Number(inputs.hoseLength || 0), 1)} ${hoseLengthShortUnit}`,
+                      note: 'Quick setup check assumes 9.53 mm (3/8") hose ID.',
+                    },
+                    {
+                      label: "Reference pressure",
+                      value: "4000 PSI",
+                      note: "Pressure washer nozzle codes are commonly based on US GPM at 4000 PSI.",
+                    },
+                  ]}
+                  results={[
+                    {
+                      label: "Recommended nozzle / tip code",
+                      value: recommendedTip,
+                      note: "Rounded to the nearest practical pressure washer nozzle code.",
+                    },
+                    {
+                      label: "Estimated hose loss",
+                      value: `${fmt(solved.hoseLossPsi, 0)} PSI (${fmt(lossBar, 1)} BAR)`,
+                      note: efficiencyTier,
+                    },
+                    {
+                      label: "Estimated at-gun pressure",
+                      value: `${fmt(solved.gunPressurePsi, 0)} PSI (${fmt(gunBar, 1)} BAR)`,
+                    },
+                    {
+                      label: "Estimated gun flow",
+                      value: `${fmt(gunLpm, 1)} LPM (${fmt(solved.gunFlowGpm, 2)} GPM)`,
+                    },
+                  ]}
+                  explanation={
+                    <p>
+                      This quick setup check gives operators a practical starting point from the main
+                      pressure, flow, and hose length inputs. For deeper setup control, open the full setup
+                      calculator and check hose ID, nozzle mode, maximum pressure, engine HP, and other limits.
+                    </p>
+                  }
+                  disclaimer={
+                    <p>
+                      Use this as a setup estimate only. Always confirm with a pressure gauge and check pump,
+                      hose, reel, gun, lance, fittings, nozzle, surface cleaner, and manufacturer limits before
+                      making equipment decisions.
+                    </p>
+                  }
+                />
 
                 <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
                   <button
