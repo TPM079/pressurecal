@@ -67,8 +67,8 @@ export default function TargetPressureNozzleCalculatorPage() {
                 </p>
 
                 <p>
-                  PressureCal keeps PSI and LPM first, with BAR and GPM still available
-                  when you need to compare mixed-spec pumps, manuals, or overseas parts.
+                  PressureCal keeps PSI and LPM first, with BAR and GPM (US gallons per minute)
+                  still available when you need to compare mixed-spec pumps, manuals, or overseas parts.
                 </p>
               </div>
             </section>
@@ -104,7 +104,7 @@ export default function TargetPressureNozzleCalculatorPage() {
                   If a 15 LPM machine needs to run closer to 3000 PSI instead of full rated
                   pressure, this calculator helps you work back to the nozzle size that best
                   matches that target. It is a faster way to compare options before changing
-                  nozzles in the field.
+                  nozzles in the field. In PressureCal, GPM means US gallons per minute.
                 </p>
               </div>
             </section>

@@ -1,3 +1,5 @@
+import CalculationExplainer from "../components/CalculationExplainer";
+
 import {
   useEffect,
   useMemo,
@@ -348,6 +350,13 @@ export default function TargetPressureNozzleCalculator() {
 
   const result = useMemo(() => calculateTargetPressureNozzle(input), [input]);
   const hasErrors = result.messages.some((message: CalcMessage) => message.type === "error");
+  const totalFlowGpm = result.totalFlowLpm / LPM_PER_GPM;
+  const flowPerNozzleGpm = result.flowPerNozzleLpm / LPM_PER_GPM;
+  const targetReferenceLabel =
+    mode === "realWorld" && form.targetReference === "gun"
+      ? "At-gun pressure"
+      : "Pump pressure";
+  const roundedNozzleLabel = `${formatNumber(result.recommendedNozzleSize, 1)} (${result.recommendedTipCode})`;
 
   return (
     <div className="space-y-8">
@@ -368,8 +377,8 @@ export default function TargetPressureNozzleCalculator() {
             </p>
 
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-              PressureCal keeps PSI and LPM first. Smaller nozzle means higher
-              pressure. Larger nozzle means lower pressure.
+              PressureCal keeps PSI and LPM first, with GPM treated as US gallons
+              per minute. Smaller nozzle means higher pressure. Larger nozzle means lower pressure.
             </p>
           </div>
 
@@ -407,11 +416,12 @@ export default function TargetPressureNozzleCalculator() {
                 unit={form.pumpFlowUnit}
                 unitOptions={[
                   { label: "LPM", value: "lpm" },
-                  { label: "GPM", value: "gpm" },
+                  { label: "GPM (US)", value: "gpm" },
                 ]}
                 onUnitChange={(value) =>
                   updateField(setForm, "pumpFlowUnit", value as FlowUnit)
                 }
+                helper="GPM means US gallons per minute in PressureCal."
               />
 
               <NumberField
@@ -601,6 +611,101 @@ export default function TargetPressureNozzleCalculator() {
                     subtext={`${formatNumber(result.targetPressureBar, 1)} BAR`}
                   />
                 </div>
+
+                <CalculationExplainer
+                  formula={
+                    <div className="space-y-2">
+                      <p>
+                        PressureCal works backwards from your target pressure and pump flow.
+                        It converts flow to US GPM, splits the flow across the nozzle count,
+                        then estimates nozzle size using the standard pressure washer nozzle relationship.
+                      </p>
+                      <p className="font-mono text-xs text-slate-600">
+                        Nozzle size = Flow per nozzle in US GPM × √(4000 ÷ target PSI)
+                      </p>
+                    </div>
+                  }
+                  inputs={[
+                    {
+                      label: "Pump flow",
+                      value: `${formatNumber(result.totalFlowLpm, 1)} LPM (${formatNumber(totalFlowGpm, 2)} GPM)`,
+                      note: "GPM means US gallons per minute in PressureCal.",
+                    },
+                    {
+                      label: "Nozzle count",
+                      value: `${Math.max(1, Math.round(form.nozzleCount || 1))}`,
+                      note: "PressureCal divides the total flow across the selected number of nozzles.",
+                    },
+                    {
+                      label: targetReferenceLabel,
+                      value: `${formatNumber(result.targetPressurePsi, 0)} PSI (${formatNumber(result.targetPressureBar, 1)} BAR)`,
+                      note:
+                        mode === "realWorld" && form.targetReference === "gun"
+                          ? "Real-world mode checks this as the target pressure at the gun."
+                          : "Quick mode works from the pump pressure target.",
+                    },
+                    {
+                      label: "Rated pump pressure",
+                      value: `${formatNumber(result.ratedPressurePsi, 0)} PSI (${formatNumber(result.ratedPressureBar, 1)} BAR)`,
+                      note: "Used to check whether the target appears achievable.",
+                    },
+                    ...(mode === "realWorld"
+                      ? [
+                          {
+                            label: "Estimated setup loss",
+                            value: `${formatNumber(result.hoseLossPsi + Math.max(0, form.extraLossPsi || 0), 0)} PSI`,
+                            note: "Includes hose loss and any extra fixed loss allowance entered.",
+                          },
+                        ]
+                      : []),
+                  ]}
+                  results={[
+                    {
+                      label: "Exact nozzle size",
+                      value: formatNumber(result.exactNozzleSize, 2),
+                      note: "Calculated before rounding to a practical standard nozzle size.",
+                    },
+                    {
+                      label: "Recommended nozzle / tip code",
+                      value: roundedNozzleLabel,
+                      note: "Rounded to the nearest half-size nozzle step.",
+                    },
+                    {
+                      label: "Flow per nozzle",
+                      value: `${formatNumber(result.flowPerNozzleLpm, 1)} LPM (${formatNumber(flowPerNozzleGpm, 2)} GPM)`,
+                    },
+                    {
+                      label: "Target check",
+                      value: result.isAchievable ? "Achievable" : "Review required",
+                      note: result.isAchievable
+                        ? "The entered target appears to be within the rated pressure allowance."
+                        : "The target may exceed the rated pressure once the setup is considered.",
+                    },
+                    ...(mode === "realWorld"
+                      ? [
+                          {
+                            label: "Required pump pressure",
+                            value: `${formatNumber(result.requiredPumpPressurePsi, 0)} PSI (${formatNumber(result.requiredPumpPressureBar, 1)} BAR)`,
+                          },
+                        ]
+                      : []),
+                  ]}
+                  explanation={
+                    <p>
+                      This calculator is useful when you already know the pressure you want to run.
+                      Smaller nozzle sizes create more restriction and raise pressure. Larger nozzle
+                      sizes reduce restriction and normally lower pressure. In real-world mode,
+                      PressureCal also checks the target against hose loss and any extra fixed losses.
+                    </p>
+                  }
+                  disclaimer={
+                    <p>
+                      Use this as a nozzle selection estimate only. Always confirm with a pressure gauge
+                      and check pump, hose, gun, lance, surface cleaner, nozzle, and manufacturer limits
+                      before operating.
+                    </p>
+                  }
+                />
               </div>
             </div>
 
@@ -691,11 +796,11 @@ export default function TargetPressureNozzleCalculator() {
               <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <SummaryItem
                   label="Total flow"
-                  value={`${formatNumber(result.totalFlowLpm, 1)} LPM`}
+                  value={`${formatNumber(result.totalFlowLpm, 1)} LPM (${formatNumber(totalFlowGpm, 2)} GPM)`}
                 />
                 <SummaryItem
                   label="Flow per nozzle"
-                  value={`${formatNumber(result.flowPerNozzleLpm, 1)} LPM`}
+                  value={`${formatNumber(result.flowPerNozzleLpm, 1)} LPM (${formatNumber(flowPerNozzleGpm, 2)} GPM)`}
                 />
                 <SummaryItem
                   label="Rated pressure"
