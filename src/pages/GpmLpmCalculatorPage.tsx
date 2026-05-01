@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
 import PressureCalLayout from "../components/PressureCalLayout";
 import BackToTopButton from "../components/BackToTopButton";
+import CalculationExplainer from "../components/CalculationExplainer";
 
 const GPM_TO_LPM = 3.78541;
 const LPM_TO_GPM = 0.264172;
@@ -318,6 +319,51 @@ export default function GpmLpmCalculatorPage() {
                     and mixed-unit flow ratings.
                   </div>
                 </div>
+
+                <CalculationExplainer
+                  className="mt-5"
+                  formula={
+                    lastEdited === "gpm"
+                      ? "LPM = GPM × 3.78541"
+                      : "GPM = LPM × 0.264172"
+                  }
+                  inputs={[
+                    {
+                      label: "Entered flow",
+                      value:
+                        lastEdited === "gpm"
+                          ? `${gpmInput} GPM`
+                          : `${lpmInput} LPM`,
+                    },
+                  ]}
+                  results={[
+                    {
+                      label: "Converted flow",
+                      value: `${result.lpm} LPM = ${result.gpm} GPM`,
+                    },
+                    {
+                      label: "Rounded result",
+                      value:
+                        lastEdited === "gpm"
+                          ? `${result.lpm} LPM`
+                          : `${result.gpm} GPM`,
+                    },
+                  ]}
+                  explanation={
+                    <p>
+                      PressureCal converts the flow value into the opposite unit so operators can compare
+                      Australian-style LPM ratings with GPM figures used on many nozzle charts, pumps,
+                      manuals, and overseas specifications.
+                    </p>
+                  }
+                  disclaimer={
+                    <p>
+                      Use this as a flow-unit conversion only. Real setup performance still depends on pump
+                      condition, nozzle size, hose loss, fittings, unloader setting, gauge readings, and
+                      manufacturer limits.
+                    </p>
+                  }
+                />
               </div>
             )}
 

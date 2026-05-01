@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
 import PressureCalLayout from "../components/PressureCalLayout";
 import BackToTopButton from "../components/BackToTopButton";
+import CalculationExplainer from "../components/CalculationExplainer";
 
 const PSI_TO_BAR = 0.0689476;
 const BAR_TO_PSI = 14.5038;
@@ -458,6 +459,60 @@ export default function PsiBarCalculatorPage() {
                     performance, also check hose loss, nozzle size, and flow.
                   </div>
                 </div>
+
+                <CalculationExplainer
+                  className="mt-5"
+                  formula={
+                    <p>
+                      {lastEdited === "psi"
+                        ? "BAR = PSI × 0.0689476"
+                        : "PSI = BAR × 14.5038"}
+                    </p>
+                  }
+                  inputs={[
+                    {
+                      label: lastEdited === "psi" ? "Pressure entered" : "BAR entered",
+                      value: lastEdited === "psi" ? `${result.psi} PSI` : `${result.bar} BAR`,
+                      note:
+                        lastEdited === "psi"
+                          ? "PressureCal treated the PSI value as the source pressure."
+                          : "PressureCal treated the BAR value as the source pressure.",
+                    },
+                    {
+                      label: "Conversion factor",
+                      value: lastEdited === "psi" ? "0.0689476" : "14.5038",
+                      note:
+                        lastEdited === "psi"
+                          ? "Multiply PSI by this number to convert to BAR."
+                          : "Multiply BAR by this number to convert to PSI.",
+                    },
+                  ]}
+                  results={[
+                    {
+                      label: "Converted result",
+                      value: lastEdited === "psi" ? `${result.bar} BAR` : `${result.psi} PSI`,
+                      note:
+                        lastEdited === "psi"
+                          ? `${result.psi} PSI × 0.0689476 = ${result.bar} BAR.`
+                          : `${result.bar} BAR × 14.5038 = ${result.psi} PSI.`,
+                    },
+                  ]}
+                  explanation={
+                    <p>
+                      PressureCal is doing a direct pressure unit conversion here. This is useful
+                      when a pump, gauge, unloader, manual, or machine label lists pressure in a
+                      different unit, but it does not model flow, hose loss, nozzle restriction, or
+                      real at-gun pressure.
+                    </p>
+                  }
+                  disclaimer={
+                    <p>
+                      Use this as a pressure rating conversion only. For real setup checks, confirm
+                      working pressure with a gauge and stay within pump, hose, gun, lance, unloader,
+                      surface cleaner, and nozzle limits.
+                    </p>
+                  }
+                />
               </div>
             )}
 

@@ -2,6 +2,7 @@ import { Helmet } from "react-helmet-async";
 import { useEffect, useMemo, useRef, useState, type FocusEvent } from "react";
 import { Link } from "react-router-dom";
 import BackToTopButton from "../components/BackToTopButton";
+import CalculationExplainer from "../components/CalculationExplainer";
 import CompactCurrentVsSavedComparePanel from "../components/CompactCurrentVsSavedComparePanel";
 import PressureCalLayout from "../components/PressureCalLayout";
 import { useProAccess } from "../hooks/useProAccess";
@@ -981,6 +982,82 @@ export default function FullRigCalculatorPage() {
     setInputs((current) => ({ ...current, [key]: value }));
   }
 
+  const calculatedNozzleLabel = `${calibratedDisplayTipCode}${nozzleDisplaySuffix}`;
+  const selectedNozzleLabel = `${selectedDisplayTipCode}${nozzleDisplaySuffix}`;
+  const sprayModeLabel =
+    inputs.sprayMode === "surfaceCleaner"
+      ? `Surface cleaner (${inputs.nozzleCount} nozzles)`
+      : "Wand (single nozzle)";
+
+  const fullSetupExplainerInputs = [
+    {
+      label: "Rated pressure",
+      value: `${fmt(Number(inputs.pumpPressure || 0), 0)} ${inputs.pumpPressureUnit.toUpperCase()}`,
+      note: `${fmt(ratedPsi, 0)} PSI used internally`,
+    },
+    {
+      label: "Rated flow",
+      value: `${fmt(ratedLpm, 1)} LPM (${fmt(ratedGpm, 2)} GPM)`,
+    },
+    {
+      label: "Max pressure",
+      value: `${fmt(Number(inputs.maxPressure || 0), 0)} ${inputs.maxPressureUnit.toUpperCase()}`,
+      note: "Used to flag bypass/pressure-limited behaviour when the setup would exceed the limit.",
+    },
+    {
+      label: "Hose",
+      value: `${fmt(Number(inputs.hoseLength || 0), 1)} ${inputs.hoseLengthUnit} · ${fmt(Number(inputs.hoseId || 0), inputs.hoseIdUnit === "in" ? 2 : 1)} ${inputs.hoseIdUnit} ID`,
+    },
+    {
+      label: "Spray mode",
+      value: sprayModeLabel,
+      note:
+        inputs.sprayMode === "surfaceCleaner"
+          ? "PressureCal treats the entered nozzle size as the size of each individual nozzle."
+          : "PressureCal treats this as a single-nozzle wand setup.",
+    },
+    {
+      label: "Selected nozzle",
+      value: selectedNozzleLabel,
+    },
+    {
+      label: "Engine HP",
+      value: inputs.engineHp === "" ? "Not provided" : `${fmt(Number(inputs.engineHp || 0), 1)} HP`,
+      note: inputs.engineHp === "" ? "Optional. Add engine HP to check power headroom." : `${fmt(usableEngineHp, 1)} HP usable guide after allowance factor.`,
+    },
+  ];
+
+  const fullSetupExplainerResults = [
+    {
+      label: "At-gun pressure",
+      value: `${fmt(r.gunPressurePsi, 0)} PSI (${fmt(gunBar, 1)} bar)`,
+    },
+    {
+      label: "Flow",
+      value: `${fmt(gunLpm, 1)} LPM (${fmt(r.gunFlowGpm, 2)} GPM)`,
+    },
+    {
+      label: "Hose loss",
+      value: `${fmt(r.hoseLossPsi, 0)} PSI (${fmt(lossBar, 1)} bar)`,
+      note: efficiencyTier,
+    },
+    {
+      label: "Nozzle match",
+      value: `${badge.text}: selected ${selectedNozzleLabel}, recommended ${calculatedNozzleLabel}`,
+      note: r.statusMessage,
+    },
+    {
+      label: "Required HP",
+      value: `${fmt(requiredHp, 1)} HP`,
+      note: usableEngineHp > 0 ? `Usable engine HP guide: ${fmt(usableEngineHp, 1)} HP` : "Enter engine HP to compare available power.",
+    },
+    {
+      label: "P × Q reference",
+      value: `${fmt(pqAtGun, 0)} at gun (${pqClassGun})`,
+      note: `Rated reference: ${fmt(pqRated, 0)} (${pqClassRated})`,
+    },
+  ];
+
   return (
     <PressureCalLayout hideFeedbackWidget={sharePanelOpen}>
       <Helmet>
@@ -1676,6 +1753,40 @@ export default function FullRigCalculatorPage() {
                   <p className="text-sm font-semibold text-slate-900">Pressure loss guide</p>
                   <p className="mt-2 text-sm leading-6 text-slate-600">{efficiencyNote}</p>
                 </div>
+
+                <CalculationExplainer
+                  className="mt-5"
+                  formula={
+                    <div className="space-y-2">
+                      <p>
+                        PressureCal models the setup by converting the rated pressure and flow into
+                        PSI/GPM, applying the selected nozzle relationship, estimating hose loss,
+                        then subtracting that loss to estimate at-gun pressure.
+                      </p>
+                      <p>
+                        Hose loss is estimated from flow, hose length, hose ID, water properties,
+                        and roughness. Required HP is estimated as: HP = (PSI × GPM) ÷ (1714 × efficiency).
+                      </p>
+                    </div>
+                  }
+                  inputs={fullSetupExplainerInputs}
+                  results={fullSetupExplainerResults}
+                  explanation={
+                    <p>
+                      This is intended to show what the complete pressure washer setup is likely
+                      doing from pump to gun. The nozzle controls the operating point, the hose
+                      removes pressure before the gun, and the engine HP check helps flag whether
+                      the setup is likely to be short on usable power.
+                    </p>
+                  }
+                  disclaimer={
+                    <p>
+                      Use this as a setup estimate only. Always confirm with a pressure gauge and
+                      check pump, hose, gun, lance, surface cleaner, nozzle, unloader, and engine
+                      limits before changing equipment or operating pressure.
+                    </p>
+                  }
+                />
               </div>
 
               <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:hidden">

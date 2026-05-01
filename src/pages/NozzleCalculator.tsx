@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import BackToTopButton from "../components/BackToTopButton";
+import CalculationExplainer from "../components/CalculationExplainer";
 import PressureCalLayout from "../components/PressureCalLayout";
 import { roundTipCodeToFive } from "../pressurecal";
 
@@ -135,6 +136,10 @@ type CalculatorCoreProps = {
   setFlow: (value: number) => void;
   flowUnit: FlowUnit;
   setFlowUnit: (value: FlowUnit) => void;
+  pressurePsi: number;
+  flowGpm: number;
+  flowLpm: number;
+  gpmAt4000: number;
   tip: string;
   orificeMm: number;
   orificeIn: number;
@@ -161,6 +166,10 @@ function CalculatorCore({
   setFlow,
   flowUnit,
   setFlowUnit,
+  pressurePsi,
+  flowGpm,
+  flowLpm,
+  gpmAt4000,
   tip,
   orificeMm,
   orificeIn,
@@ -171,6 +180,9 @@ function CalculatorCore({
   copyMessage,
   applyPreset,
 }: CalculatorCoreProps) {
+  const pressureDisplayUnit = pressureUnit === "psi" ? "PSI" : "BAR";
+  const flowDisplayUnit = flowUnit === "lpm" ? "LPM" : "GPM";
+
   return (
     <div className={embedded ? "space-y-6" : "space-y-8"}>
       {!embedded && (
@@ -377,6 +389,63 @@ function CalculatorCore({
                   <p className="mt-1 text-sm text-slate-500">@ 4000 PSI</p>
                 </div>
               </div>
+
+              <CalculationExplainer
+                formula={
+                  <p>
+                    PressureCal converts the entered flow to GPM, converts pressure to PSI,
+                    then estimates the flow equivalent at 4000 PSI: tip flow = flow × √(4000 ÷ pressure).
+                    The nozzle code is then rounded to the nearest standard tip code.
+                  </p>
+                }
+                inputs={[
+                  {
+                    label: "Pump pressure",
+                    value: `${fmt(pressure, pressureUnit === "psi" ? 0 : 1)} ${pressureDisplayUnit}`,
+                    note: `${fmt(pressurePsi, 0)} PSI used in the nozzle calculation.`,
+                  },
+                  {
+                    label: "Pump flow",
+                    value: `${fmt(flow, flowUnit === "lpm" ? 1 : 2)} ${flowDisplayUnit}`,
+                    note: `${fmt(flowLpm, 1)} LPM / ${fmt(flowGpm, 2)} GPM after unit conversion.`,
+                  },
+                  {
+                    label: "Reference pressure",
+                    value: "4000 PSI",
+                    note: "Pressure washer nozzle codes are commonly based on GPM at 4000 PSI.",
+                  },
+                ]}
+                results={[
+                  {
+                    label: "Flow equivalent",
+                    value: `${fmt(gpmAt4000, 2)} GPM @ 4000 PSI`,
+                    note: `${fmtRounded(gpmAt4000 * LPM_PER_GPM)} LPM equivalent after pressure adjustment.`,
+                  },
+                  {
+                    label: "Recommended tip code",
+                    value: tip,
+                    note: "Rounded to the nearest practical pressure washer nozzle code.",
+                  },
+                  {
+                    label: "Estimated orifice",
+                    value: `${fmt(orificeMm, 2)} mm (${fmt(orificeIn, 3)} in)`,
+                    note: "Orifice estimate assumes water and Cd ≈ 0.62.",
+                  },
+                ]}
+                explanation={
+                  <p>
+                    A smaller nozzle restricts flow more and raises operating pressure. A larger nozzle
+                    restricts flow less and normally lowers pressure at the gun. This estimate gives you
+                    a practical starting point for matching a nozzle to the pressure and flow you entered.
+                  </p>
+                }
+                disclaimer={
+                  <p>
+                    Use this as a setup estimate only. Always confirm with a pressure gauge and check
+                    pump, hose, gun, lance, surface cleaner, and nozzle limits before operating.
+                  </p>
+                }
+              />
 
               <div className="flex flex-col gap-3 sm:flex-row">
                 <button
@@ -715,6 +784,10 @@ export default function NozzleCalculator({ embedded = false }: NozzleCalculatorP
       setFlow={setFlow}
       flowUnit={flowUnit}
       setFlowUnit={setFlowUnit}
+      pressurePsi={pressurePsi}
+      flowGpm={flowGpm}
+      flowLpm={flowLpm}
+      gpmAt4000={gpmAt4000}
       tip={tip}
       orificeMm={orificeMm}
       orificeIn={orificeIn}

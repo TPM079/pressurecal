@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import BackToTopButton from "../components/BackToTopButton";
 import PressureCalLayout from "../components/PressureCalLayout";
+import CalculationExplainer from "../components/CalculationExplainer";
 
 type PressureUnit = "psi" | "bar";
 type FlowUnit = "gpm" | "lpm";
@@ -202,6 +203,10 @@ export default function HosePressureLossCalculator() {
     if (lossPct < 8) return "Noticeable, but often still workable depending on the job.";
     return "Meaningful pressure loss. Hose length or hose ID may be worth revisiting.";
   }, [lossPct]);
+
+  const flowLpm = useMemo(() => flowGpm * LPM_PER_GPM, [flowGpm]);
+  const hoseLossBar = useMemo(() => fromPsi(hoseLossPsi, "bar"), [hoseLossPsi]);
+  const pressureAtGunBar = useMemo(() => fromPsi(pressureAtGunPsi, "bar"), [pressureAtGunPsi]);
 
   function resetAll() {
     setPressure(DEFAULTS.pressure);
@@ -557,6 +562,62 @@ export default function HosePressureLossCalculator() {
                     <p className="text-xs text-slate-500">
                       {copyMessage || "Share link preserves your units and inputs."}
                     </p>
+
+                    <CalculationExplainer
+                      formula={
+                        <div className="space-y-2">
+                          <p>
+                            Hose pressure loss is estimated from flow, hose length, and hose internal diameter using a Darcy-Weisbach style pressure-loss calculation.
+                          </p>
+                          <p className="font-mono text-xs text-slate-600">
+                            Pressure at gun = Pump pressure - Estimated hose loss
+                          </p>
+                        </div>
+                      }
+                      inputs={[
+                        {
+                          label: "Pump pressure",
+                          value: `${fmtRounded(pressurePsi)} PSI (${fmt(fromPsi(pressurePsi, "bar"), 1)} BAR)`,
+                          note: `Entered as ${fmt(pressure, pressureUnit === "psi" ? 0 : 1)} ${pressureUnit.toUpperCase()}.`,
+                        },
+                        {
+                          label: "Pump flow",
+                          value: `${fmtRounded(flowLpm)} LPM (${fmt(flowGpm, 2)} GPM)`,
+                          note: `Entered as ${fmt(flow, flowUnit === "gpm" ? 2 : 0)} ${flowUnit.toUpperCase()}.`,
+                        },
+                        {
+                          label: "Hose length",
+                          value: `${fmt(hoseLengthM, 1)} m`,
+                          note: `Entered as ${fmt(hoseLength, 0)} ${hoseLengthUnit === "m" ? "metres" : "feet"}.`,
+                        },
+                        {
+                          label: "Hose ID",
+                          value: `${fmt(hoseIdMm, 2)} mm`,
+                          note: `Entered as ${fmt(hoseId, hoseIdUnit === "mm" ? 2 : 3)} ${hoseIdUnit}.`,
+                        },
+                      ]}
+                      results={[
+                        {
+                          label: "Estimated hose loss",
+                          value: `${fmtRounded(hoseLossPsi)} PSI (${fmt(hoseLossBar, 1)} BAR)`,
+                          note: `${fmt(lossPct, 1)}% of the entered pump pressure.`,
+                        },
+                        {
+                          label: "Estimated pressure at gun",
+                          value: `${fmtRounded(pressureAtGunPsi)} PSI (${fmt(pressureAtGunBar, 1)} BAR)`,
+                        },
+                      ]}
+                      explanation={
+                        <p>
+                          PressureCal estimates the pressure being lost as water moves through the hose. Longer hose runs, smaller hose IDs, and higher flow rates usually increase pressure loss. This helps show whether the hose is a small part of the setup or a meaningful reason the machine feels weaker at the gun.
+                        </p>
+                      }
+                      disclaimer={
+                        <p>
+                          Use this as a setup estimate only. Always confirm with a pressure gauge and check pump, hose, reel, gun, lance, fittings, nozzle, and manufacturer limits before making equipment decisions.
+                        </p>
+                      }
+                    />
                   </div>
                 </div>
               </div>
