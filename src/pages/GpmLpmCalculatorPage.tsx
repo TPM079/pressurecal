@@ -5,8 +5,8 @@ import PressureCalLayout from "../components/PressureCalLayout";
 import BackToTopButton from "../components/BackToTopButton";
 import CalculationExplainer from "../components/CalculationExplainer";
 
-const GPM_TO_LPM = 3.78541;
-const LPM_TO_GPM = 0.264172;
+const US_GPM_TO_LPM = 3.78541;
+const LPM_TO_US_GPM = 0.264172;
 
 function formatNumber(value: number, maxDecimals = 4) {
   if (!Number.isFinite(value)) return "";
@@ -14,11 +14,11 @@ function formatNumber(value: number, maxDecimals = 4) {
 }
 
 function formatLpmFromGpm(gpm: number) {
-  return formatNumber(gpm * GPM_TO_LPM, 2);
+  return formatNumber(gpm * US_GPM_TO_LPM, 2);
 }
 
 function formatGpmFromLpm(lpm: number) {
-  return formatNumber(lpm * LPM_TO_GPM, 2);
+  return formatNumber(lpm * LPM_TO_US_GPM, 2);
 }
 
 export default function GpmLpmCalculatorPage() {
@@ -125,7 +125,7 @@ export default function GpmLpmCalculatorPage() {
 
     try {
       await navigator.clipboard.writeText(
-        `${result.lpm} LPM = ${result.gpm} GPM`
+        `${result.lpm} LPM = ${result.gpm} GPM (US)`
       );
       setCopied(true);
     } catch {
@@ -139,10 +139,10 @@ export default function GpmLpmCalculatorPage() {
   return (
     <PressureCalLayout>
       <Helmet>
-        <title>LPM to GPM Converter for Pressure Washers | PressureCal</title>
+        <title>LPM to GPM (US) Converter for Pressure Washers | PressureCal</title>
         <meta
           name="description"
-          content="Convert LPM to GPM and GPM to LPM for pressure washer setups, pumps, nozzles, and machine specs. Useful for comparing Australian and overseas flow ratings."
+          content="Convert LPM to US GPM and US GPM to LPM for pressure washer setups, pumps, nozzles, and machine specs. Useful for comparing Australian and overseas flow ratings."
         />
         <link
           rel="canonical"
@@ -150,11 +150,11 @@ export default function GpmLpmCalculatorPage() {
         />
         <meta
           property="og:title"
-          content="LPM to GPM Converter for Pressure Washers | PressureCal"
+          content="LPM to GPM (US) Converter for Pressure Washers | PressureCal"
         />
         <meta
           property="og:description"
-          content="Convert LPM to GPM and GPM to LPM for pressure washer setups, pumps, nozzles, and machine specs. Useful for comparing Australian and overseas flow ratings."
+          content="Convert LPM to US GPM and US GPM to LPM for pressure washer setups, pumps, nozzles, and machine specs. Useful for comparing Australian and overseas flow ratings."
         />
         <meta
           property="og:url"
@@ -163,22 +163,22 @@ export default function GpmLpmCalculatorPage() {
         <meta property="og:type" content="website" />
         <meta
           name="twitter:title"
-          content="LPM to GPM Converter for Pressure Washers | PressureCal"
+          content="LPM to GPM (US) Converter for Pressure Washers | PressureCal"
         />
         <meta
           name="twitter:description"
-          content="Convert LPM to GPM and GPM to LPM for pressure washer setups, pumps, nozzles, and machine specs. Useful for comparing Australian and overseas flow ratings."
+          content="Convert LPM to US GPM and US GPM to LPM for pressure washer setups, pumps, nozzles, and machine specs. Useful for comparing Australian and overseas flow ratings."
         />
         <script type="application/ld+json">
           {JSON.stringify({
             "@context": "https://schema.org",
             "@type": "WebApplication",
-            name: "LPM to GPM Converter",
+            name: "LPM to GPM (US) Converter",
             url: "https://www.pressurecal.com/lpm-gpm-calculator",
             applicationCategory: "Converter",
             operatingSystem: "Web",
             description:
-              "Convert LPM to GPM and GPM to LPM for pressure washer setups, pumps, nozzles, and machine specs. Useful for comparing Australian and overseas flow ratings.",
+              "Convert LPM to US GPM and US GPM to LPM for pressure washer setups, pumps, nozzles, and machine specs. Useful for comparing Australian and overseas flow ratings.",
           })}
         </script>
       </Helmet>
@@ -201,9 +201,8 @@ export default function GpmLpmCalculatorPage() {
               </p>
 
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-                Useful for comparing Australian and overseas flow ratings,
-                checking machine specs, and matching nozzles and setup changes
-                across mixed-unit equipment.
+                PressureCal uses US gallons per minute for GPM, matching the convention used by
+                most pressure washer nozzle charts, pumps, and overseas specifications.
               </p>
             </div>
 
@@ -236,7 +235,7 @@ export default function GpmLpmCalculatorPage() {
                   htmlFor="gpm"
                   className="mb-2 block text-sm font-medium text-slate-700"
                 >
-                  GPM
+                  GPM (US)
                 </label>
                 <input
                   id="gpm"
@@ -247,7 +246,7 @@ export default function GpmLpmCalculatorPage() {
                   onKeyDown={(e) => {
                     if (e.key === "Enter") e.currentTarget.blur();
                   }}
-                  placeholder="Enter GPM"
+                  placeholder="Enter GPM (US)"
                   className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                 />
               </div>
@@ -315,8 +314,8 @@ export default function GpmLpmCalculatorPage() {
                   </div>
 
                   <div className="rounded-2xl border border-blue-200 bg-white px-4 py-3 text-sm leading-6 text-slate-600 md:max-w-xs">
-                    Useful for comparing pumps, machine specs, nozzle matching,
-                    and mixed-unit flow ratings.
+                    GPM here means US gallons per minute. Useful for comparing pumps,
+                    machine specs, nozzle matching, and mixed-unit flow ratings.
                   </div>
                 </div>
 
@@ -324,35 +323,35 @@ export default function GpmLpmCalculatorPage() {
                   className="mt-5"
                   formula={
                     lastEdited === "gpm"
-                      ? "LPM = GPM × 3.78541"
-                      : "GPM = LPM × 0.264172"
+                      ? "LPM = US GPM × 3.78541"
+                      : "US GPM = LPM × 0.264172"
                   }
                   inputs={[
                     {
                       label: "Entered flow",
                       value:
                         lastEdited === "gpm"
-                          ? `${gpmInput} GPM`
+                          ? `${gpmInput} GPM (US)`
                           : `${lpmInput} LPM`,
                     },
                   ]}
                   results={[
                     {
                       label: "Converted flow",
-                      value: `${result.lpm} LPM = ${result.gpm} GPM`,
+                      value: `${result.lpm} LPM = ${result.gpm} GPM (US)`,
                     },
                     {
                       label: "Rounded result",
                       value:
                         lastEdited === "gpm"
                           ? `${result.lpm} LPM`
-                          : `${result.gpm} GPM`,
+                          : `${result.gpm} GPM (US)`,
                     },
                   ]}
                   explanation={
                     <p>
                       PressureCal converts the flow value into the opposite unit so operators can compare
-                      Australian-style LPM ratings with GPM figures used on many nozzle charts, pumps,
+                      Australian-style LPM ratings with US GPM figures used on many nozzle charts, pumps,
                       manuals, and overseas specifications.
                     </p>
                   }
@@ -397,7 +396,7 @@ export default function GpmLpmCalculatorPage() {
 
               <div>
                 <p className="mb-3 text-sm font-medium text-slate-700">
-                  Quick GPM presets
+                  Quick GPM (US) presets
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {quickGpmExamples.map((value) => {
@@ -427,8 +426,8 @@ export default function GpmLpmCalculatorPage() {
               <h2 className="text-sm font-semibold text-slate-900">
                 Conversion formulas
               </h2>
-              <p className="mt-2 text-sm text-slate-600">LPM = GPM × 3.78541</p>
-              <p className="text-sm text-slate-600">GPM = LPM × 0.264172</p>
+              <p className="mt-2 text-sm text-slate-600">LPM = US GPM × 3.78541</p>
+              <p className="text-sm text-slate-600">US GPM = LPM × 0.264172</p>
             </div>
 
             <div className="mt-8">
@@ -443,7 +442,7 @@ export default function GpmLpmCalculatorPage() {
                     className="rounded-2xl border border-slate-200 bg-white p-4"
                   >
                     <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      GPM to LPM
+                      GPM (US) to LPM
                     </p>
                     <p className="mt-2 text-sm font-medium text-slate-700">
                       {value} GPM = {formatLpmFromGpm(value)} LPM
@@ -459,7 +458,7 @@ export default function GpmLpmCalculatorPage() {
                     className="rounded-2xl border border-slate-200 bg-white p-4"
                   >
                     <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      LPM to GPM
+                      LPM to GPM (US)
                     </p>
                     <p className="mt-2 text-sm font-medium text-slate-700">
                       {value} LPM = {formatGpmFromLpm(value)} GPM
@@ -477,21 +476,21 @@ export default function GpmLpmCalculatorPage() {
 
             <div className="mt-4 space-y-4 text-sm leading-7 text-slate-600">
               <p>
-                LPM and GPM are both common flow-rate units in the pressure
+                LPM and US GPM are both common flow-rate units in the pressure
                 washing industry. Pumps, nozzles, machines, and manuals may use
                 one or the other depending on the brand, market, or country of
                 origin.
               </p>
 
               <p>
-                This converter is useful when you need to compare mixed-spec
-                equipment, cross-check machine ratings, or move between
-                Australian and overseas flow references.
+                PressureCal treats GPM as US gallons per minute because that is
+                the convention used by many pressure washer nozzle charts, pump
+                specifications, and overseas equipment references.
               </p>
 
               <p>
                 For PressureCal, LPM comes first because that matches how many
-                operators think about machine flow in practice, while GPM is
+                operators think about machine flow in practice, while US GPM is
                 still important for manuals, parts, and overseas specs.
               </p>
             </div>
@@ -508,7 +507,8 @@ export default function GpmLpmCalculatorPage() {
                   What is 4 GPM in LPM?
                 </h3>
                 <p className="mt-2">
-                  4 GPM is approximately {formatLpmFromGpm(4)} LPM.
+                  4 GPM is approximately {formatLpmFromGpm(4)} LPM. In PressureCal,
+                  GPM means US gallons per minute.
                 </p>
               </div>
 
@@ -517,7 +517,8 @@ export default function GpmLpmCalculatorPage() {
                   What is 5.5 GPM in LPM?
                 </h3>
                 <p className="mt-2">
-                  5.5 GPM is approximately {formatLpmFromGpm(5.5)} LPM.
+                  5.5 GPM is approximately {formatLpmFromGpm(5.5)} LPM. This uses
+                  US gallons per minute.
                 </p>
               </div>
 
@@ -526,7 +527,17 @@ export default function GpmLpmCalculatorPage() {
                   What is 21 LPM in GPM?
                 </h3>
                 <p className="mt-2">
-                  21 LPM is approximately {formatGpmFromLpm(21)} GPM.
+                  21 LPM is approximately {formatGpmFromLpm(21)} GPM using US gallons per minute.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-base font-semibold text-slate-900">
+                  Is GPM in PressureCal US or imperial gallons?
+                </h3>
+                <p className="mt-2">
+                  PressureCal uses US gallons per minute for GPM. This matches the common convention
+                  used by pressure washer nozzle charts, pumps, and many overseas specifications.
                 </p>
               </div>
 

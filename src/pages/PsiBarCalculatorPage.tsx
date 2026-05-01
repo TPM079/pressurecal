@@ -753,9 +753,9 @@ export default function PsiBarCalculatorPage() {
                 to="/lpm-gpm-calculator"
                 className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium text-slate-800 transition hover:bg-slate-100"
               >
-                LPM ↔ GPM Calculator
+                LPM ↔ GPM (US) Calculator
                 <span className="mt-1 block text-xs font-normal leading-5 text-slate-500">
-                  Convert flow ratings between Australian-style LPM and GPM.
+                  Convert flow ratings between Australian-style LPM and US gallons per minute.
                 </span>
               </Link>
 

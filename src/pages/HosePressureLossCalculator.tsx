@@ -269,7 +269,7 @@ export default function HosePressureLossCalculator() {
         </title>
         <meta
           name="description"
-          content="Estimate pressure loss through pressure washer hose using metres, PSI and LPM first, while still supporting feet, BAR and GPM when needed. Useful for checking at-gun pressure and real setup performance."
+          content="Estimate pressure loss through pressure washer hose using metres, PSI and LPM first, while still supporting feet, BAR and GPM (US) when needed. Useful for checking at-gun pressure and real setup performance."
         />
         <link
           rel="canonical"
@@ -281,7 +281,7 @@ export default function HosePressureLossCalculator() {
         />
         <meta
           property="og:description"
-          content="Estimate pressure loss through pressure washer hose using metres, PSI and LPM first, while still supporting feet, BAR and GPM when needed. Useful for checking at-gun pressure and real setup performance."
+          content="Estimate pressure loss through pressure washer hose using metres, PSI and LPM first, while still supporting feet, BAR and GPM (US) when needed. Useful for checking at-gun pressure and real setup performance."
         />
         <meta
           property="og:url"
@@ -294,7 +294,7 @@ export default function HosePressureLossCalculator() {
         />
         <meta
           name="twitter:description"
-          content="Estimate pressure loss through pressure washer hose using metres, PSI and LPM first, while still supporting feet, BAR and GPM when needed. Useful for checking at-gun pressure and real setup performance."
+          content="Estimate pressure loss through pressure washer hose using metres, PSI and LPM first, while still supporting feet, BAR and GPM (US) when needed. Useful for checking at-gun pressure and real setup performance."
         />
         <script type="application/ld+json">
           {JSON.stringify({
@@ -305,7 +305,7 @@ export default function HosePressureLossCalculator() {
             applicationCategory: "EngineeringApplication",
             operatingSystem: "Web",
             description:
-              "Estimate pressure loss through pressure washer hose using metres, PSI and LPM first, while still supporting feet, BAR and GPM when needed. Useful for checking at-gun pressure and real setup performance.",
+              "Estimate pressure loss through pressure washer hose using metres, PSI and LPM first, while still supporting feet, BAR and GPM (US) when needed. Useful for checking at-gun pressure and real setup performance.",
           })}
         </script>
       </Helmet>
@@ -330,7 +330,7 @@ export default function HosePressureLossCalculator() {
                 </p>
 
                 <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-                  PressureCal keeps metres, PSI and LPM first, with feet, BAR and GPM still
+                  PressureCal keeps metres, PSI and LPM first, with feet, BAR and GPM (US) still
                   available when needed. Useful estimates for real setup checks.
                 </p>
               </div>
@@ -384,7 +384,7 @@ export default function HosePressureLossCalculator() {
 
                   <div>
                     <label className="mb-2 block text-sm font-medium text-slate-700">
-                      Pump flow ({flowUnit === "lpm" ? "LPM" : "GPM"})
+                      Pump flow ({flowUnit === "lpm" ? "LPM" : "GPM (US)"})
                     </label>
 
                     <div className="flex gap-3">
@@ -402,9 +402,13 @@ export default function HosePressureLossCalculator() {
                         onChange={(e) => setFlowUnit(e.target.value as FlowUnit)}
                       >
                         <option value="lpm">LPM</option>
-                        <option value="gpm">GPM</option>
+                        <option value="gpm">GPM (US)</option>
                       </select>
                     </div>
+
+                    <p className="mt-2 text-xs leading-5 text-slate-500">
+                      PressureCal uses US gallons per minute for GPM, matching the convention used by most pressure washer nozzle charts and pump specifications.
+                    </p>
                   </div>
 
                   <div>
@@ -569,6 +573,9 @@ export default function HosePressureLossCalculator() {
                           <p>
                             Hose pressure loss is estimated from flow, hose length, and hose internal diameter using a Darcy-Weisbach style pressure-loss calculation.
                           </p>
+                          <p>
+                            When GPM is used, PressureCal treats it as US gallons per minute.
+                          </p>
                           <p className="font-mono text-xs text-slate-600">
                             Pressure at gun = Pump pressure - Estimated hose loss
                           </p>
@@ -582,8 +589,8 @@ export default function HosePressureLossCalculator() {
                         },
                         {
                           label: "Pump flow",
-                          value: `${fmtRounded(flowLpm)} LPM (${fmt(flowGpm, 2)} GPM)`,
-                          note: `Entered as ${fmt(flow, flowUnit === "gpm" ? 2 : 0)} ${flowUnit.toUpperCase()}.`,
+                          value: `${fmtRounded(flowLpm)} LPM (${fmt(flowGpm, 2)} US GPM)`,
+                          note: `Entered as ${fmt(flow, flowUnit === "gpm" ? 2 : 0)} ${flowUnit === "gpm" ? "GPM (US)" : "LPM"}.`,
                         },
                         {
                           label: "Hose length",
@@ -609,7 +616,7 @@ export default function HosePressureLossCalculator() {
                       ]}
                       explanation={
                         <p>
-                          PressureCal estimates the pressure being lost as water moves through the hose. Longer hose runs, smaller hose IDs, and higher flow rates usually increase pressure loss. This helps show whether the hose is a small part of the setup or a meaningful reason the machine feels weaker at the gun.
+                          PressureCal estimates the pressure being lost as water moves through the hose. Longer hose runs, smaller hose IDs, and higher flow rates usually increase pressure loss. GPM is treated as US gallons per minute, matching the pressure washer convention used by most nozzle charts and pump specifications. This helps show whether the hose is a small part of the setup or a meaningful reason the machine feels weaker at the gun.
                         </p>
                       }
                       disclaimer={
@@ -644,7 +651,7 @@ export default function HosePressureLossCalculator() {
                 </p>
 
                 <p>
-                  PressureCal keeps metres, PSI and LPM first, with feet, BAR and GPM still visible
+                  PressureCal keeps metres, PSI and LPM first, with feet, BAR and GPM (US) still visible
                   when you need to compare mixed-spec equipment, manuals, or parts.
                 </p>
               </div>

@@ -997,7 +997,8 @@ export default function FullRigCalculatorPage() {
     },
     {
       label: "Rated flow",
-      value: `${fmt(ratedLpm, 1)} LPM (${fmt(ratedGpm, 2)} GPM)`,
+      value: `${fmt(ratedLpm, 1)} LPM (${fmt(ratedGpm, 2)} US GPM)`,
+      note: "PressureCal uses US gallons per minute for GPM calculations.",
     },
     {
       label: "Max pressure",
@@ -1034,7 +1035,7 @@ export default function FullRigCalculatorPage() {
     },
     {
       label: "Flow",
-      value: `${fmt(gunLpm, 1)} LPM (${fmt(r.gunFlowGpm, 2)} GPM)`,
+      value: `${fmt(gunLpm, 1)} LPM (${fmt(r.gunFlowGpm, 2)} US GPM)`,
     },
     {
       label: "Hose loss",
@@ -1546,9 +1547,12 @@ export default function FullRigCalculatorPage() {
                       className="rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
                     >
                       <option value="lpm">LPM</option>
-                      <option value="gpm">GPM</option>
+                      <option value="gpm">GPM (US)</option>
                     </select>
                   </div>
+                  <p className="mt-2 text-xs leading-5 text-slate-500">
+                    GPM in PressureCal means US gallons per minute, matching the convention used by most pressure washer nozzle charts and pump specifications.
+                  </p>
                 </div>
 
                 <div>
@@ -1760,12 +1764,15 @@ export default function FullRigCalculatorPage() {
                     <div className="space-y-2">
                       <p>
                         PressureCal models the setup by converting the rated pressure and flow into
-                        PSI/GPM, applying the selected nozzle relationship, estimating hose loss,
+                        PSI/US GPM, applying the selected nozzle relationship, estimating hose loss,
                         then subtracting that loss to estimate at-gun pressure.
                       </p>
                       <p>
                         Hose loss is estimated from flow, hose length, hose ID, water properties,
-                        and roughness. Required HP is estimated as: HP = (PSI × GPM) ÷ (1714 × efficiency).
+                        and roughness. Required HP is estimated as: HP = (PSI × US GPM) ÷ (1714 × efficiency).
+                      </p>
+                      <p>
+                        In PressureCal, GPM means US gallons per minute unless otherwise stated.
                       </p>
                     </div>
                   }
@@ -1896,7 +1903,7 @@ export default function FullRigCalculatorPage() {
                   PSI ↔ BAR Converter
                 </Link>
                 <Link to="/lpm-gpm-calculator" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
-                  LPM ↔ GPM Converter
+                  LPM ↔ GPM (US) Converter
                 </Link>
               </div>
             </div>

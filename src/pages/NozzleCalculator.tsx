@@ -14,7 +14,7 @@ const PAGE_URL = `${SITE_URL}/nozzle-size-calculator`;
 const PAGE_TITLE =
   "Pressure Washer Nozzle Size Calculator | Match PSI, LPM & Tip Code | PressureCal";
 const PAGE_DESCRIPTION =
-  "Calculate the right pressure washer nozzle size from pump pressure and flow, then check the matching nozzle / tip code before you fit the wrong nozzle to the machine.";
+  "Calculate the right pressure washer nozzle size from pump pressure and flow, then check the matching nozzle / tip code before you fit the wrong nozzle to the machine. GPM refers to US gallons per minute.";
 
 const PSI_PER_BAR = 14.5037738;
 const LPM_PER_GPM = 3.785411784;
@@ -181,7 +181,7 @@ function CalculatorCore({
   applyPreset,
 }: CalculatorCoreProps) {
   const pressureDisplayUnit = pressureUnit === "psi" ? "PSI" : "BAR";
-  const flowDisplayUnit = flowUnit === "lpm" ? "LPM" : "GPM";
+  const flowDisplayUnit = flowUnit === "lpm" ? "LPM" : "GPM (US)";
 
   return (
     <div className={embedded ? "space-y-6" : "space-y-8"}>
@@ -203,8 +203,13 @@ function CalculatorCore({
             </p>
 
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-              PressureCal keeps PSI and LPM first, with BAR and GPM still available when
+              PressureCal keeps PSI and LPM first, with BAR and GPM (US) still available when
               you need to compare mixed-spec equipment, manuals, or parts.
+            </p>
+
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
+              In PressureCal, GPM refers to US gallons per minute. That matches the
+              common pressure washer nozzle convention of GPM at 4000 PSI.
             </p>
           </div>
 
@@ -301,7 +306,7 @@ function CalculatorCore({
 
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">
-                Pump flow ({flowUnit === "lpm" ? "LPM" : "GPM"})
+                Pump flow ({flowUnit === "lpm" ? "LPM" : "GPM (US)"})
               </label>
 
               <div className="flex gap-3">
@@ -319,7 +324,7 @@ function CalculatorCore({
                   onChange={(e) => setFlowUnit(e.target.value as FlowUnit)}
                 >
                   <option value="lpm">LPM</option>
-                  <option value="gpm">GPM</option>
+                  <option value="gpm">GPM (US)</option>
                 </select>
               </div>
             </div>
@@ -393,8 +398,8 @@ function CalculatorCore({
               <CalculationExplainer
                 formula={
                   <p>
-                    PressureCal converts the entered flow to GPM, converts pressure to PSI,
-                    then estimates the flow equivalent at 4000 PSI: tip flow = flow × √(4000 ÷ pressure).
+                    PressureCal converts the entered flow to US GPM, converts pressure to PSI,
+                    then estimates the US GPM equivalent at 4000 PSI: tip flow = flow × √(4000 ÷ pressure).
                     The nozzle code is then rounded to the nearest standard tip code.
                   </p>
                 }
@@ -407,18 +412,18 @@ function CalculatorCore({
                   {
                     label: "Pump flow",
                     value: `${fmt(flow, flowUnit === "lpm" ? 1 : 2)} ${flowDisplayUnit}`,
-                    note: `${fmt(flowLpm, 1)} LPM / ${fmt(flowGpm, 2)} GPM after unit conversion.`,
+                    note: `${fmt(flowLpm, 1)} LPM / ${fmt(flowGpm, 2)} US GPM after unit conversion.`,
                   },
                   {
                     label: "Reference pressure",
                     value: "4000 PSI",
-                    note: "Pressure washer nozzle codes are commonly based on GPM at 4000 PSI.",
+                    note: "Pressure washer nozzle codes are commonly based on US GPM at 4000 PSI.",
                   },
                 ]}
                 results={[
                   {
                     label: "Flow equivalent",
-                    value: `${fmt(gpmAt4000, 2)} GPM @ 4000 PSI`,
+                    value: `${fmt(gpmAt4000, 2)} GPM (US) @ 4000 PSI`,
                     note: `${fmtRounded(gpmAt4000 * LPM_PER_GPM)} LPM equivalent after pressure adjustment.`,
                   },
                   {
@@ -484,7 +489,8 @@ function CalculatorCore({
             <div className="mt-4 space-y-4 text-sm leading-7 text-slate-600">
               <p>
                 Matching nozzle size to pump pressure and flow is one of the most important
-                setup checks in pressure washing. A nozzle that is too small can raise pressure,
+                setup checks in pressure washing. Pressure washer nozzle codes commonly use US GPM
+                at 4000 PSI. A nozzle that is too small can raise pressure,
                 increase engine load, and push the unloader harder than intended.
               </p>
 
@@ -524,7 +530,7 @@ function CalculatorCore({
                 <p className="mt-2 text-2xl font-semibold text-slate-900">
                   15 LPM
                 </p>
-                <p className="mt-1 text-sm text-slate-500">(4.0 GPM)</p>
+                <p className="mt-1 text-sm text-slate-500">(4.0 GPM US)</p>
               </div>
             </div>
 
@@ -628,7 +634,7 @@ function CalculatorCore({
             </div>
 
             <p className="mt-6 text-xs text-slate-500">
-              Results are indicative. Orifice estimate assumes water and Cd ≈ 0.62.
+              Results are indicative. Orifice estimate assumes water and Cd ≈ 0.62. GPM means US gallons per minute throughout PressureCal unless otherwise stated.
             </p>
           </section>
         </>
