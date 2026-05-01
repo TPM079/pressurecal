@@ -23,7 +23,7 @@ function formatGpmFromLpm(lpm: number) {
 
 export default function GpmLpmCalculatorPage() {
   const [gpmInput, setGpmInput] = useState("");
-  const [lpmInput, setLpmInput] = useState("");
+  const [lpmInput, setLpmInput] = useState("15");
   const [lastEdited, setLastEdited] = useState<"gpm" | "lpm">("lpm");
   const [copied, setCopied] = useState(false);
 
