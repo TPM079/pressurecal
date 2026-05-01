@@ -263,7 +263,7 @@ function ReferenceTable({
             </div>
             <div>
               <span className="font-semibold text-slate-800">Flow:</span> LPM
-              (GPM)
+              (US GPM)
             </div>
             <div>
               <span className="font-semibold text-slate-800">Output:</span>{" "}
@@ -444,7 +444,7 @@ function ReferenceTable({
               Tip code convention:
             </span>{" "}
             PressureCal displays tip size using the common pressure-washer
-            nozzle code style.
+            nozzle code style, based on US GPM at 4000 PSI.
           </p>
         </div>
       </div>
@@ -464,8 +464,8 @@ function TechnicalNotesPanel() {
 
         <p>
           PressureCal shows <strong className="text-slate-900">PSI and LPM first</strong>,
-          with BAR and GPM still visible for cross-checking mixed-spec equipment, manuals,
-          and parts lists.
+          with BAR and US GPM still visible for cross-checking mixed-spec equipment, manuals,
+          and parts lists. GPM means US gallons per minute throughout PressureCal unless otherwise stated.
         </p>
 
         <p>
@@ -513,7 +513,7 @@ function ExamplePanel() {
             <div className="mt-2 text-2xl font-semibold text-slate-900">
               15 LPM
             </div>
-            <div className="mt-1 text-sm text-slate-500">(4 GPM)</div>
+            <div className="mt-1 text-sm text-slate-500">(4 US GPM)</div>
           </div>
         </div>
 
@@ -526,7 +526,7 @@ function ExamplePanel() {
           </div>
           <p className="mt-3 text-sm leading-6 text-blue-900">
             Locate <strong>4000 PSI (276 BAR)</strong> on the left-hand pressure column,
-            then move across to <strong>15 LPM (4 GPM)</strong>. The intersection
+            then move across to <strong>15 LPM (4 US GPM)</strong>. The intersection
             gives a recommended tip code of <strong>040</strong>.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
@@ -553,7 +553,7 @@ function PresetExamples() {
   return (
     <SectionCard eyebrow="Quick Examples" title="Popular setup shortcuts">
       <p className="mb-4 text-sm leading-6 text-slate-600">
-        Use these presets to jump straight to common machine pressure and flow combinations. PressureCal keeps PSI and LPM first, with BAR and GPM still available for reference.
+        Use these presets to jump straight to common machine pressure and flow combinations. PressureCal keeps PSI and LPM first, with BAR and US GPM still available for reference.
       </p>
 
       <div className="flex flex-wrap gap-3">
@@ -703,9 +703,12 @@ function SurfaceCleanerHelper() {
               className="rounded-xl border border-slate-200 px-4 py-3 text-slate-900 outline-none focus:border-slate-400"
             >
               <option value="lpm">LPM</option>
-              <option value="gpm">GPM</option>
+              <option value="gpm">GPM (US)</option>
             </select>
           </div>
+          <p className="mt-2 text-xs leading-5 text-slate-500">
+            GPM means US gallons per minute in PressureCal.
+          </p>
         </div>
 
         <div>
@@ -736,7 +739,7 @@ function SurfaceCleanerHelper() {
           </div>
 
           <div className="mt-2 text-sm text-slate-600">
-            ({formatNumber(perNozzleGpm, 2)} GPM) per nozzle
+            ({formatNumber(perNozzleGpm, 2)} US GPM) per nozzle
           </div>
 
           <div className="mt-4 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4">
@@ -748,7 +751,7 @@ function SurfaceCleanerHelper() {
             </div>
             <p className="mt-2 text-sm leading-6 text-blue-900">
               Chart uses nearest available column:{" "}
-              <strong>{formatRoundedLpm(nearestFlow.lpm)} LPM</strong> ({nearestFlow.gpm} GPM)
+              <strong>{formatRoundedLpm(nearestFlow.lpm)} LPM</strong> ({nearestFlow.gpm} US GPM)
             </p>
             <p className="mt-2 text-sm leading-6 text-blue-900">
               Nearest chart row: <strong>{Math.round(pressurePsi)} PSI</strong> ({roundedPressureBar} BAR)
@@ -884,8 +887,8 @@ function SEOContentBlocks() {
           </p>
 
           <p>
-            PressureCal shows <strong>PSI and LPM first</strong>, with BAR and GPM
-            still visible for cross-checking equipment that uses mixed specs. That
+            PressureCal shows <strong>PSI and LPM first</strong>, with BAR and US GPM
+            still visible for cross-checking equipment that uses mixed specs. GPM means US gallons per minute in PressureCal. That
             makes it easier to compare machines, manuals, pumps, and nozzle data
             without constantly converting units.
           </p>
@@ -957,11 +960,11 @@ function SEOContentBlocks() {
 
           <div>
             <h3 className="text-base font-semibold text-slate-900">
-              What if my machine uses BAR and LPM instead of PSI and GPM?
+              What if my machine uses BAR and LPM instead of PSI and US GPM?
             </h3>
             <p className="mt-2">
-              That is fine. PressureCal still shows BAR and GPM, but keeps PSI and
-              LPM clearly visible so operators can compare across different specs.
+              That is fine. PressureCal still shows BAR and US GPM, but keeps PSI and
+              LPM clearly visible so operators can compare across different specs. The chart uses US gallons per minute because that matches the common pressure washer nozzle-chart convention.
             </p>
           </div>
 
@@ -1078,7 +1081,7 @@ export default function NozzleSizeChartPage() {
   return (
     <>
       <Helmet>
-        <title>Pressure Washer Nozzle Size Chart | PSI, LPM, BAR & GPM | PressureCal</title>
+        <title>Pressure Washer Nozzle Size Chart | PSI, LPM, BAR & GPM (US) | PressureCal</title>
         <meta
           name="description"
           content="Use this pressure washer nozzle size chart to match nozzle tips to PSI and LPM, compare common sizes, and choose a suitable nozzle for your pressure washer setup."
@@ -1089,7 +1092,7 @@ export default function NozzleSizeChartPage() {
         />
         <meta
           property="og:title"
-          content="Pressure Washer Nozzle Size Chart | PSI, LPM, BAR & GPM | PressureCal"
+          content="Pressure Washer Nozzle Size Chart | PSI, LPM, BAR & GPM (US) | PressureCal"
         />
         <meta
           property="og:description"
@@ -1102,7 +1105,7 @@ export default function NozzleSizeChartPage() {
         <meta property="og:type" content="website" />
         <meta
           name="twitter:title"
-          content="Pressure Washer Nozzle Size Chart | PSI, LPM, BAR & GPM | PressureCal"
+          content="Pressure Washer Nozzle Size Chart | PSI, LPM, BAR & GPM (US) | PressureCal"
         />
         <meta
           name="twitter:description"
@@ -1139,7 +1142,11 @@ export default function NozzleSizeChartPage() {
                   </p>
 
                   <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-500">
-                    Built for fast field reference, with PSI and LPM first and BAR and GPM still visible when you need to cross-check mixed-spec equipment.
+                    Built for fast field reference, with PSI and LPM first and BAR and US GPM still visible when you need to cross-check mixed-spec equipment.
+                  </p>
+
+                  <p className="mt-2 max-w-3xl text-xs leading-5 text-slate-500">
+                    In PressureCal, GPM means US gallons per minute. That matches the convention used by most pressure washer nozzle charts and pump specifications.
                   </p>
 
                   <div className="mt-6 flex flex-wrap gap-3">
@@ -1193,7 +1200,7 @@ export default function NozzleSizeChartPage() {
             <div id="standard-chart" className="mt-8 print:mt-0">
               <ReferenceTable
                 title="Standard pressure washer nozzle reference table"
-                subtitle="Quick reference chart for standard single-nozzle pressure washer setups from 70 BAR to 350 BAR, with pressure shown as PSI (BAR) and flow shown as LPM (GPM)."
+                subtitle="Quick reference chart for standard single-nozzle pressure washer setups from 70 BAR to 350 BAR, with pressure shown as PSI (BAR) and flow shown as LPM (US GPM)."
                 flowHeaders={flowHeaders}
                 rows={standardNozzleChart}
                 minWidthClass="min-w-[1150px]"
@@ -1212,7 +1219,7 @@ export default function NozzleSizeChartPage() {
             <div id="high-chart" className="mt-8 print:mt-6">
               <ReferenceTable
                 title="High pressure / industrial nozzle reference table"
-                subtitle="Quick reference chart for higher-pressure single-nozzle setups from 360 BAR to 500 BAR, with pressure shown as PSI (BAR) and flow shown as LPM (GPM)."
+                subtitle="Quick reference chart for higher-pressure single-nozzle setups from 360 BAR to 500 BAR, with pressure shown as PSI (BAR) and flow shown as LPM (US GPM)."
                 flowHeaders={flowHeaders}
                 rows={highPressureNozzleChart}
                 minWidthClass="min-w-[1150px]"

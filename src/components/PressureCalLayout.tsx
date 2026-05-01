@@ -14,7 +14,7 @@ const toolLinks = [
   { to: "/hose-pressure-loss-calculator", label: "Hose Pressure Loss Calculator" },
   { to: "/nozzle-size-chart", label: "Nozzle Size Chart" },
   { to: "/psi-bar-calculator", label: "PSI ↔ BAR Converter" },
-  { to: "/lpm-gpm-calculator", label: "LPM ↔ GPM Converter" },
+  { to: "/lpm-gpm-calculator", label: "LPM ↔ GPM (US) Converter" },
 ];
 
 const footerQuickLinks = [

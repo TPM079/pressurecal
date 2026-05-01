@@ -55,6 +55,10 @@ function formatUnitLabel(unit: SetupFormState["hoseLengthUnit"]) {
   return unit === "m" ? "Metres" : "Feet";
 }
 
+function formatFlowUnitLabel(unit: SetupFormState["pumpFlowUnit"]) {
+  return unit === "lpm" ? "LPM" : "GPM (US)";
+}
+
 
 function formatResultNumber(value: number, decimals = 0) {
   if (!Number.isFinite(value)) {
@@ -641,9 +645,12 @@ export default function SavedSetupsPage() {
                         className="rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
                       >
                         <option value="lpm">LPM</option>
-                        <option value="gpm">GPM</option>
+                        <option value="gpm">GPM (US)</option>
                       </select>
                     </div>
+                    <p className="mt-2 text-xs leading-5 text-slate-500">
+                      GPM means US gallons per minute in PressureCal.
+                    </p>
                   </label>
 
                   <label className="block">
@@ -908,7 +915,7 @@ export default function SavedSetupsPage() {
                             </dt>
                             <dd className="mt-1">
                               {setup.pumpPressure ?? "—"} {setup.pumpPressureUnit.toUpperCase()} ·{" "}
-                              {setup.pumpFlow ?? "—"} {setup.pumpFlowUnit.toUpperCase()}
+                              {setup.pumpFlow ?? "—"} {formatFlowUnitLabel(setup.pumpFlowUnit)}
                             </dd>
                           </div>
                           <div className="rounded-2xl bg-slate-50 px-4 py-3">

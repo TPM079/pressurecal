@@ -21,7 +21,7 @@ const workflowSteps = [
   {
     step: "03",
     title: "Refine your setup",
-    description: "Open the full calculator for deeper rig tuning and system checks.",
+    description: "Open the full calculator for deeper setup tuning and system checks.",
   },
 ];
 
@@ -29,14 +29,14 @@ const featureGrid = [
   "Nozzle size calculator",
   "Hose pressure loss calculator",
   "PSI ↔ BAR conversion",
-  "LPM ↔ GPM conversion",
+  "LPM ↔ GPM (US) conversion",
   "Nozzle size chart",
 ];
 
 const proFeatures = [
   "Save setups",
   "Compare configurations",
-  "Share rigs with your team",
+  "Share setups with your team",
 ];
 
 type HomepageCopyLayoutProps = {
@@ -105,8 +105,12 @@ export default function HomepageCopyLayout({
             </h2>
             <p className="mt-4 text-lg leading-8 text-slate-600">
               Pressure washer calculators usually give you simple number changes — PSI to
-              BAR, GPM to LPM — but not the answers that actually matter in the real
+              BAR, US GPM to LPM — but not the answers that actually matter in the real
               world.
+            </p>
+
+            <p className="mt-3 text-sm leading-6 text-slate-500">
+              In PressureCal, GPM means US gallons per minute unless otherwise stated.
             </p>
             <ul className="mt-6 space-y-3 text-base leading-7 text-slate-700">
               <li>• What pressure am I really getting at the gun?</li>
@@ -173,7 +177,7 @@ export default function HomepageCopyLayout({
 
           <div className="rounded-3xl border border-slate-200 bg-slate-950 p-6 text-white shadow-sm">
             <h2 className="text-3xl font-bold tracking-tight">
-              Go deeper with full rig modelling.
+              Go deeper with full setup modelling.
             </h2>
             <p className="mt-4 text-base leading-7 text-slate-300">
               Open the full calculator to dial in every part of your setup:
@@ -190,7 +194,7 @@ export default function HomepageCopyLayout({
                 to="/calculator"
                 className="inline-flex items-center justify-center rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-200"
               >
-                Open full rig calculator
+                Open full setup calculator
               </Link>
             </div>
           </div>
@@ -332,7 +336,7 @@ export default function HomepageCopyLayout({
               to="/calculator"
               className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
             >
-              Open full rig calculator
+              Open full setup calculator
             </Link>
           </div>
         </div>

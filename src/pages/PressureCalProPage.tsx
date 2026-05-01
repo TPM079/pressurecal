@@ -103,7 +103,7 @@ const freeFeatures = [
   "Nozzle size calculator",
   "Hose pressure loss calculator",
   "PSI ↔ BAR converter",
-  "LPM ↔ GPM converter",
+  "LPM ↔ GPM (US) converter",
   "Nozzle size chart",
 ];
 

@@ -38,7 +38,10 @@ function ToggleButton({
 
 export function UnitsCard({ inputs, onChange }: Props) {
   return (
-    <CardShell title="Units" subtitle="PSI + LPM + metres is the default for Australian operators.">
+    <CardShell
+      title="Units"
+      subtitle="PSI + LPM + metres is the default for Australian operators. GPM means US gallons per minute."
+    >
       <div className="space-y-4">
         <div>
           <p className="mb-2 text-sm font-medium text-slate-700">Pressure</p>
@@ -71,9 +74,12 @@ export function UnitsCard({ inputs, onChange }: Props) {
               active={inputs.units.flow === "gpm"}
               onClick={() => onChange((prev) => switchFlowUnit(prev, "gpm"))}
             >
-              GPM
+              GPM (US)
             </ToggleButton>
           </div>
+          <p className="mt-2 text-xs leading-5 text-slate-500">
+            PressureCal treats GPM as US gallons per minute for nozzle and flow calculations.
+          </p>
         </div>
 
         <div>

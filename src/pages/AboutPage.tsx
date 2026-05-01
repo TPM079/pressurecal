@@ -12,7 +12,7 @@ const differentiators = [
   {
     title: "More than a simple converter",
     body:
-      "Basic tools usually stop at PSI, BAR, GPM, or LPM conversions. PressureCal is built to model how those values interact across the setup so users can make better decisions with more context.",
+      "Basic tools usually stop at PSI, BAR, GPM (US), or LPM conversions. PressureCal is built to model how those values interact across the setup so users can make better decisions with more context.",
   },
   {
     title: "Clear outputs, not unnecessary complexity",
@@ -64,6 +64,13 @@ export default function AboutPage() {
                   incomplete charts, or basic unit converters that do not reflect what happens
                   across a real system. PressureCal is built to bridge that gap with more useful
                   field-focused modelling and cleaner outputs.
+                </p>
+
+                <p className="mt-3 text-sm leading-7 text-slate-500">
+                  PressureCal keeps Australian-first defaults in mind, including PSI, LPM,
+                  metres, and hose sizes operators recognise, while still supporting BAR,
+                  feet, and GPM where mixed-spec equipment or overseas references need them.
+                  In PressureCal, GPM means US gallons per minute unless otherwise stated.
                 </p>
 
                 <div className="mt-6 flex flex-wrap gap-3">
