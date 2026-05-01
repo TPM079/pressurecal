@@ -275,9 +275,9 @@ function ReferenceTable({
 
       <div className="overflow-x-auto print:overflow-visible">
         <table className={`${minWidthClass} w-full border-collapse print:min-w-0`}>
-          <thead className="sticky top-0 z-30 print:static">
+          <thead className="print:static">
             <tr className="border-b border-slate-300 bg-slate-100">
-              <th className="sticky left-0 z-30 border-r border-slate-300 bg-slate-100 px-4 py-4 text-left align-bottom print:static print:px-2 print:py-2">
+              <th className="sticky left-0 top-[64px] z-40 border-r border-slate-300 bg-slate-100 px-4 py-4 text-left align-bottom shadow-sm md:top-[76px] print:static print:px-2 print:py-2 print:shadow-none">
                 <div className="text-xs font-semibold uppercase tracking-wide text-slate-700">
                   Pressure
                 </div>
@@ -291,7 +291,7 @@ function ReferenceTable({
                 return (
                   <th
                     key={`${formatRoundedLpm(flow.lpm)}-${flow.gpm}`}
-                    className={`border-r border-slate-200 px-2 py-3 text-center transition-colors last:border-r-0 print:px-1.5 print:py-2 ${
+                    className={`sticky top-[64px] z-30 border-r border-slate-200 px-2 py-3 text-center shadow-sm transition-colors last:border-r-0 md:top-[76px] print:static print:px-1.5 print:py-2 print:shadow-none ${
                       isColSelected
                         ? "bg-blue-200"
                         : isColHovered
