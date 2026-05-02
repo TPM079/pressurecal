@@ -162,58 +162,12 @@ function ReportSection({
 }
 
 function PressureCalReportLogo() {
-  const [imageFailed, setImageFailed] = useState(false);
-
-  if (!imageFailed) {
-    return (
-      <img
-        src="/PressureCal_primary_logo.png"
-        alt="PressureCal"
-        onError={() => setImageFailed(true)}
-        className="h-12 w-auto object-contain sm:h-14"
-      />
-    );
-  }
-
   return (
-    <div className="inline-flex items-center gap-3">
-      <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 ring-1 ring-blue-100">
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 48 48"
-          className="h-9 w-9"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M24 4C17.5 12.1 11 20.2 11 29.2C11 37.1 16.9 43 24 43C31.1 43 37 37.1 37 29.2C37 20.2 30.5 12.1 24 4Z"
-            fill="#1C408C"
-          />
-          <circle cx="24" cy="28" r="11" fill="white" />
-          <path
-            d="M16.5 29.5C16.9 25.7 20.1 22.8 24 22.8C27.9 22.8 31.1 25.7 31.5 29.5"
-            stroke="#22C55E"
-            strokeWidth="2.3"
-            strokeLinecap="round"
-          />
-          <path
-            d="M24 28L29.7 25.7"
-            stroke="#1C408C"
-            strokeWidth="2.6"
-            strokeLinecap="round"
-          />
-          <circle cx="24" cy="28" r="1.7" fill="#1C408C" />
-        </svg>
-      </span>
-      <span>
-        <span className="block text-2xl font-bold tracking-tight text-[#1C408C]">
-          PressureCal
-        </span>
-        <span className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
-          Model • Measure • Match
-        </span>
-      </span>
-    </div>
+    <img
+      src="/pressurecal-logo-primary.png"
+      alt="PressureCal"
+      className="h-12 w-auto object-contain sm:h-14"
+    />
   );
 }
 
@@ -453,7 +407,8 @@ export default function SavedSetupReportPage() {
           }
 
           .report-header img {
-            height: 31px !important;
+            height: 34px !important;
+            max-width: 180px !important;
           }
 
           .report-header h1 {
