@@ -17,6 +17,7 @@ import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import TermsOfServicePage from "./pages/TermsOfServicePage";
 import PressureCalProPage from "./pages/PressureCalProPage";
 import SavedSetupsPage from "./pages/SavedSetupsPage";
+import SavedSetupReportPage from "./pages/SavedSetupReportPage";
 import CompareSetupsPage from "./pages/CompareSetupsPage";
 import AccountPage from "./pages/AccountPage";
 import UpdatePasswordPage from "./pages/UpdatePasswordPage";
@@ -28,6 +29,8 @@ import NozzleSizeChartPage from "./pages/NozzleSizeChartPage";
 import HosePressureLossCalculator from "./pages/HosePressureLossCalculator";
 import PsiBarCalculatorPage from "./pages/PsiBarCalculatorPage";
 import GpmLpmCalculatorPage from "./pages/GpmLpmCalculatorPage";
+import EquipmentLibraryPage from "./pages/EquipmentLibraryPage";
+
 
 function PageTransition({ children }: { children: ReactNode }) {
   return (
@@ -132,6 +135,22 @@ export default function App() {
             element={
               <PageTransition>
                 <SavedSetupsPage />
+              </PageTransition>
+            }
+          />
+<Route
+  path="/equipment-library"
+  element={
+    <PageTransition>
+      <EquipmentLibraryPage />
+    </PageTransition>
+  }
+/>
+          <Route
+            path="/saved-setups/:setupId/report"
+            element={
+              <PageTransition>
+                <SavedSetupReportPage />
               </PageTransition>
             }
           />

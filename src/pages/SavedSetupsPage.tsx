@@ -927,14 +927,23 @@ export default function SavedSetupsPage() {
                     </p>
                   </div>
 
-                  {setups.length >= 2 ? (
+                  <div className="flex flex-wrap gap-2">
                     <Link
-                      to={`/compare-setups?a=${setups[0].id}&b=${setups[1].id}`}
+                      to="/equipment-library"
                       className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                     >
-                      Compare Setups
+                      Equipment Library
                     </Link>
-                  ) : null}
+
+                    {setups.length >= 2 ? (
+                      <Link
+                        to={`/compare-setups?a=${setups[0].id}&b=${setups[1].id}`}
+                        className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                      >
+                        Compare Setups
+                      </Link>
+                    ) : null}
+                  </div>
                 </div>
 
                 {!isReady ? (
