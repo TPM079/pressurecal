@@ -55,6 +55,14 @@ type EquipmentTypeOption = {
   description: string;
 };
 
+type EquipmentPreset = {
+  id: string;
+  label: string;
+  description: string;
+  equipmentType: EquipmentType;
+  form: Partial<EquipmentFormState>;
+};
+
 const EQUIPMENT_TYPE_OPTIONS: EquipmentTypeOption[] = [
   {
     value: "machine",
@@ -128,6 +136,194 @@ const HOSE_ID_OPTIONS = [
   { label: '1/2"', inch: 0.5 },
   { label: '3/4"', inch: 0.75 },
   { label: '1"', inch: 1 },
+];
+
+const EQUIPMENT_PRESETS: EquipmentPreset[] = [
+  {
+    id: "machine-4000-15",
+    label: "4000 PSI / 15 LPM petrol machine",
+    description: "Common Australian pressure washer setup starting point.",
+    equipmentType: "machine",
+    form: {
+      equipmentType: "machine",
+      name: "4000 PSI / 15 LPM machine",
+      pressurePsi: "4000",
+      pressureUnit: "psi",
+      flowLpm: "15",
+      flowUnit: "lpm",
+      maxPressurePsi: "4000",
+      maxPressureUnit: "psi",
+      engineHp: "13",
+    },
+  },
+  {
+    id: "machine-3000-11",
+    label: "3000 PSI / 11 LPM compact machine",
+    description: "Useful starter template for smaller petrol or electric units.",
+    equipmentType: "machine",
+    form: {
+      equipmentType: "machine",
+      name: "3000 PSI / 11 LPM machine",
+      pressurePsi: "3000",
+      pressureUnit: "psi",
+      flowLpm: "11",
+      flowUnit: "lpm",
+      maxPressurePsi: "3000",
+      maxPressureUnit: "psi",
+      engineHp: "",
+    },
+  },
+  {
+    id: "machine-5000-21",
+    label: "5000 PSI / 21 LPM high-output machine",
+    description: "Starter template for larger contractor machines.",
+    equipmentType: "machine",
+    form: {
+      equipmentType: "machine",
+      name: "5000 PSI / 21 LPM machine",
+      pressurePsi: "5000",
+      pressureUnit: "psi",
+      flowLpm: "21",
+      flowUnit: "lpm",
+      maxPressurePsi: "5000",
+      maxPressureUnit: "psi",
+      engineHp: "21",
+    },
+  },
+  {
+    id: "hose-15m-3-8",
+    label: "15 m 3/8 hose",
+    description: "Most common short pressure washing hose starter.",
+    equipmentType: "hose",
+    form: {
+      equipmentType: "hose",
+      name: "15 m 3/8 hose",
+      hoseLengthM: "15",
+      hoseLengthUnit: "m",
+      hoseIdMm: "9.53",
+      hoseIdUnit: "mm",
+    },
+  },
+  {
+    id: "hose-30m-3-8",
+    label: "30 m 3/8 hose",
+    description: "Common longer hose run for mobile work.",
+    equipmentType: "hose",
+    form: {
+      equipmentType: "hose",
+      name: "30 m 3/8 hose",
+      hoseLengthM: "30",
+      hoseLengthUnit: "m",
+      hoseIdMm: "9.53",
+      hoseIdUnit: "mm",
+    },
+  },
+  {
+    id: "hose-30m-1-2",
+    label: "30 m 1/2 hose",
+    description: "Useful for higher-flow setups where pressure loss matters.",
+    equipmentType: "hose",
+    form: {
+      equipmentType: "hose",
+      name: "30 m 1/2 hose",
+      hoseLengthM: "30",
+      hoseLengthUnit: "m",
+      hoseIdMm: "12.7",
+      hoseIdUnit: "mm",
+    },
+  },
+  {
+    id: "nozzle-035",
+    label: "035 wand nozzle",
+    description: "Single-nozzle wand template.",
+    equipmentType: "nozzle",
+    form: {
+      equipmentType: "nozzle",
+      name: "035 nozzle",
+      nozzleCode: "035",
+      nozzleCount: "1",
+      sprayMode: "wand",
+    },
+  },
+  {
+    id: "nozzle-040",
+    label: "040 wand nozzle",
+    description: "Single-nozzle wand template.",
+    equipmentType: "nozzle",
+    form: {
+      equipmentType: "nozzle",
+      name: "040 nozzle",
+      nozzleCode: "040",
+      nozzleCount: "1",
+      sprayMode: "wand",
+    },
+  },
+  {
+    id: "nozzle-045",
+    label: "045 wand nozzle",
+    description: "Single-nozzle wand template.",
+    equipmentType: "nozzle",
+    form: {
+      equipmentType: "nozzle",
+      name: "045 nozzle",
+      nozzleCode: "045",
+      nozzleCount: "1",
+      sprayMode: "wand",
+    },
+  },
+  {
+    id: "nozzle-050",
+    label: "050 wand nozzle",
+    description: "Single-nozzle wand template.",
+    equipmentType: "nozzle",
+    form: {
+      equipmentType: "nozzle",
+      name: "050 nozzle",
+      nozzleCode: "050",
+      nozzleCount: "1",
+      sprayMode: "wand",
+    },
+  },
+  {
+    id: "surface-cleaner-20-020",
+    label: "20 inch surface cleaner — 2 × 020",
+    description: "Common two-nozzle surface cleaner starting point.",
+    equipmentType: "surface_cleaner",
+    form: {
+      equipmentType: "surface_cleaner",
+      name: "20 inch surface cleaner - 2 x 020",
+      surfaceCleanerDiameter: "20",
+      nozzleCode: "020",
+      nozzleCount: "2",
+      sprayMode: "surfaceCleaner",
+    },
+  },
+  {
+    id: "surface-cleaner-24-025",
+    label: "24 inch surface cleaner — 2 × 025",
+    description: "Larger two-nozzle surface cleaner starting point.",
+    equipmentType: "surface_cleaner",
+    form: {
+      equipmentType: "surface_cleaner",
+      name: "24 inch surface cleaner - 2 x 025",
+      surfaceCleanerDiameter: "24",
+      nozzleCode: "025",
+      nozzleCount: "2",
+      sprayMode: "surfaceCleaner",
+    },
+  },
+  {
+    id: "gun-lance-5000",
+    label: "5000 PSI gun / lance set",
+    description: "Common pressure-rated gun and lance template.",
+    equipmentType: "gun_lance",
+    form: {
+      equipmentType: "gun_lance",
+      name: "5000 PSI gun and lance set",
+      pressureRatingPsi: "5000",
+      pressureRatingUnit: "psi",
+    },
+  },
 ];
 
 function toPsi(value: number, unit: PressureUnit) {
@@ -757,6 +953,11 @@ export default function EquipmentLibraryPage() {
     [items, selectedType]
   );
 
+  const presetsForCurrentType = useMemo(
+    () => EQUIPMENT_PRESETS.filter((preset) => preset.equipmentType === form.equipmentType),
+    [form.equipmentType]
+  );
+
   useEffect(() => {
     let mounted = true;
 
@@ -877,6 +1078,26 @@ export default function EquipmentLibraryPage() {
       hoseIdMm: formatInputNumber(parsed, 4),
       hoseIdUnit: "inch",
     }));
+  }
+
+  function applyEquipmentPreset(presetId: string) {
+    const preset = EQUIPMENT_PRESETS.find((item) => item.id === presetId);
+
+    if (!preset) {
+      return;
+    }
+
+    setForm((current) => ({
+      ...EMPTY_FORM,
+      ...current,
+      ...preset.form,
+      equipmentType: preset.equipmentType,
+      notes: current.notes,
+    }));
+
+    setEditingId(null);
+    setLocalError(null);
+    setSuccessMessage(null);
   }
 
   function changeEquipmentType(type: EquipmentType) {
@@ -1356,7 +1577,7 @@ export default function EquipmentLibraryPage() {
                   {editingId ? "Edit equipment item" : "Save equipment item"}
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Start simple. Save the values you reuse often; setup-building from the library can come next.
+                  Start from a common preset or save the exact values you reuse often.
                 </p>
 
                 <form onSubmit={handleSubmit} className="mt-6 space-y-5">
@@ -1373,6 +1594,51 @@ export default function EquipmentLibraryPage() {
                       ))}
                     </select>
                   </FormField>
+
+                  {presetsForCurrentType.length > 0 ? (
+                    <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-4">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
+                            Quick presets
+                          </p>
+                          <p className="mt-1 text-sm leading-6 text-slate-600">
+                            Start from a common template, then adjust the values to match the actual equipment.
+                          </p>
+                        </div>
+                        <select
+                          value=""
+                          onChange={(event) => applyEquipmentPreset(event.target.value)}
+                          className="min-w-56 rounded-2xl border border-blue-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-blue-500"
+                        >
+                          <option value="">Apply preset...</option>
+                          {presetsForCurrentType.map((preset) => (
+                            <option key={preset.id} value={preset.id}>
+                              {preset.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                        {presetsForCurrentType.slice(0, 4).map((preset) => (
+                          <button
+                            key={preset.id}
+                            type="button"
+                            onClick={() => applyEquipmentPreset(preset.id)}
+                            className="rounded-2xl border border-blue-100 bg-white px-4 py-3 text-left transition hover:border-blue-200 hover:bg-blue-50"
+                          >
+                            <span className="block text-sm font-semibold text-slate-950">
+                              {preset.label}
+                            </span>
+                            <span className="mt-1 block text-xs leading-5 text-slate-500">
+                              {preset.description}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
 
                   <FormField label="Name">
                     <input
