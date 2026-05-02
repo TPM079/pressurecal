@@ -4,6 +4,8 @@ import { Link } from "react-router-dom";
 import BackToTopButton from "../components/BackToTopButton";
 import PressureCalLayout from "../components/PressureCalLayout";
 import RequirePro from "../components/RequirePro";
+import { buildFullRigSearchParams } from "../lib/rigUrlState";
+import type { Inputs } from "../pressurecal";
 import {
   useEquipmentLibrary,
   type EquipmentItem,
@@ -37,6 +39,12 @@ type EquipmentFormState = {
   surfaceCleanerDiameter: string;
   pressureRatingPsi: string;
   pressureRatingUnit: PressureUnit;
+};
+
+type SetupBuilderState = {
+  machineId: string;
+  hoseId: string;
+  nozzleId: string;
 };
 
 type EquipmentTypeOption = {
@@ -94,6 +102,12 @@ const EMPTY_FORM: EquipmentFormState = {
   surfaceCleanerDiameter: "20",
   pressureRatingPsi: "5000",
   pressureRatingUnit: "psi",
+};
+
+const EMPTY_BUILDER: SetupBuilderState = {
+  machineId: "",
+  hoseId: "",
+  nozzleId: "",
 };
 
 const NOTES_MAX_CHARS = 600;
@@ -450,6 +464,156 @@ function buildSpecsSummary(item: EquipmentItem) {
       return [];
   }
 }
+function roundInputValue(value: number, decimals: number) {
+  return Number(value.toFixed(decimals));
+}
+
+function getSpecNumber(item: EquipmentItem | undefined, key: string) {
+  return item ? numberFromSpec(item.specs[key]) : null;
+}
+
+function getSpecString(item: EquipmentItem | undefined, key: string) {
+  const value = item?.specs[key];
+  return typeof value === "string" ? value : "";
+}
+
+function equipmentSelectLabel(item: EquipmentItem) {
+  const summary = buildSpecsSummary(item)
+    .slice(0, 2)
+    .map((spec) => spec.value)
+    .filter((value) => value && value !== "—")
+    .join(" · ");
+
+  return summary ? `${item.name} — ${summary}` : item.name;
+}
+
+function buildCalculatorInputsFromEquipment(
+  machine: EquipmentItem | undefined,
+  hose: EquipmentItem | undefined,
+  nozzle: EquipmentItem | undefined
+): Partial<Inputs> {
+  const inputs: Partial<Inputs> = {
+    pumpPressureUnit: "psi",
+    pumpFlowUnit: "lpm",
+    maxPressureUnit: "psi",
+    hoseLengthUnit: "m",
+    hoseIdUnit: "mm",
+  };
+
+  const pressurePsi = getSpecNumber(machine, "pressurePsi");
+  const flowLpm = getSpecNumber(machine, "flowLpm");
+  const maxPressurePsi = getSpecNumber(machine, "maxPressurePsi");
+  const engineHp = getSpecNumber(machine, "engineHp");
+
+  if (pressurePsi !== null) {
+    inputs.pumpPressure = roundInputValue(pressurePsi, 0);
+  }
+
+  if (flowLpm !== null) {
+    inputs.pumpFlow = roundInputValue(flowLpm, 1);
+  }
+
+  if (maxPressurePsi !== null) {
+    inputs.maxPressure = roundInputValue(maxPressurePsi, 0);
+  } else if (pressurePsi !== null) {
+    inputs.maxPressure = roundInputValue(pressurePsi, 0);
+  }
+
+  if (engineHp !== null) {
+    inputs.engineHp = roundInputValue(engineHp, 1);
+  }
+
+  const hoseLengthM = getSpecNumber(hose, "hoseLengthM");
+  const hoseIdMm = getSpecNumber(hose, "hoseIdMm");
+
+  if (hoseLengthM !== null) {
+    inputs.hoseLength = roundInputValue(hoseLengthM, 1);
+  }
+
+  if (hoseIdMm !== null) {
+    inputs.hoseId = roundInputValue(hoseIdMm, 2);
+  }
+
+  const nozzleCode = normalizeNozzleCode(getSpecString(nozzle, "nozzleCode"));
+  const nozzleCount = getSpecNumber(nozzle, "nozzleCount");
+  const sprayMode = getSpecString(nozzle, "sprayMode");
+
+  if (nozzleCode) {
+    inputs.nozzleSizeText = nozzleCode;
+  }
+
+  if (nozzleCount !== null) {
+    inputs.nozzleCount = Math.max(1, Math.round(nozzleCount));
+  }
+
+  if (nozzle?.equipmentType === "surface_cleaner" || sprayMode === "surfaceCleaner") {
+    inputs.sprayMode = "surfaceCleaner";
+  } else if (nozzle) {
+    inputs.sprayMode = "wand";
+  }
+
+  return inputs;
+}
+
+function buildCalculatorHrefFromEquipment(
+  machine: EquipmentItem | undefined,
+  hose: EquipmentItem | undefined,
+  nozzle: EquipmentItem | undefined
+) {
+  const params = buildFullRigSearchParams(
+    buildCalculatorInputsFromEquipment(machine, hose, nozzle)
+  );
+
+  const query = params.toString();
+  return query ? `/calculator?${query}` : "/calculator";
+}
+
+function buildSetupBuilderSummary(
+  machine: EquipmentItem | undefined,
+  hose: EquipmentItem | undefined,
+  nozzle: EquipmentItem | undefined
+) {
+  const inputs = buildCalculatorInputsFromEquipment(machine, hose, nozzle);
+
+  return [
+    {
+      label: "Machine",
+      value:
+        inputs.pumpPressure && inputs.pumpFlow
+          ? `${formatNumericValue(Number(inputs.pumpPressure), 0)} PSI · ${formatNumericValue(
+              Number(inputs.pumpFlow),
+              1
+            )} LPM`
+          : machine
+            ? "Machine selected"
+            : "Select a machine",
+    },
+    {
+      label: "Hose",
+      value:
+        inputs.hoseLength && inputs.hoseId
+          ? `${formatNumericValue(Number(inputs.hoseLength), 1)} m · ${formatNumericValue(
+              Number(inputs.hoseId),
+              2
+            )} mm ID`
+          : hose
+            ? "Hose selected"
+            : "Optional",
+    },
+    {
+      label: "Nozzle",
+      value:
+        inputs.nozzleSizeText
+          ? `${inputs.nozzleSizeText} · ${inputs.nozzleCount ?? 1} nozzle${
+              Number(inputs.nozzleCount ?? 1) === 1 ? "" : "s"
+            } · ${inputs.sprayMode === "surfaceCleaner" ? "Surface cleaner" : "Wand"}`
+          : nozzle
+            ? "Nozzle selected"
+            : "Optional",
+    },
+  ];
+}
+
 function getDefaultName(type: EquipmentType) {
   switch (type) {
     case "machine":
@@ -501,6 +665,53 @@ export default function EquipmentLibraryPage() {
   const [selectedType, setSelectedType] = useState<EquipmentType | "all">("all");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [builder, setBuilder] = useState<SetupBuilderState>(EMPTY_BUILDER);
+
+  const machineItems = useMemo(
+    () => items.filter((item) => item.equipmentType === "machine"),
+    [items]
+  );
+
+  const hoseItems = useMemo(
+    () => items.filter((item) => item.equipmentType === "hose"),
+    [items]
+  );
+
+  const nozzleItems = useMemo(
+    () =>
+      items.filter(
+        (item) => item.equipmentType === "nozzle" || item.equipmentType === "surface_cleaner"
+      ),
+    [items]
+  );
+
+  const selectedMachine = useMemo(
+    () => machineItems.find((item) => item.id === builder.machineId),
+    [machineItems, builder.machineId]
+  );
+
+  const selectedHose = useMemo(
+    () => hoseItems.find((item) => item.id === builder.hoseId),
+    [hoseItems, builder.hoseId]
+  );
+
+  const selectedNozzle = useMemo(
+    () => nozzleItems.find((item) => item.id === builder.nozzleId),
+    [nozzleItems, builder.nozzleId]
+  );
+
+  const setupBuilderHref = useMemo(
+    () => buildCalculatorHrefFromEquipment(selectedMachine, selectedHose, selectedNozzle),
+    [selectedMachine, selectedHose, selectedNozzle]
+  );
+
+  const setupBuilderSummary = useMemo(
+    () => buildSetupBuilderSummary(selectedMachine, selectedHose, selectedNozzle),
+    [selectedMachine, selectedHose, selectedNozzle]
+  );
+
+  const canOpenBuiltSetup = Boolean(selectedMachine);
+
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const visibleItems = useMemo(
@@ -792,6 +1003,120 @@ export default function EquipmentLibraryPage() {
               </div>
             }
           >
+            <section className="mt-6 rounded-3xl border border-blue-100 bg-white p-6 shadow-sm md:p-8">
+              <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <div className="inline-flex items-center rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
+                    Setup builder
+                  </div>
+                  <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">
+                    Create setup from saved equipment
+                  </h2>
+                  <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+                    Pick a saved machine, hose, and nozzle, then open the full calculator with those values already filled in. Save the calculated result from there when you are happy with the setup.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <Link
+                    to={setupBuilderHref}
+                    aria-disabled={!canOpenBuiltSetup}
+                    onClick={(event) => {
+                      if (!canOpenBuiltSetup) {
+                        event.preventDefault();
+                      }
+                    }}
+                    className={`inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold transition ${
+                      canOpenBuiltSetup
+                        ? "bg-slate-950 text-white hover:bg-slate-800"
+                        : "cursor-not-allowed bg-slate-200 text-slate-500"
+                    }`}
+                  >
+                    Open Built Setup
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setBuilder(EMPTY_BUILDER)}
+                    className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  >
+                    Clear Builder
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-6 grid gap-4 lg:grid-cols-3">
+                <FormField label="Machine / pump">
+                  <select
+                    value={builder.machineId}
+                    onChange={(event) =>
+                      setBuilder((current) => ({ ...current, machineId: event.target.value }))
+                    }
+                    className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-slate-500"
+                  >
+                    <option value="">Select machine</option>
+                    {machineItems.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {equipmentSelectLabel(item)}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+
+                <FormField label="Hose">
+                  <select
+                    value={builder.hoseId}
+                    onChange={(event) =>
+                      setBuilder((current) => ({ ...current, hoseId: event.target.value }))
+                    }
+                    className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-slate-500"
+                  >
+                    <option value="">Optional hose</option>
+                    {hoseItems.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {equipmentSelectLabel(item)}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+
+                <FormField label="Nozzle / surface cleaner">
+                  <select
+                    value={builder.nozzleId}
+                    onChange={(event) =>
+                      setBuilder((current) => ({ ...current, nozzleId: event.target.value }))
+                    }
+                    className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-slate-500"
+                  >
+                    <option value="">Optional nozzle</option>
+                    {nozzleItems.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {equipmentSelectLabel(item)}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+              </div>
+
+              <div className="mt-5 grid gap-3 md:grid-cols-3">
+                {setupBuilderSummary.map((item) => (
+                  <div key={item.label} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                      {item.label}
+                    </p>
+                    <p className="mt-1 break-words text-sm font-semibold text-slate-900 [overflow-wrap:anywhere]">
+                      {item.value}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {!canOpenBuiltSetup ? (
+                <p className="mt-4 text-sm leading-6 text-amber-700">
+                  Save or select a machine first. Hose and nozzle are optional, but the calculator needs machine pressure and flow to make this useful.
+                </p>
+              ) : null}
+            </section>
+
             <div className="mt-6 grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
               <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
                 <h2 className="text-2xl font-semibold tracking-tight text-slate-950">
