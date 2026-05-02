@@ -167,6 +167,28 @@ function formatBillingProvider(provider: BillingProvider) {
   }
 }
 
+function formatBillingCycle(value?: string | null) {
+  if (!value) {
+    return "Not available";
+  }
+
+  const normalized = value.trim().toLowerCase();
+
+  if (normalized === "month" || normalized === "monthly") {
+    return "Monthly";
+  }
+
+  if (normalized === "year" || normalized === "yearly" || normalized === "annual") {
+    return "Yearly";
+  }
+
+  return normalized
+    .split(/[_\s-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
 function formatStatus(status?: string | null) {
   if (!status) {
     return "No subscription";
@@ -928,7 +950,7 @@ export default function AccountPage() {
                       </div>
                       <div>
                         <p className="font-semibold text-slate-950">Billing cycle</p>
-                        <p>{subscription?.plan_interval ?? "Not available"}</p>
+                        <p>{formatBillingCycle(subscription?.plan_interval)}</p>
                       </div>
                       <div>
                         <p className="font-semibold text-slate-950">Current period ends</p>
