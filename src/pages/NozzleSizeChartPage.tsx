@@ -84,9 +84,11 @@ function buildChartRows(
 }
 
 function buildCalculatorHref(pressureBar: number, flowLpm: string) {
+  const pressurePsi = psiFromBar(pressureBar);
+
   const params = new URLSearchParams({
-    p: String(pressureBar),
-    pu: "bar",
+    p: String(pressurePsi),
+    pu: "psi",
     f: flowLpm,
     fu: "lpm",
   });
@@ -536,7 +538,7 @@ function ExamplePanel() {
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
             <Link
-              to="/nozzle-size-calculator?p=276&pu=bar&f=15.1&fu=lpm"
+              to="/nozzle-size-calculator?p=4000&pu=psi&f=15.1&fu=lpm"
               className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
             >
               Open in Calculator
@@ -941,7 +943,7 @@ function SEOContentBlocks() {
 
           <div>
             <Link
-              to="/nozzle-size-calculator?p=276&pu=bar&f=15.1&fu=lpm"
+              to="/nozzle-size-calculator?p=4000&pu=psi&f=15.1&fu=lpm"
               className="inline-flex rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
             >
               Open 4000 PSI / 15.1 LPM in Calculator
@@ -1179,8 +1181,10 @@ export default function NozzleSizeChartPage() {
                   {selectedCell && (
                     <div className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4 text-sm text-blue-900">
                       Highlighted from your link:{" "}
-                      <strong>{selectedCell.pressureBar} BAR</strong> and{" "}
-                      <strong>{formatRoundedLpm(selectedCell.flowLpm)} LPM</strong>.
+                      <strong>
+                        {psiFromBar(selectedCell.pressureBar)} PSI ({selectedCell.pressureBar} BAR)
+                      </strong>{" "}
+                      and <strong>{formatRoundedLpm(selectedCell.flowLpm)} LPM</strong>.
                     </div>
                   )}
                 </div>

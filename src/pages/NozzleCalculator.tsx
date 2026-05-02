@@ -349,7 +349,10 @@ function CalculatorCore({
             </div>
           </div>
 
-          <div className="rounded-3xl border border-blue-200 bg-gradient-to-br from-blue-50 to-white p-5 shadow-sm">
+          <div
+            id={embedded ? undefined : "result"}
+            className="scroll-mt-28 rounded-3xl border border-blue-200 bg-gradient-to-br from-blue-50 to-white p-5 shadow-sm"
+          >
             <div className="flex flex-col gap-5">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
@@ -681,6 +684,26 @@ export default function NozzleCalculator({ embedded = false }: NozzleCalculatorP
       setFlow(nextFlow);
     }
   }, []);
+
+  useEffect(() => {
+    if (embedded) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const hasInputParams =
+      params.has("p") || params.has("pu") || params.has("f") || params.has("fu");
+    const shouldJumpToResult = hasInputParams || window.location.hash === "#result";
+
+    if (!shouldJumpToResult) return;
+
+    const timer = window.setTimeout(() => {
+      document.getElementById("result")?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }, 180);
+
+    return () => window.clearTimeout(timer);
+  }, [embedded]);
 
   const pressurePsi = useMemo(() => toPsi(pressure, pressureUnit), [pressure, pressureUnit]);
   const flowGpm = useMemo(() => toGpm(flow, flowUnit), [flow, flowUnit]);
