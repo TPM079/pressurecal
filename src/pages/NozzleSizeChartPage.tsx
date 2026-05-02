@@ -271,13 +271,18 @@ function ReferenceTable({
             </div>
           </div>
         </div>
+
+        <p className="mt-4 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-xs leading-5 text-blue-900 print:hidden">
+          Scroll inside the chart table. The flow header and left pressure column stay pinned,
+          so the values remain lined up while you move through the rows.
+        </p>
       </div>
 
-      <div className="overflow-x-auto print:overflow-visible">
+      <div className="max-h-[calc(100vh-9rem)] overflow-auto print:max-h-none print:overflow-visible">
         <table className={`${minWidthClass} w-full border-collapse print:min-w-0`}>
-          <thead className="print:static">
+          <thead>
             <tr className="border-b border-slate-300 bg-slate-100">
-              <th className="sticky left-0 top-[64px] z-40 border-r border-slate-300 bg-slate-100 px-4 py-4 text-left align-bottom shadow-sm md:top-[76px] print:static print:px-2 print:py-2 print:shadow-none">
+              <th className="sticky left-0 top-0 z-40 border-r border-slate-300 bg-slate-100 px-4 py-4 text-left align-bottom shadow-[1px_0_0_0_rgb(203,213,225)] print:static print:px-2 print:py-2 print:shadow-none">
                 <div className="text-xs font-semibold uppercase tracking-wide text-slate-700">
                   Pressure
                 </div>
@@ -291,7 +296,7 @@ function ReferenceTable({
                 return (
                   <th
                     key={`${formatRoundedLpm(flow.lpm)}-${flow.gpm}`}
-                    className={`sticky top-[64px] z-30 border-r border-slate-200 px-2 py-3 text-center shadow-sm transition-colors last:border-r-0 md:top-[76px] print:static print:px-1.5 print:py-2 print:shadow-none ${
+                    className={`sticky top-0 z-30 border-r border-slate-200 px-2 py-3 text-center shadow-[0_1px_0_0_rgb(203,213,225)] transition-colors last:border-r-0 print:static print:px-1.5 print:py-2 print:shadow-none ${
                       isColSelected
                         ? "bg-blue-200"
                         : isColHovered
@@ -337,7 +342,7 @@ function ReferenceTable({
                   onMouseLeave={() => setHoveredRow(null)}
                 >
                   <td
-                    className={`sticky left-0 z-10 border-r border-b border-slate-300 px-3 py-3 transition-colors print:static print:px-2 print:py-2 ${
+                    className={`sticky left-0 z-20 border-r border-b border-slate-300 px-3 py-3 shadow-[1px_0_0_0_rgb(203,213,225)] transition-colors print:static print:px-2 print:py-2 print:shadow-none ${
                       isRowSelected
                         ? "bg-blue-200"
                         : isRowHovered
