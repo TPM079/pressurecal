@@ -256,6 +256,9 @@ export default function SavedSetupsPage() {
   const [selectedSetupId, setSelectedSetupId] = useState<string | null>(null);
   const [form, setForm] = useState<SetupFormState>(EMPTY_FORM);
   const [copiedSetupId, setCopiedSetupId] = useState<string | null>(null);
+  const [isSavingSetup, setIsSavingSetup] = useState(false);
+  const [busySetupId, setBusySetupId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -284,8 +287,16 @@ export default function SavedSetupsPage() {
     };
   }, []);
 
-  const { setups, isReady, saveSetup, deleteSetup, duplicateSetup, getSetupById } =
-    useSavedSetups(authUserId);
+  const {
+    setups,
+    isReady,
+    isMutating,
+    error: savedSetupsError,
+    saveSetup,
+    deleteSetup,
+    duplicateSetup,
+    getSetupById,
+  } = useSavedSetups(authUserId);
 
   const editingSetup = useMemo(() => {
     return selectedSetupId ? getSetupById(selectedSetupId) : null;
@@ -357,7 +368,24 @@ export default function SavedSetupsPage() {
     return Number.isFinite(parsed) ? parsed : null;
   }
 
-  function handleSave() {
+  function getActionErrorMessage(error: unknown) {
+    if (error instanceof Error && error.message) {
+      return error.message;
+    }
+
+    if (
+      error &&
+      typeof error === "object" &&
+      "message" in error &&
+      typeof (error as { message?: unknown }).message === "string"
+    ) {
+      return (error as { message: string }).message;
+    }
+
+    return "Saved setup action failed. Please try again.";
+  }
+
+  async function handleSave() {
     if (!authUserId) {
       window.alert("Please sign in before saving setups.");
       return;
@@ -376,41 +404,50 @@ export default function SavedSetupsPage() {
     const pumpFlow = toNumberOrNull(form.pumpFlow);
     const nozzleSizeText = form.nozzleSizeText.trim() || null;
 
-    const saved = saveSetup({
-      id: selectedSetupId ?? undefined,
-      name,
-      notes: form.notes.trim() || null,
+    setActionError(null);
+    setIsSavingSetup(true);
 
-      machinePsi: form.pumpPressureUnit === "psi" ? pumpPressure : null,
-      machineLpm: form.pumpFlowUnit === "lpm" ? pumpFlow : null,
-      hoseLengthM: form.hoseLengthUnit === "m" ? hoseLength : null,
-      hoseIdMm: form.hoseIdUnit === "mm" ? hoseId : null,
-      nozzleSize: nozzleSizeText,
+    try {
+      const saved = await saveSetup({
+        id: selectedSetupId ?? undefined,
+        name,
+        notes: form.notes.trim() || null,
 
-      pumpPressure,
-      pumpPressureUnit: form.pumpPressureUnit,
-      pumpFlow,
-      pumpFlowUnit: form.pumpFlowUnit,
-      maxPressure: toNumberOrNull(form.maxPressure),
-      maxPressureUnit: form.maxPressureUnit,
-      hoseLength,
-      hoseLengthUnit: form.hoseLengthUnit,
-      hoseId,
-      hoseIdUnit: form.hoseIdUnit,
-      engineHp: toNumberOrNull(form.engineHp),
-      sprayMode: form.sprayMode,
-      nozzleCount: Math.max(
-        form.sprayMode === "surfaceCleaner" ? 2 : 1,
-        Number(form.nozzleCount || "1")
-      ),
-      nozzleSizeText,
-      orificeMm: 1.2,
-      dischargeCoeffCd: 0.62,
-      waterDensity: 1000,
-      hoseRoughnessMm: 0.0015,
-    });
+        machinePsi: form.pumpPressureUnit === "psi" ? pumpPressure : null,
+        machineLpm: form.pumpFlowUnit === "lpm" ? pumpFlow : null,
+        hoseLengthM: form.hoseLengthUnit === "m" ? hoseLength : null,
+        hoseIdMm: form.hoseIdUnit === "mm" ? hoseId : null,
+        nozzleSize: nozzleSizeText,
 
-    setSelectedSetupId(saved.id);
+        pumpPressure,
+        pumpPressureUnit: form.pumpPressureUnit,
+        pumpFlow,
+        pumpFlowUnit: form.pumpFlowUnit,
+        maxPressure: toNumberOrNull(form.maxPressure),
+        maxPressureUnit: form.maxPressureUnit,
+        hoseLength,
+        hoseLengthUnit: form.hoseLengthUnit,
+        hoseId,
+        hoseIdUnit: form.hoseIdUnit,
+        engineHp: toNumberOrNull(form.engineHp),
+        sprayMode: form.sprayMode,
+        nozzleCount: Math.max(
+          form.sprayMode === "surfaceCleaner" ? 2 : 1,
+          Number(form.nozzleCount || "1")
+        ),
+        nozzleSizeText,
+        orificeMm: 1.2,
+        dischargeCoeffCd: 0.62,
+        waterDensity: 1000,
+        hoseRoughnessMm: 0.0015,
+      });
+
+      setSelectedSetupId(saved.id);
+    } catch (error) {
+      setActionError(getActionErrorMessage(error));
+    } finally {
+      setIsSavingSetup(false);
+    }
   }
 
   function handleEdit(setupId: string) {
@@ -465,6 +502,44 @@ export default function SavedSetupsPage() {
       window.prompt("Copy this setup link:", url);
     }
   }
+
+  async function handleDuplicateSetup(setupId: string) {
+    setActionError(null);
+    setBusySetupId(setupId);
+
+    try {
+      await duplicateSetup(setupId);
+    } catch (error) {
+      setActionError(getActionErrorMessage(error));
+    } finally {
+      setBusySetupId(null);
+    }
+  }
+
+  async function handleDeleteSetup(setupId: string, setupName: string) {
+    const confirmed = window.confirm(`Delete "${setupName}"?`);
+
+    if (!confirmed) {
+      return;
+    }
+
+    setActionError(null);
+    setBusySetupId(setupId);
+
+    try {
+      await deleteSetup(setupId);
+
+      if (selectedSetupId === setupId) {
+        resetForm();
+      }
+    } catch (error) {
+      setActionError(getActionErrorMessage(error));
+    } finally {
+      setBusySetupId(null);
+    }
+  }
+
+  const visibleActionError = actionError ?? savedSetupsError;
 
   const signedOutFallback = (
     <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
@@ -776,25 +851,38 @@ export default function SavedSetupsPage() {
                   </label>
 
                   <label className="block sm:col-span-2">
-                    <span className="text-sm font-semibold text-slate-800">Notes</span>
+                    <span className="text-sm font-semibold text-slate-800">Operator notes</span>
                     <textarea
                       value={form.notes}
                       onChange={(event) => updateField("notes", event.target.value)}
-                      placeholder="Pump, reel, gun, use case, favourite combo, or anything else you want to remember."
+                      placeholder={'Example: Good for house wash. Use 1/2" hose on long runs. Check nozzle wear before quoting.'}
                       rows={4}
                       className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
                     />
+                    <p className="mt-2 text-xs leading-5 text-slate-500">
+                      Use this for job notes, setup observations, customer preferences, or checks you want to remember.
+                    </p>
                   </label>
                 </div>
+
+                {visibleActionError ? (
+                  <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                    {visibleActionError}
+                  </div>
+                ) : null}
 
                 <div className="mt-8 flex flex-wrap gap-3">
                   <button
                     type="button"
                     onClick={handleSave}
-                    disabled={authLoading || !isReady}
+                    disabled={authLoading || !isReady || isSavingSetup || isMutating}
                     className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {selectedSetupId ? "Update Saved Setup" : "Save Setup"}
+                    {isSavingSetup
+                      ? "Saving..."
+                      : selectedSetupId
+                        ? "Update Saved Setup"
+                        : "Save Setup"}
                   </button>
 
                   <button
@@ -849,6 +937,16 @@ export default function SavedSetupsPage() {
                             <p className="mt-1 text-xs uppercase tracking-[0.15em] text-slate-400">
                               Updated {new Date(setup.updatedAt).toLocaleString()}
                             </p>
+                            {setup.notes ? (
+                              <div className="mt-4 max-w-xl rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
+                                  Operator notes
+                                </p>
+                                <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">
+                                  {setup.notes}
+                                </p>
+                              </div>
+                            ) : null}
                           </div>
 
                           <div className="flex flex-wrap gap-2">
@@ -880,23 +978,17 @@ export default function SavedSetupsPage() {
                             </Link>
                             <button
                               type="button"
-                              onClick={() => duplicateSetup(setup.id)}
-                              className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                              onClick={() => void handleDuplicateSetup(setup.id)}
+                              disabled={busySetupId === setup.id || isMutating}
+                              className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                             >
-                              Duplicate
+                              {busySetupId === setup.id ? "Working..." : "Duplicate"}
                             </button>
                             <button
                               type="button"
-                              onClick={() => {
-                                const confirmed = window.confirm(`Delete "${setup.name}"?`);
-                                if (confirmed) {
-                                  deleteSetup(setup.id);
-                                  if (selectedSetupId === setup.id) {
-                                    resetForm();
-                                  }
-                                }
-                              }}
-                              className="rounded-xl border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-50"
+                              onClick={() => void handleDeleteSetup(setup.id, setup.name)}
+                              disabled={busySetupId === setup.id || isMutating}
+                              className="rounded-xl border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
                             >
                               Delete
                             </button>

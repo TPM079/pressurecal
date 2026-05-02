@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { supabase } from "../lib/supabase-browser";
 import {
   barFromPsi,
   lpmFromGpm,
@@ -183,7 +184,10 @@ function makeId() {
     return crypto.randomUUID();
   }
 
-  return `setup_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+  const segment = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).slice(1);
+  const variant = (8 + Math.floor(Math.random() * 4)).toString(16);
+
+  return `${segment()}${segment()}-${segment()}-4${segment().slice(1)}-${variant}${segment().slice(1)}-${segment()}${segment()}${segment()}`;
 }
 
 function toNullableNumber(value: unknown, fallback: number | null) {
@@ -767,146 +771,404 @@ export function inputsFromSavedSetup(setup: SavedSetup): Inputs {
   };
 }
 
+type SavedSetupRow = {
+  id: string;
+  user_id: string;
+  name: string;
+  notes: string | null;
+  machine_label: string | null;
+  schema_version: number;
+  rig_inputs: Record<string, unknown>;
+  result_snapshot: Record<string, unknown> | null;
+  summary: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+};
+
+type SavedSetupDatabasePayload = {
+  id: string;
+  user_id: string;
+  name: string;
+  notes: string | null;
+  machine_label: string | null;
+  schema_version: number;
+  rig_inputs: Inputs;
+  result_snapshot: SavedSetupCalculatedResult | null;
+  summary: Record<string, unknown>;
+};
+
+function buildMigrationKey(userId: string) {
+  return `pressurecal:saved-setups:supabase-imported:${userId}`;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  if (isRecord(error) && typeof error.message === "string" && error.message.trim()) {
+    return error.message.trim();
+  }
+
+  return "Saved setups could not be updated. Please try again.";
+}
+
+function buildSavedSetupFromInput(args: {
+  input: SaveSetupInput;
+  userId: string;
+  existing?: SavedSetup | null;
+  timestamp: string;
+}) {
+  const { input, userId, existing, timestamp } = args;
+
+  const nextSetup: SavedSetup = {
+    id: existing?.id ?? input.id ?? makeId(),
+    userId,
+    name: input.name.trim() || existing?.name || "Untitled setup",
+    notes:
+      typeof input.notes === "string" && input.notes.trim()
+        ? input.notes.trim()
+        : null,
+
+    machinePsi: input.machinePsi ?? existing?.machinePsi ?? DEFAULT_SNAPSHOT.machinePsi,
+    machineLpm: input.machineLpm ?? existing?.machineLpm ?? DEFAULT_SNAPSHOT.machineLpm,
+    hoseLengthM:
+      input.hoseLengthM ?? existing?.hoseLengthM ?? DEFAULT_SNAPSHOT.hoseLengthM,
+    hoseIdMm: input.hoseIdMm ?? existing?.hoseIdMm ?? DEFAULT_SNAPSHOT.hoseIdMm,
+    nozzleSize: input.nozzleSize ?? existing?.nozzleSize ?? DEFAULT_SNAPSHOT.nozzleSize,
+
+    pumpPressure:
+      input.pumpPressure ?? existing?.pumpPressure ?? DEFAULT_SNAPSHOT.pumpPressure,
+    pumpPressureUnit:
+      input.pumpPressureUnit ??
+      existing?.pumpPressureUnit ??
+      DEFAULT_SNAPSHOT.pumpPressureUnit,
+    pumpFlow: input.pumpFlow ?? existing?.pumpFlow ?? DEFAULT_SNAPSHOT.pumpFlow,
+    pumpFlowUnit:
+      input.pumpFlowUnit ?? existing?.pumpFlowUnit ?? DEFAULT_SNAPSHOT.pumpFlowUnit,
+    maxPressure:
+      input.maxPressure ?? existing?.maxPressure ?? DEFAULT_SNAPSHOT.maxPressure,
+    maxPressureUnit:
+      input.maxPressureUnit ??
+      existing?.maxPressureUnit ??
+      DEFAULT_SNAPSHOT.maxPressureUnit,
+    hoseLength:
+      input.hoseLength ?? existing?.hoseLength ?? DEFAULT_SNAPSHOT.hoseLength,
+    hoseLengthUnit:
+      input.hoseLengthUnit ?? existing?.hoseLengthUnit ?? DEFAULT_SNAPSHOT.hoseLengthUnit,
+    hoseId: input.hoseId ?? existing?.hoseId ?? DEFAULT_SNAPSHOT.hoseId,
+    hoseIdUnit:
+      input.hoseIdUnit ?? existing?.hoseIdUnit ?? DEFAULT_SNAPSHOT.hoseIdUnit,
+    engineHp: input.engineHp ?? existing?.engineHp ?? null,
+    sprayMode: input.sprayMode ?? existing?.sprayMode ?? DEFAULT_SNAPSHOT.sprayMode,
+    nozzleCount:
+      input.nozzleCount ?? existing?.nozzleCount ?? DEFAULT_SNAPSHOT.nozzleCount,
+    nozzleMode: "tipSize",
+    nozzleSizeText:
+      input.nozzleSizeText ?? existing?.nozzleSizeText ?? DEFAULT_SNAPSHOT.nozzleSizeText,
+    orificeMm: input.orificeMm ?? existing?.orificeMm ?? DEFAULT_SNAPSHOT.orificeMm,
+    dischargeCoeffCd:
+      input.dischargeCoeffCd ??
+      existing?.dischargeCoeffCd ??
+      DEFAULT_SNAPSHOT.dischargeCoeffCd,
+    waterDensity:
+      input.waterDensity ?? existing?.waterDensity ?? DEFAULT_SNAPSHOT.waterDensity,
+    hoseRoughnessMm:
+      input.hoseRoughnessMm ??
+      existing?.hoseRoughnessMm ??
+      DEFAULT_SNAPSHOT.hoseRoughnessMm,
+
+    createdAt: existing?.createdAt ?? timestamp,
+    updatedAt: timestamp,
+  };
+
+  nextSetup.calculatedResult =
+    input.calculatedResult ??
+    buildCalculatedResultFromInputs(inputsFromSavedSetup(nextSetup), timestamp);
+
+  return nextSetup;
+}
+
+function buildSummary(setup: SavedSetup): Record<string, unknown> {
+  return {
+    machinePsi: setup.machinePsi,
+    machineLpm: setup.machineLpm,
+    hoseLengthM: setup.hoseLengthM,
+    hoseIdMm: setup.hoseIdMm,
+    nozzleSize: setup.nozzleSize,
+    resultSummary: setup.calculatedResult?.resultSummary ?? null,
+    setupHealth: setup.calculatedResult?.setupHealth ?? null,
+  };
+}
+
+function savedSetupToDatabasePayload(setup: SavedSetup): SavedSetupDatabasePayload {
+  return {
+    id: setup.id,
+    user_id: setup.userId,
+    name: setup.name,
+    notes: setup.notes,
+    machine_label: null,
+    schema_version: 1,
+    rig_inputs: inputsFromSavedSetup(setup),
+    result_snapshot: setup.calculatedResult ?? null,
+    summary: buildSummary(setup),
+  };
+}
+
+function normalizeSupabaseRow(row: SavedSetupRow, userId: string): SavedSetup | null {
+  const rigInputs = isRecord(row.rig_inputs) ? row.rig_inputs : {};
+  const summary = isRecord(row.summary) ? row.summary : {};
+
+  return normalizeSavedSetup(
+    {
+      id: row.id,
+      name: row.name,
+      notes: row.notes,
+      machinePsi: summary.machinePsi ?? rigInputs.machinePsi,
+      machineLpm: summary.machineLpm ?? rigInputs.machineLpm,
+      hoseLengthM: summary.hoseLengthM ?? rigInputs.hoseLengthM,
+      hoseIdMm: summary.hoseIdMm ?? rigInputs.hoseIdMm,
+      nozzleSize: summary.nozzleSize ?? rigInputs.nozzleSize ?? rigInputs.nozzleSizeText,
+      pumpPressure: rigInputs.pumpPressure,
+      pumpPressureUnit: rigInputs.pumpPressureUnit,
+      pumpFlow: rigInputs.pumpFlow,
+      pumpFlowUnit: rigInputs.pumpFlowUnit,
+      maxPressure: rigInputs.maxPressure,
+      maxPressureUnit: rigInputs.maxPressureUnit,
+      hoseLength: rigInputs.hoseLength,
+      hoseLengthUnit: rigInputs.hoseLengthUnit,
+      hoseId: rigInputs.hoseId,
+      hoseIdUnit: rigInputs.hoseIdUnit,
+      engineHp: rigInputs.engineHp,
+      sprayMode: rigInputs.sprayMode,
+      nozzleCount: rigInputs.nozzleCount,
+      nozzleSizeText: rigInputs.nozzleSizeText,
+      orificeMm: rigInputs.orificeMm,
+      dischargeCoeffCd: rigInputs.dischargeCoeffCd,
+      waterDensity: rigInputs.waterDensity,
+      hoseRoughnessMm: rigInputs.hoseRoughnessMm,
+      calculatedResult: row.result_snapshot,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    },
+    userId
+  );
+}
+
+async function fetchSavedSetups(userId: string) {
+  const { data, error } = await supabase
+    .from("saved_setups")
+    .select(
+      "id,user_id,name,notes,machine_label,schema_version,rig_inputs,result_snapshot,summary,created_at,updated_at"
+    )
+    .eq("user_id", userId)
+    .order("updated_at", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? [])
+    .map((row) => normalizeSupabaseRow(row as SavedSetupRow, userId))
+    .filter((setup): setup is SavedSetup => setup !== null);
+}
+
+function readLegacyLocalSetups(userId: string) {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  const raw = window.localStorage.getItem(buildStorageKey(userId));
+  const parsed = raw ? (JSON.parse(raw) as unknown) : [];
+
+  return Array.isArray(parsed)
+    ? parsed
+        .map((item) => normalizeSavedSetup(item, userId))
+        .filter((item): item is SavedSetup => item !== null)
+    : [];
+}
+
+async function importLegacyLocalSetups(userId: string) {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  const migrationKey = buildMigrationKey(userId);
+
+  if (window.localStorage.getItem(migrationKey) === "done") {
+    return [];
+  }
+
+  const legacySetups = readLegacyLocalSetups(userId);
+
+  if (legacySetups.length === 0) {
+    window.localStorage.setItem(migrationKey, "done");
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("saved_setups")
+    .upsert(legacySetups.map(savedSetupToDatabasePayload), { onConflict: "id" })
+    .select(
+      "id,user_id,name,notes,machine_label,schema_version,rig_inputs,result_snapshot,summary,created_at,updated_at"
+    );
+
+  if (error) {
+    throw error;
+  }
+
+  window.localStorage.setItem(migrationKey, "done");
+
+  return (data ?? [])
+    .map((row) => normalizeSupabaseRow(row as SavedSetupRow, userId))
+    .filter((setup): setup is SavedSetup => setup !== null);
+}
+
+function replaceSetup(current: SavedSetup[], setup: SavedSetup) {
+  const withoutExisting = current.filter((item) => item.id !== setup.id);
+  return [setup, ...withoutExisting].sort(
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+  );
+}
+
 export function useSavedSetups(userId: string | null) {
   const [setups, setSetups] = useState<SavedSetup[]>([]);
   const [isReady, setIsReady] = useState(false);
+  const [isMutating, setIsMutating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const refreshSetups = useCallback(async () => {
     if (!userId) {
       setSetups([]);
       setIsReady(true);
-      return;
+      setError(null);
+      return [];
     }
 
-    const storageKey = buildStorageKey(userId);
+    setIsReady(false);
+    setError(null);
 
     try {
-      const raw = window.localStorage.getItem(storageKey);
-      const parsed = raw ? (JSON.parse(raw) as unknown[]) : [];
-      const normalized = Array.isArray(parsed)
-        ? parsed
-            .map((item) => normalizeSavedSetup(item, userId))
-            .filter((item): item is SavedSetup => item !== null)
-        : [];
+      let nextSetups = await fetchSavedSetups(userId);
 
-      setSetups(normalized);
-      window.localStorage.setItem(storageKey, JSON.stringify(normalized));
-    } catch (error) {
-      console.error(error);
-      setSetups([]);
-    }
-
-    setIsReady(true);
-  }, [userId]);
-
-  const persist = useCallback(
-    (nextSetups: SavedSetup[]) => {
-      setSetups(nextSetups);
-
-      if (!userId) {
-        return;
+      if (nextSetups.length === 0) {
+        try {
+          const importedSetups = await importLegacyLocalSetups(userId);
+          if (importedSetups.length > 0) {
+            nextSetups = importedSetups;
+          }
+        } catch (legacyImportError) {
+          console.error("Could not import local saved setups", legacyImportError);
+        }
       }
 
-      window.localStorage.setItem(buildStorageKey(userId), JSON.stringify(nextSetups));
-    },
-    [userId]
-  );
+      setSetups(nextSetups);
+      return nextSetups;
+    } catch (loadError) {
+      const message = getErrorMessage(loadError);
+      console.error(loadError);
+      setError(message);
+      setSetups([]);
+      return [];
+    } finally {
+      setIsReady(true);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    void refreshSetups();
+  }, [refreshSetups]);
 
   const saveSetup = useCallback(
-    (input: SaveSetupInput) => {
+    async (input: SaveSetupInput) => {
       if (!userId) {
         throw new Error("Cannot save setup without a signed-in user.");
       }
 
       const timestamp = new Date().toISOString();
       const existing = input.id ? setups.find((setup) => setup.id === input.id) : null;
-
-      const nextSetup: SavedSetup = {
-        id: existing?.id ?? makeId(),
+      const nextSetup = buildSavedSetupFromInput({
+        input,
         userId,
-        name: input.name,
-        notes: input.notes ?? null,
+        existing,
+        timestamp,
+      });
+      const previousSetups = setups;
 
-        machinePsi: input.machinePsi ?? existing?.machinePsi ?? DEFAULT_SNAPSHOT.machinePsi,
-        machineLpm: input.machineLpm ?? existing?.machineLpm ?? DEFAULT_SNAPSHOT.machineLpm,
-        hoseLengthM:
-          input.hoseLengthM ?? existing?.hoseLengthM ?? DEFAULT_SNAPSHOT.hoseLengthM,
-        hoseIdMm: input.hoseIdMm ?? existing?.hoseIdMm ?? DEFAULT_SNAPSHOT.hoseIdMm,
-        nozzleSize: input.nozzleSize ?? existing?.nozzleSize ?? DEFAULT_SNAPSHOT.nozzleSize,
+      setError(null);
+      setIsMutating(true);
+      setSetups((current) => replaceSetup(current, nextSetup));
 
-        pumpPressure:
-          input.pumpPressure ?? existing?.pumpPressure ?? DEFAULT_SNAPSHOT.pumpPressure,
-        pumpPressureUnit:
-          input.pumpPressureUnit ??
-          existing?.pumpPressureUnit ??
-          DEFAULT_SNAPSHOT.pumpPressureUnit,
-        pumpFlow: input.pumpFlow ?? existing?.pumpFlow ?? DEFAULT_SNAPSHOT.pumpFlow,
-        pumpFlowUnit:
-          input.pumpFlowUnit ??
-          existing?.pumpFlowUnit ??
-          DEFAULT_SNAPSHOT.pumpFlowUnit,
-        maxPressure:
-          input.maxPressure ?? existing?.maxPressure ?? DEFAULT_SNAPSHOT.maxPressure,
-        maxPressureUnit:
-          input.maxPressureUnit ??
-          existing?.maxPressureUnit ??
-          DEFAULT_SNAPSHOT.maxPressureUnit,
-        hoseLength:
-          input.hoseLength ?? existing?.hoseLength ?? DEFAULT_SNAPSHOT.hoseLength,
-        hoseLengthUnit:
-          input.hoseLengthUnit ??
-          existing?.hoseLengthUnit ??
-          DEFAULT_SNAPSHOT.hoseLengthUnit,
-        hoseId: input.hoseId ?? existing?.hoseId ?? DEFAULT_SNAPSHOT.hoseId,
-        hoseIdUnit:
-          input.hoseIdUnit ?? existing?.hoseIdUnit ?? DEFAULT_SNAPSHOT.hoseIdUnit,
-        engineHp: input.engineHp ?? existing?.engineHp ?? null,
-        sprayMode: input.sprayMode ?? existing?.sprayMode ?? DEFAULT_SNAPSHOT.sprayMode,
-        nozzleCount:
-          input.nozzleCount ?? existing?.nozzleCount ?? DEFAULT_SNAPSHOT.nozzleCount,
-        nozzleMode: "tipSize",
-        nozzleSizeText:
-          input.nozzleSizeText ??
-          existing?.nozzleSizeText ??
-          DEFAULT_SNAPSHOT.nozzleSizeText,
-        orificeMm: input.orificeMm ?? existing?.orificeMm ?? DEFAULT_SNAPSHOT.orificeMm,
-        dischargeCoeffCd:
-          input.dischargeCoeffCd ??
-          existing?.dischargeCoeffCd ??
-          DEFAULT_SNAPSHOT.dischargeCoeffCd,
-        waterDensity:
-          input.waterDensity ?? existing?.waterDensity ?? DEFAULT_SNAPSHOT.waterDensity,
-        hoseRoughnessMm:
-          input.hoseRoughnessMm ??
-          existing?.hoseRoughnessMm ??
-          DEFAULT_SNAPSHOT.hoseRoughnessMm,
+      try {
+        const { data, error: saveError } = await supabase
+          .from("saved_setups")
+          .upsert(savedSetupToDatabasePayload(nextSetup), { onConflict: "id" })
+          .select(
+            "id,user_id,name,notes,machine_label,schema_version,rig_inputs,result_snapshot,summary,created_at,updated_at"
+          )
+          .single();
 
-        createdAt: existing?.createdAt ?? timestamp,
-        updatedAt: timestamp,
-      };
+        if (saveError) {
+          throw saveError;
+        }
 
-      nextSetup.calculatedResult =
-        input.calculatedResult ?? buildCalculatedResultFromInputs(inputsFromSavedSetup(nextSetup), timestamp);
-
-      const nextSetups = existing
-        ? setups.map((setup) => (setup.id === existing.id ? nextSetup : setup))
-        : [nextSetup, ...setups];
-
-      persist(nextSetups);
-      return nextSetup;
+        const savedSetup = normalizeSupabaseRow(data as SavedSetupRow, userId) ?? nextSetup;
+        setSetups((current) => replaceSetup(current, savedSetup));
+        return savedSetup;
+      } catch (saveError) {
+        const message = getErrorMessage(saveError);
+        console.error(saveError);
+        setError(message);
+        setSetups(previousSetups);
+        throw saveError;
+      } finally {
+        setIsMutating(false);
+      }
     },
-    [persist, setups, userId]
+    [setups, userId]
   );
 
   const deleteSetup = useCallback(
-    (setupId: string) => {
-      persist(setups.filter((setup) => setup.id !== setupId));
+    async (setupId: string) => {
+      if (!userId) {
+        throw new Error("Cannot delete setup without a signed-in user.");
+      }
+
+      const previousSetups = setups;
+
+      setError(null);
+      setIsMutating(true);
+      setSetups((current) => current.filter((setup) => setup.id !== setupId));
+
+      try {
+        const { error: deleteError } = await supabase
+          .from("saved_setups")
+          .delete()
+          .eq("id", setupId)
+          .eq("user_id", userId);
+
+        if (deleteError) {
+          throw deleteError;
+        }
+      } catch (deleteError) {
+        const message = getErrorMessage(deleteError);
+        console.error(deleteError);
+        setError(message);
+        setSetups(previousSetups);
+        throw deleteError;
+      } finally {
+        setIsMutating(false);
+      }
     },
-    [persist, setups]
+    [setups, userId]
   );
 
   const duplicateSetup = useCallback(
-    (setupId: string) => {
+    async (setupId: string) => {
       const source = setups.find((setup) => setup.id === setupId);
 
       if (!source || !userId) {
@@ -920,12 +1182,42 @@ export function useSavedSetups(userId: string | null) {
         name: `${source.name} (copy)`,
         createdAt: timestamp,
         updatedAt: timestamp,
+        calculatedResult:
+          source.calculatedResult ?? buildCalculatedResultFromInputs(inputsFromSavedSetup(source), timestamp),
       };
+      const previousSetups = setups;
 
-      persist([copy, ...setups]);
-      return copy;
+      setError(null);
+      setIsMutating(true);
+      setSetups((current) => replaceSetup(current, copy));
+
+      try {
+        const { data, error: duplicateError } = await supabase
+          .from("saved_setups")
+          .insert(savedSetupToDatabasePayload(copy))
+          .select(
+            "id,user_id,name,notes,machine_label,schema_version,rig_inputs,result_snapshot,summary,created_at,updated_at"
+          )
+          .single();
+
+        if (duplicateError) {
+          throw duplicateError;
+        }
+
+        const savedCopy = normalizeSupabaseRow(data as SavedSetupRow, userId) ?? copy;
+        setSetups((current) => replaceSetup(current, savedCopy));
+        return savedCopy;
+      } catch (duplicateError) {
+        const message = getErrorMessage(duplicateError);
+        console.error(duplicateError);
+        setError(message);
+        setSetups(previousSetups);
+        throw duplicateError;
+      } finally {
+        setIsMutating(false);
+      }
     },
-    [persist, setups, userId]
+    [setups, userId]
   );
 
   const getSetupById = useCallback(
@@ -937,11 +1229,24 @@ export function useSavedSetups(userId: string | null) {
     () => ({
       setups,
       isReady,
+      isMutating,
+      error,
       saveSetup,
       deleteSetup,
       duplicateSetup,
       getSetupById,
+      refreshSetups,
     }),
-    [deleteSetup, duplicateSetup, getSetupById, isReady, saveSetup, setups]
+    [
+      deleteSetup,
+      duplicateSetup,
+      error,
+      getSetupById,
+      isMutating,
+      isReady,
+      refreshSetups,
+      saveSetup,
+      setups,
+    ]
   );
 }
