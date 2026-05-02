@@ -376,15 +376,26 @@ export default function SavedSetupReportPage() {
           }
 
           .report-paper > .space-y-6 {
-            display: grid !important;
-            grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr) !important;
-            grid-auto-flow: row !important;
-            align-items: start !important;
-            gap: 5px !important;
+            display: block !important;
+            column-count: 2 !important;
+            column-gap: 5px !important;
+            column-fill: auto !important;
           }
 
           .report-paper > .space-y-6 > :not([hidden]) ~ :not([hidden]) {
             margin-top: 0 !important;
+          }
+
+          .report-header,
+          .report-section,
+          .report-disclaimer {
+            display: block !important;
+            width: 100% !important;
+            margin: 0 0 5px 0 !important;
+          }
+
+          .report-results {
+            break-before: column !important;
           }
 
           .report-header,
@@ -448,34 +459,14 @@ export default function SavedSetupReportPage() {
             gap: 6px !important;
           }
 
-          .report-health {
-            grid-column: 1 !important;
-            grid-row: 2 !important;
-          }
-
-          .report-inputs {
-            grid-column: 1 !important;
-            grid-row: 3 !important;
-          }
-
-          .report-assumptions {
-            grid-column: 1 !important;
-            grid-row: 4 !important;
-          }
-
-          .report-results {
-            grid-column: 2 !important;
-            grid-row: 1 / span 3 !important;
-          }
-
-          .report-notes {
-            grid-column: 2 !important;
-            grid-row: 4 !important;
-          }
-
+          .report-health,
+          .report-inputs,
+          .report-assumptions,
+          .report-results,
+          .report-notes,
           .report-disclaimer {
-            grid-column: 2 !important;
-            grid-row: 5 !important;
+            grid-column: auto !important;
+            grid-row: auto !important;
           }
 
           .report-section {
@@ -815,8 +806,31 @@ export default function SavedSetupReportPage() {
                   </dl>
                 </ReportSection>
 
+                
+
+                <ReportSection title="Calculation assumptions" className="report-assumptions">
+                  <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <ReportMetric
+                      label="Discharge coefficient"
+                      value={formatNumber(setup.dischargeCoeffCd, 2)}
+                    />
+                    <ReportMetric
+                      label="Water density"
+                      value={`${formatNumber(setup.waterDensity)} kg/m³`}
+                    />
+                    <ReportMetric
+                      label="Hose roughness"
+                      value={`${formatNumber(setup.hoseRoughnessMm, 4)} mm`}
+                    />
+                    <ReportMetric
+                      label="Schema version"
+                      value="1"
+                    />
+                  </dl>
+                </ReportSection>
+
                 {result ? (
-                  <ReportSection title="Calculated results" className="report-results report-print-page-start">
+                  <ReportSection title="Calculated results" className="report-results">
                     <div className="report-compact-box mb-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                       <p className="report-compact-text text-sm font-medium leading-6 text-slate-700">
                         {result.resultSummary}
@@ -896,7 +910,7 @@ export default function SavedSetupReportPage() {
                     ) : null}
                   </ReportSection>
                 ) : (
-                  <ReportSection title="Calculated results" className="report-results report-print-page-start">
+                  <ReportSection title="Calculated results" className="report-results">
                     <p className="text-sm leading-6 text-slate-600">
                       No calculated result snapshot was saved with this setup. Open the setup in the calculator and save it again to include report results.
                     </p>
@@ -921,28 +935,6 @@ export default function SavedSetupReportPage() {
                     </p>
                   )}
                 </ReportSection>
-
-                <ReportSection title="Calculation assumptions" className="report-assumptions">
-                  <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                    <ReportMetric
-                      label="Discharge coefficient"
-                      value={formatNumber(setup.dischargeCoeffCd, 2)}
-                    />
-                    <ReportMetric
-                      label="Water density"
-                      value={`${formatNumber(setup.waterDensity)} kg/m³`}
-                    />
-                    <ReportMetric
-                      label="Hose roughness"
-                      value={`${formatNumber(setup.hoseRoughnessMm, 4)} mm`}
-                    />
-                    <ReportMetric
-                      label="Schema version"
-                      value="1"
-                    />
-                  </dl>
-                </ReportSection>
-
                 <section className="report-section report-disclaimer rounded-3xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-600 sm:p-6">
                   <h2 className="text-base font-semibold text-slate-950">Disclaimer</h2>
                   <p className="mt-3">
