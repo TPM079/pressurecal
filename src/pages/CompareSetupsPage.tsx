@@ -207,6 +207,22 @@ function badgeClassForStatus(status: string) {
   return "border-slate-200 bg-slate-50 text-slate-700";
 }
 
+const COMPARE_NOTE_PREVIEW_LIMIT = 120;
+
+function compareNotePreview(notes: string | null | undefined) {
+  const cleanNotes = (notes ?? "").trim().replace(/\s+/g, " ");
+
+  if (!cleanNotes) {
+    return null;
+  }
+
+  if (cleanNotes.length <= COMPARE_NOTE_PREVIEW_LIMIT) {
+    return cleanNotes;
+  }
+
+  return `${cleanNotes.slice(0, COMPARE_NOTE_PREVIEW_LIMIT).trimEnd()}…`;
+}
+
 export default function CompareSetupsPage() {
   const [authUserId, setAuthUserId] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -877,16 +893,23 @@ export default function CompareSetupsPage() {
                       className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8"
                     >
                       <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div>
+                        <div className="min-w-0 flex-1">
                           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
                             Setup {index === 0 ? "A" : "B"}
                           </p>
-                          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
+                          <h2 className="mt-2 break-words text-2xl font-semibold tracking-tight text-slate-950">
                             {item.setup.name}
                           </h2>
-                          <p className="mt-2 text-sm leading-6 text-slate-600">
-                            {item.setup.notes || "No notes saved for this setup yet."}
-                          </p>
+                          {compareNotePreview(item.setup.notes) ? (
+                            <div className="mt-3 max-w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                                Operator note preview
+                              </p>
+                              <p className="mt-1 break-all text-sm leading-6 text-slate-600">
+                                {compareNotePreview(item.setup.notes)}
+                              </p>
+                            </div>
+                          ) : null}
                         </div>
 
                         <div className="flex flex-wrap gap-2">
