@@ -51,6 +51,23 @@ const EMPTY_FORM: SetupFormState = {
   nozzleSizeText: "040",
 };
 
+const OPERATOR_NOTES_MAX_CHARS = 600;
+const OPERATOR_NOTES_PREVIEW_CHARS = 220;
+
+function limitText(value: string, maxChars: number) {
+  return value.length > maxChars ? value.slice(0, maxChars) : value;
+}
+
+function previewText(value: string, maxChars: number) {
+  const trimmed = value.trim();
+
+  if (trimmed.length <= maxChars) {
+    return trimmed;
+  }
+
+  return `${trimmed.slice(0, maxChars).trimEnd()}…`;
+}
+
 function formatUnitLabel(unit: SetupFormState["hoseLengthUnit"]) {
   return unit === "m" ? "Metres" : "Feet";
 }
@@ -310,7 +327,7 @@ export default function SavedSetupsPage() {
 
     setForm({
       name: editingSetup.name,
-      notes: editingSetup.notes ?? "",
+      notes: limitText(editingSetup.notes ?? "", OPERATOR_NOTES_MAX_CHARS),
       pumpPressure: editingSetup.pumpPressure != null ? String(editingSetup.pumpPressure) : "",
       pumpPressureUnit: editingSetup.pumpPressureUnit,
       pumpFlow: editingSetup.pumpFlow != null ? String(editingSetup.pumpFlow) : "",
@@ -403,6 +420,7 @@ export default function SavedSetupsPage() {
     const pumpPressure = toNumberOrNull(form.pumpPressure);
     const pumpFlow = toNumberOrNull(form.pumpFlow);
     const nozzleSizeText = form.nozzleSizeText.trim() || null;
+    const notes = limitText(form.notes.trim(), OPERATOR_NOTES_MAX_CHARS);
 
     setActionError(null);
     setIsSavingSetup(true);
@@ -411,7 +429,7 @@ export default function SavedSetupsPage() {
       const saved = await saveSetup({
         id: selectedSetupId ?? undefined,
         name,
-        notes: form.notes.trim() || null,
+        notes: notes || null,
 
         machinePsi: form.pumpPressureUnit === "psi" ? pumpPressure : null,
         machineLpm: form.pumpFlowUnit === "lpm" ? pumpFlow : null,
@@ -854,13 +872,16 @@ export default function SavedSetupsPage() {
                     <span className="text-sm font-semibold text-slate-800">Operator notes</span>
                     <textarea
                       value={form.notes}
-                      onChange={(event) => updateField("notes", event.target.value)}
+                      onChange={(event) =>
+                        updateField("notes", limitText(event.target.value, OPERATOR_NOTES_MAX_CHARS))
+                      }
+                      maxLength={OPERATOR_NOTES_MAX_CHARS}
                       placeholder={'Example: Good for house wash. Use 1/2" hose on long runs. Check nozzle wear before quoting.'}
                       rows={4}
                       className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
                     />
                     <p className="mt-2 text-xs leading-5 text-slate-500">
-                      Use this for job notes, setup observations, customer preferences, or checks you want to remember.
+                      Use this for job notes, setup observations, customer preferences, or checks you want to remember. {form.notes.length}/{OPERATOR_NOTES_MAX_CHARS} characters.
                     </p>
                   </label>
                 </div>
@@ -933,18 +954,23 @@ export default function SavedSetupsPage() {
                       <article key={setup.id} className="rounded-2xl border border-slate-200 p-5">
                         <div className="flex flex-wrap items-start justify-between gap-3">
                           <div>
-                            <h3 className="text-lg font-semibold text-slate-950">{setup.name}</h3>
+                            <h3 className="break-words text-lg font-semibold text-slate-950 [overflow-wrap:anywhere]">{setup.name}</h3>
                             <p className="mt-1 text-xs uppercase tracking-[0.15em] text-slate-400">
                               Updated {new Date(setup.updatedAt).toLocaleString()}
                             </p>
                             {setup.notes ? (
-                              <div className="mt-4 max-w-xl rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                              <div className="mt-4 max-w-xl overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                                 <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
                                   Operator notes
                                 </p>
-                                <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">
-                                  {setup.notes}
+                                <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700 [overflow-wrap:anywhere]">
+                                  {previewText(setup.notes, OPERATOR_NOTES_PREVIEW_CHARS)}
                                 </p>
+                                {setup.notes.trim().length > OPERATOR_NOTES_PREVIEW_CHARS ? (
+                                  <p className="mt-2 text-xs font-medium text-slate-500">
+                                    Open the setup report to view the full note.
+                                  </p>
+                                ) : null}
                               </div>
                             ) : null}
                           </div>
@@ -970,6 +996,12 @@ export default function SavedSetupsPage() {
                             >
                               {copiedSetupId === setup.id ? "Copied ✓" : "Copy Setup Link"}
                             </button>
+                            <Link
+                              to={`/saved-setups/${setup.id}/report`}
+                              className="rounded-xl bg-slate-950 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-800"
+                            >
+                              Setup Report
+                            </Link>
                             <Link
                               to={compareHref(setup.id)}
                               className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
@@ -1041,10 +1073,6 @@ export default function SavedSetupsPage() {
                             <dd className="mt-1">{setup.nozzleSizeText ?? "—"}</dd>
                           </div>
                         </dl>
-
-                        {setup.notes ? (
-                          <p className="mt-4 text-sm leading-6 text-slate-600">{setup.notes}</p>
-                        ) : null}
                       </article>
                     ))}
                   </div>
