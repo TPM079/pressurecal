@@ -108,11 +108,11 @@ const freeFeatures = [
 ];
 
 const proFeatures = [
-  "Save setups you already trust",
+  "Save known-good setups with operator notes",
+  "Build calculator checks from saved equipment",
   "Compare changes before you swap parts",
-  "Keep your repeat-job setups organised",
-  "Share proven setups with the team",
-  "Professional PDF setup reports coming soon",
+  "Generate printable one-page setup reports",
+  "Keep repeat-job setups and common gear organised",
 ];
 
 type AuthState = "loading" | "signed_out" | "signed_in";
@@ -832,10 +832,10 @@ export default function PressureCalProPage() {
   return (
     <PressureCalLayout>
       <Helmet>
-        <title>PressureCal Pro | Stop working out the same setup over and over</title>
+        <title>PressureCal Pro | Save, Build, Compare & Report Pressure Washer Setups</title>
         <meta
           name="description"
-          content="PressureCal Pro helps operators save known-good setups, compare changes, and keep repeat-job setups organised."
+          content="PressureCal Pro helps operators save setups, build checks from saved equipment, compare changes, keep notes, and generate printable setup reports."
         />
       </Helmet>
 
@@ -866,15 +866,15 @@ export default function PressureCalProPage() {
         <div className="mx-auto max-w-6xl py-14 sm:py-20">
           <div className="max-w-3xl">
             <h1 className="text-3xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-              Stop working out the same setup over and over
+              Save your gear. Build setups faster. Compare before you test.
             </h1>
 
             <p className="mt-5 max-w-2xl text-base leading-7 text-slate-300 sm:text-xl sm:leading-8">
               <span className="sm:hidden">
-                Save known-good setups, compare changes, and keep repeat-job work organised.
+                Save common gear, build setup checks faster, compare changes, and print clean setup reports.
               </span>
               <span className="hidden sm:inline">
-                PressureCal Pro helps you save known-good setups, compare changes, and keep your repeat-job setups organised.
+                PressureCal Pro helps you save known-good setups, build calculator checks from saved equipment, compare changes, keep operator notes, and generate printable setup reports.
               </span>
             </p>
 
@@ -930,7 +930,7 @@ export default function PressureCalProPage() {
             </div>
 
             <p className="mt-4 text-sm text-slate-400">
-              The core calculator stays free. Pro adds saved setups, comparisons, and repeat-job workflow.
+              The core calculator stays free. Pro adds saved setups, equipment library, comparison tools, operator notes, and printable setup reports.
             </p>
           </div>
         </div>
@@ -949,10 +949,10 @@ export default function PressureCalProPage() {
         <div className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
           <div className="max-w-3xl">
             <h2 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-              What stays free, and what Pro adds
+              Free calculators. Pro workflow tools.
             </h2>
             <p className="mt-4 text-base leading-7 text-slate-600 sm:text-lg sm:leading-8">
-              PressureCal keeps the core calculator useful on its own. Pro adds the features that make repeat-job setup work faster, easier, and more organised.
+              PressureCal keeps the core calculators useful on their own. Pro adds the workflow tools that help regular operators save common gear, build setups faster, compare changes, and keep cleaner job records.
             </p>
           </div>
 
@@ -1319,3 +1319,12 @@ function PayPalCheckoutSlot({
     />
   );
 }
+
+
+
+
+
+
+
+
+

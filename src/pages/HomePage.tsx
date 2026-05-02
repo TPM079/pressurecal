@@ -64,10 +64,11 @@ const toolCards: ToolCard[] = [
 ];
 
 const proFeatures = [
-  "Save proven setups you already trust",
-  "Compare setup changes before swapping parts",
-  "Keep repeat-job setups organised",
-  "Share working setups with the team",
+  "Save common machines, hoses, nozzles, and surface cleaners",
+  "Build setup checks faster from saved equipment",
+  "Save operator notes and calculated result snapshots",
+  "Compare changes before swapping parts",
+  "Generate printable setup reports for quoting, records, and support",
 ];
 
 const proofPoints = [
@@ -1297,4 +1298,5 @@ export default function HomePage() {
     </PressureCalLayout>
   );
 }
+
 

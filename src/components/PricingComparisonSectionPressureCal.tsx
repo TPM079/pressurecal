@@ -57,12 +57,13 @@ function buildFeatureRows(freeSaveSetupsLabel: FeatureStatus): FeatureRow[] {
     { feature: "Core calculators and conversions", free: "Included", pro: "Included" },
     { feature: "Real at-gun performance outputs", free: "Included", pro: "Included" },
     { feature: "Save pressure washer setups", free: freeSaveSetupsLabel, pro: "Included" },
+    { feature: "Operator notes on saved setups", free: "—", pro: "Included" },
+    { feature: "Equipment library", free: "—", pro: "Included" },
+    { feature: "Build calculator setups from saved equipment", free: "—", pro: "Included" },
     { feature: "Duplicate and reuse setups", free: "—", pro: "Included" },
     { feature: "Compare saved setups", free: "—", pro: "Included" },
     { feature: "Share setup links", free: "—", pro: "Included" },
-    { feature: "Saved setup library", free: "—", pro: "Included" },
-    { feature: "Professional setup workflow tools", free: "—", pro: "Included" },
-    { feature: "Professional PDF setup reports", free: "—", pro: "Coming soon" },
+    { feature: "Printable setup reports", free: "—", pro: "Included" },
   ];
 }
 
@@ -111,7 +112,7 @@ function ProPrimaryAction({
         to={proHref}
         className="mt-8 inline-flex w-full items-center justify-center rounded-2xl bg-[#1C408C] px-5 py-3.5 text-sm font-semibold text-white transition hover:opacity-95"
       >
-        Open Saved Setups
+        Open Pro Tools
       </Link>
     );
   }
@@ -145,13 +146,13 @@ export default function PricingComparisonSectionPressureCal({
           </div>
 
           <h2 className="mt-5 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
-            Start free. Upgrade when PressureCal becomes part of your workflow.
+            Start free. Upgrade when setup work needs to be saved, compared, and shared.
           </h2>
 
           <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
-            PressureCal gives working pressure washing operators fast, practical
-            setup modelling. PressureCal Pro adds the tools to save, duplicate,
-            compare, and share real pressure washer setups over time.
+            PressureCal gives working pressure washing operators fast, practical setup modelling.
+            PressureCal Pro adds the workflow tools to save common gear, build setup checks faster,
+            compare changes, keep job notes, and generate clean setup reports.
           </p>
         </div>
 
@@ -212,11 +213,11 @@ export default function PricingComparisonSectionPressureCal({
                     PressureCal Pro
                   </p>
                   <h3 className="mt-2 text-2xl font-bold text-slate-900">
-                    Setup management for repeat work
+                    A practical workflow for repeat setup work
                   </h3>
                   <p className="mt-3 text-sm leading-6 text-slate-600">
-                    Built for operators who want to save proven setups, compare
-                    options, share setup links, and build a reusable setup library.
+                    Built for operators who want to save common equipment, build setup checks faster,
+                    compare changes before testing, and keep clean records for repeat jobs.
                   </p>
                 </div>
 
@@ -229,19 +230,19 @@ export default function PricingComparisonSectionPressureCal({
               <ul className="mt-8 space-y-3">
                 <li className="flex items-start gap-3 text-sm text-slate-700">
                   <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#1C408C]" />
-                  Save pressure washer setups for repeat jobs and standard machines
+                  Save known-good setups with operator notes and result snapshots
                 </li>
                 <li className="flex items-start gap-3 text-sm text-slate-700">
                   <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#1C408C]" />
-                  Duplicate, compare, and reuse setups without starting again
+                  Save common machines, hoses, nozzles, and surface cleaners in your equipment library
                 </li>
                 <li className="flex items-start gap-3 text-sm text-slate-700">
                   <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#1C408C]" />
-                  Share saved setup links for faster recommendations and handovers
+                  Build calculator checks from saved equipment instead of retyping values
                 </li>
                 <li className="flex items-start gap-3 text-sm text-slate-700">
                   <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#1C408C]" />
-                  Professional PDF setup reports coming soon
+                  Compare setups and generate printable one-page setup reports
                 </li>
               </ul>
 
