@@ -51,6 +51,8 @@ type WorkspaceCard = {
   badge?: string;
 };
 
+const PRO_ONBOARDING_HIDDEN_KEY = "pressurecal_pro_checklist_hidden";
+
 function withTimeout<T>(
   promise: PromiseLike<T>,
   timeoutMs: number,
@@ -251,6 +253,293 @@ function WorkspaceLinkCard({ card }: { card: WorkspaceCard }) {
         {card.cta} →
       </p>
     </Link>
+  );
+}
+
+type OnboardingStep = {
+  title: string;
+  description: string;
+  href: string;
+  cta: string;
+  complete: boolean;
+};
+
+function ChecklistStatusIcon({ complete, index }: { complete: boolean; index: number }) {
+  if (complete) {
+    return (
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-600 text-sm font-bold text-white">
+        ✓
+      </span>
+    );
+  }
+
+  return (
+    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-300 bg-white text-sm font-bold text-slate-500">
+      {index + 1}
+    </span>
+  );
+}
+
+function ProOnboardingChecklist({
+  savedSetupCount,
+  equipmentItemCount,
+}: {
+  savedSetupCount: number | null;
+  equipmentItemCount: number | null;
+}) {
+  const equipmentCount = equipmentItemCount ?? 0;
+  const setupCount = savedSetupCount ?? 0;
+  const hasStarterEquipment = equipmentCount >= 3;
+  const hasFirstSetup = setupCount >= 1;
+  const hasComparisonReady = setupCount >= 2;
+
+  const steps: OnboardingStep[] = [
+    {
+      title: "Add a machine, hose, and nozzle",
+      description:
+        "Start your Equipment Library with the gear you reuse most often. Three saved items gives you enough to build a proper setup.",
+      href: "/equipment-library",
+      cta: hasStarterEquipment ? "Open Equipment Library" : "Add equipment",
+      complete: hasStarterEquipment,
+    },
+    {
+      title: "Build a setup from saved equipment",
+      description:
+        "Use the Setup Builder to combine saved gear and open the calculator prefilled.",
+      href: "/equipment-library",
+      cta: "Open Setup Builder",
+      complete: hasFirstSetup,
+    },
+    {
+      title: "Save your first known-good setup",
+      description:
+        "Save the calculated setup so it can be reopened, edited, shared, and reported later.",
+      href: "/saved-setups",
+      cta: hasFirstSetup ? "Open Saved Setups" : "Save a setup",
+      complete: hasFirstSetup,
+    },
+    {
+      title: "Create a second setup for comparison",
+      description:
+        "Save another nozzle, hose, or machine variation so you can compare before testing in the field.",
+      href: "/equipment-library",
+      cta: hasComparisonReady ? "Open Equipment Library" : "Build another setup",
+      complete: hasComparisonReady,
+    },
+    {
+      title: "Compare setups and generate a report",
+      description:
+        "Compare two saved setups, then print a one-page setup report for records, quoting, or handover.",
+      href: hasComparisonReady ? "/compare-setups" : "/saved-setups",
+      cta: hasComparisonReady ? "Compare Setups" : "Open Saved Setups",
+      complete: hasComparisonReady,
+    },
+  ];
+
+  const completeCount = steps.filter((step) => step.complete).length;
+  const allStepsComplete = completeCount === steps.length;
+  const nextStep = allStepsComplete ? null : steps.find((step) => !step.complete);
+  const progressPercent = Math.round((completeCount / steps.length) * 100);
+  const [checklistHidden, setChecklistHidden] = useState(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+
+    return window.localStorage.getItem(PRO_ONBOARDING_HIDDEN_KEY) === "true";
+  });
+
+  useEffect(() => {
+    if (!allStepsComplete && checklistHidden) {
+      setChecklistHidden(false);
+
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem(PRO_ONBOARDING_HIDDEN_KEY);
+      }
+    }
+  }, [allStepsComplete, checklistHidden]);
+
+  function hideCompletedChecklist() {
+    setChecklistHidden(true);
+    window.localStorage.setItem(PRO_ONBOARDING_HIDDEN_KEY, "true");
+  }
+
+  function showCompletedChecklist() {
+    setChecklistHidden(false);
+    window.localStorage.removeItem(PRO_ONBOARDING_HIDDEN_KEY);
+  }
+
+  if (allStepsComplete && checklistHidden) {
+    return (
+      <section className="rounded-3xl border border-green-100 bg-green-50/80 p-5 shadow-sm md:p-6">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-green-700">
+              Pro workflow ready
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
+              Your PressureCal Pro workflow is set up
+            </h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+              Your saved equipment and setup workflow are ready. Keep adding gear, saving variations, comparing setups, and printing reports when needed.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <Link
+              to="/equipment-library"
+              className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+            >
+              Equipment Library
+            </Link>
+            <Link
+              to="/saved-setups"
+              className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+            >
+              Saved Setups
+            </Link>
+            <button
+              type="button"
+              onClick={showCompletedChecklist}
+              className="inline-flex items-center justify-center rounded-2xl bg-[#1C408C] px-4 py-2 text-xs font-semibold text-white transition hover:opacity-95"
+            >
+              Show checklist
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="rounded-3xl border border-blue-100 bg-blue-50/70 p-5 shadow-sm md:p-6">
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
+            Pro onboarding
+          </p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
+            Get started with PressureCal Pro
+          </h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+            Follow this workflow to turn Pro from saved pages into a repeatable operator process.
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-blue-100 bg-white px-4 py-3 text-sm shadow-sm">
+          <p className="font-semibold text-slate-950">
+            {completeCount}/{steps.length} complete
+          </p>
+          <div className="mt-2 h-2 w-40 overflow-hidden rounded-full bg-slate-100">
+            <div
+              className="h-full rounded-full bg-blue-700"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+          {allStepsComplete ? (
+            <button
+              type="button"
+              onClick={hideCompletedChecklist}
+              className="mt-3 text-xs font-semibold text-slate-500 underline decoration-slate-300 underline-offset-4 transition hover:text-slate-900"
+            >
+              Hide checklist
+            </button>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-3">
+        {steps.map((step, index) => (
+          <div
+            key={step.title}
+            className={[
+              "flex gap-3 rounded-2xl border bg-white px-4 py-4 shadow-sm",
+              step.complete ? "border-green-100" : "border-slate-200",
+            ].join(" ")}
+          >
+            <ChecklistStatusIcon complete={step.complete} index={index} />
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-950">{step.title}</h3>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">{step.description}</p>
+                </div>
+                <Link
+                  to={step.href}
+                  className={[
+                    "inline-flex shrink-0 items-center justify-center rounded-2xl px-4 py-2 text-xs font-semibold transition",
+                    step.complete
+                      ? "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                      : "bg-slate-950 text-white hover:bg-slate-800",
+                  ].join(" ")}
+                >
+                  {step.cta}
+                </Link>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {allStepsComplete ? (
+        <div className="mt-5 rounded-2xl border border-green-100 bg-white px-4 py-4">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-green-700">
+                Pro workflow ready
+              </p>
+              <p className="mt-1 text-sm font-semibold text-slate-950">
+                Your saved equipment and setup workflow are ready to use.
+              </p>
+              <p className="mt-1 text-sm leading-6 text-slate-600">
+                Keep adding common gear, save setup variations, compare changes, and print reports when needed.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                to="/equipment-library"
+                className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                Equipment Library
+              </Link>
+              <Link
+                to="/saved-setups"
+                className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                Saved Setups
+              </Link>
+              <Link
+                to="/compare-setups"
+                className="inline-flex items-center justify-center rounded-2xl bg-[#1C408C] px-4 py-2 text-xs font-semibold text-white transition hover:opacity-95"
+              >
+                Compare Setups
+              </Link>
+              <button
+                type="button"
+                onClick={hideCompletedChecklist}
+                className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                Hide checklist
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : nextStep ? (
+        <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-blue-100 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
+              Next recommended step
+            </p>
+            <p className="mt-1 text-sm font-semibold text-slate-950">{nextStep.title}</p>
+          </div>
+          <Link
+            to={nextStep.href}
+            className="inline-flex items-center justify-center rounded-2xl bg-[#1C408C] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-95"
+          >
+            {nextStep.cta}
+          </Link>
+        </div>
+      ) : null}
+    </section>
   );
 }
 
@@ -858,6 +1147,13 @@ export default function AccountPage() {
                       helper="Machines, hoses, nozzles, and reusable setup components."
                     />
                   </div>
+
+                  {alreadyPro ? (
+                    <ProOnboardingChecklist
+                      savedSetupCount={savedSetupCount}
+                      equipmentItemCount={equipmentItemCount}
+                    />
+                  ) : null}
 
                   <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
