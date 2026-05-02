@@ -1,10 +1,11 @@
 import { Helmet } from "react-helmet-async";
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import BackToTopButton from "../components/BackToTopButton";
 import PressureCalLayout from "../components/PressureCalLayout";
 import RequirePro from "../components/RequirePro";
 import { buildFullRigSearchParams } from "../lib/rigUrlState";
+import { supabase } from "../lib/supabase-browser";
 import type { Inputs } from "../pressurecal";
 import {
   useEquipmentLibrary,
@@ -12,6 +13,7 @@ import {
   type EquipmentSpecs,
   type EquipmentType,
 } from "../hooks/useEquipmentLibrary";
+import { useSavedSetups } from "../hooks/useSavedSetups";
 
 type PressureUnit = "psi" | "bar";
 type FlowUnit = "lpm" | "gpm";
@@ -487,6 +489,22 @@ function equipmentSelectLabel(item: EquipmentItem) {
   return summary ? `${item.name} — ${summary}` : item.name;
 }
 
+function buildSetupNameFromEquipment(
+  machine: EquipmentItem | undefined,
+  hose: EquipmentItem | undefined,
+  nozzle: EquipmentItem | undefined
+) {
+  const parts = [machine?.name, hose?.name, nozzle?.name]
+    .map((part) => part?.trim())
+    .filter((part): part is string => Boolean(part));
+
+  return parts.length > 0 ? parts.join(" + ") : "Equipment library setup";
+}
+
+function asNumberInput(value: Inputs[keyof Inputs] | undefined) {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
 function buildCalculatorInputsFromEquipment(
   machine: EquipmentItem | undefined,
   hose: EquipmentItem | undefined,
@@ -661,11 +679,23 @@ export default function EquipmentLibraryPage() {
     duplicateItem,
   } = useEquipmentLibrary();
 
+  const [savedSetupUserId, setSavedSetupUserId] = useState<string | null>(null);
+  const {
+    saveSetup,
+    isMutating: isSavingSetup,
+    error: savedSetupsError,
+  } = useSavedSetups(savedSetupUserId);
+
   const [form, setForm] = useState<EquipmentFormState>(EMPTY_FORM);
   const [selectedType, setSelectedType] = useState<EquipmentType | "all">("all");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
   const [builder, setBuilder] = useState<SetupBuilderState>(EMPTY_BUILDER);
+  const [builderSetupName, setBuilderSetupName] = useState("");
+  const [builderNotes, setBuilderNotes] = useState("");
+  const [builderError, setBuilderError] = useState<string | null>(null);
+  const [builderSuccessMessage, setBuilderSuccessMessage] = useState<string | null>(null);
+  const [createdSetupId, setCreatedSetupId] = useState<string | null>(null);
 
   const machineItems = useMemo(
     () => items.filter((item) => item.equipmentType === "machine"),
@@ -711,6 +741,11 @@ export default function EquipmentLibraryPage() {
   );
 
   const canOpenBuiltSetup = Boolean(selectedMachine);
+  const canSaveBuiltSetup = Boolean(selectedMachine && selectedHose && selectedNozzle);
+  const builtSetupDefaultName = useMemo(
+    () => buildSetupNameFromEquipment(selectedMachine, selectedHose, selectedNozzle),
+    [selectedMachine, selectedHose, selectedNozzle]
+  );
 
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -721,6 +756,37 @@ export default function EquipmentLibraryPage() {
         : items.filter((item) => item.equipmentType === selectedType),
     [items, selectedType]
   );
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadSavedSetupUser() {
+      const { data } = await supabase.auth.getSession();
+
+      if (!mounted) {
+        return;
+      }
+
+      setSavedSetupUserId(data.session?.user?.id ?? null);
+    }
+
+    void loadSavedSetupUser();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) {
+        return;
+      }
+
+      setSavedSetupUserId(session?.user?.id ?? null);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   function updateForm<K extends keyof EquipmentFormState>(key: K, value: EquipmentFormState[K]) {
     setForm((current) => ({
@@ -901,6 +967,99 @@ export default function EquipmentLibraryPage() {
     }
   }
 
+  function resetBuilder() {
+    setBuilder(EMPTY_BUILDER);
+    setBuilderSetupName("");
+    setBuilderNotes("");
+    setBuilderError(null);
+    setBuilderSuccessMessage(null);
+    setCreatedSetupId(null);
+  }
+
+  async function saveBuiltSetup() {
+    setBuilderError(null);
+    setBuilderSuccessMessage(null);
+    setCreatedSetupId(null);
+
+    if (!savedSetupUserId) {
+      setBuilderError("Sign in again before saving this setup.");
+      return;
+    }
+
+    if (!selectedMachine) {
+      setBuilderError("Select a machine first.");
+      return;
+    }
+
+    if (!selectedHose || !selectedNozzle) {
+      setBuilderError("Select a machine, hose, and nozzle before saving a setup directly.");
+      return;
+    }
+
+    const builtInputs = buildCalculatorInputsFromEquipment(
+      selectedMachine,
+      selectedHose,
+      selectedNozzle
+    );
+
+    const pumpPressure = asNumberInput(builtInputs.pumpPressure);
+    const pumpFlow = asNumberInput(builtInputs.pumpFlow);
+
+    if (pumpPressure === null || pumpFlow === null) {
+      setBuilderError("The selected machine needs both pressure and flow before it can be saved as a setup.");
+      return;
+    }
+
+    const hoseLength = asNumberInput(builtInputs.hoseLength);
+    const hoseId = asNumberInput(builtInputs.hoseId);
+    const maxPressure = asNumberInput(builtInputs.maxPressure);
+    const engineHp = asNumberInput(builtInputs.engineHp);
+    const nozzleCount = asNumberInput(builtInputs.nozzleCount);
+    const setupName = builderSetupName.trim() || builtSetupDefaultName;
+
+    try {
+      const savedSetup = await saveSetup({
+        name: setupName,
+        notes: builderNotes.trim() ? builderNotes.trim().slice(0, NOTES_MAX_CHARS) : null,
+
+        machinePsi: pumpPressure,
+        machineLpm: pumpFlow,
+        hoseLengthM: hoseLength,
+        hoseIdMm: hoseId,
+        nozzleSize: builtInputs.nozzleSizeText ?? null,
+
+        pumpPressure,
+        pumpPressureUnit: "psi",
+        pumpFlow,
+        pumpFlowUnit: "lpm",
+        maxPressure: maxPressure ?? pumpPressure,
+        maxPressureUnit: "psi",
+        hoseLength,
+        hoseLengthUnit: "m",
+        hoseId,
+        hoseIdUnit: "mm",
+        engineHp,
+        sprayMode: builtInputs.sprayMode ?? "wand",
+        nozzleCount: nozzleCount === null ? 1 : Math.max(1, Math.round(nozzleCount)),
+        nozzleMode: "tipSize",
+        nozzleSizeText: builtInputs.nozzleSizeText ?? "040",
+        orificeMm: 1.2,
+        dischargeCoeffCd: 0.62,
+        waterDensity: 1000,
+        hoseRoughnessMm: 0.0015,
+      });
+
+      setCreatedSetupId(savedSetup.id);
+      setBuilderSuccessMessage("Setup saved directly from your equipment library.");
+    } catch (saveError) {
+      setBuilderError(
+        saveError instanceof Error
+          ? saveError.message
+          : "Unable to save this setup from your equipment library."
+      );
+    }
+  }
+
   const signedOutFallback = (
     <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
       <div className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
@@ -1036,7 +1195,19 @@ export default function EquipmentLibraryPage() {
                   </Link>
                   <button
                     type="button"
-                    onClick={() => setBuilder(EMPTY_BUILDER)}
+                    onClick={saveBuiltSetup}
+                    disabled={!canSaveBuiltSetup || isSavingSetup}
+                    className={`inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold transition ${
+                      canSaveBuiltSetup && !isSavingSetup
+                        ? "bg-[#1C408C] text-white hover:opacity-95"
+                        : "cursor-not-allowed bg-slate-200 text-slate-500"
+                    }`}
+                  >
+                    {isSavingSetup ? "Saving Setup..." : "Save as Setup"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={resetBuilder}
                     className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                   >
                     Clear Builder
@@ -1097,6 +1268,34 @@ export default function EquipmentLibraryPage() {
                 </FormField>
               </div>
 
+              <div className="mt-5 grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
+                <FormField label="Setup name">
+                  <input
+                    value={builderSetupName}
+                    onChange={(event) => setBuilderSetupName(event.target.value)}
+                    maxLength={120}
+                    placeholder={builtSetupDefaultName}
+                    className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-500"
+                  />
+                </FormField>
+
+                <FormField
+                  label="Operator notes"
+                  hint="Optional. Notes are saved into the setup and appear on the setup report."
+                >
+                  <textarea
+                    value={builderNotes}
+                    onChange={(event) => setBuilderNotes(event.target.value.slice(0, NOTES_MAX_CHARS))}
+                    rows={3}
+                    maxLength={NOTES_MAX_CHARS}
+                    className="w-full resize-none rounded-2xl border border-slate-300 px-4 py-3 text-sm leading-6 text-slate-900 outline-none transition focus:border-slate-500"
+                  />
+                  <p className="mt-2 text-right text-xs text-slate-500">
+                    {builderNotes.length}/{NOTES_MAX_CHARS}
+                  </p>
+                </FormField>
+              </div>
+
               <div className="mt-5 grid gap-3 md:grid-cols-3">
                 {setupBuilderSummary.map((item) => (
                   <div key={item.label} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
@@ -1112,8 +1311,42 @@ export default function EquipmentLibraryPage() {
 
               {!canOpenBuiltSetup ? (
                 <p className="mt-4 text-sm leading-6 text-amber-700">
-                  Save or select a machine first. Hose and nozzle are optional, but the calculator needs machine pressure and flow to make this useful.
+                  Save or select a machine first. Hose and nozzle are optional for opening the calculator, but the calculator needs machine pressure and flow to make this useful.
                 </p>
+              ) : null}
+
+              {canOpenBuiltSetup && !canSaveBuiltSetup ? (
+                <p className="mt-4 text-sm leading-6 text-slate-600">
+                  To save directly as a setup, select a machine, hose, and nozzle/surface cleaner. This avoids quietly saving default hose or nozzle values.
+                </p>
+              ) : null}
+
+              {(builderError || savedSetupsError) ? (
+                <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-800">
+                  {builderError ?? savedSetupsError}
+                </div>
+              ) : null}
+
+              {builderSuccessMessage ? (
+                <div className="mt-4 rounded-2xl border border-green-200 bg-green-50 p-4 text-sm leading-6 text-green-800">
+                  <p className="font-semibold">{builderSuccessMessage}</p>
+                  {createdSetupId ? (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Link
+                        to="/saved-setups"
+                        className="rounded-xl border border-green-300 bg-white px-3 py-2 text-xs font-semibold text-green-900 transition hover:bg-green-100"
+                      >
+                        Open Saved Setups
+                      </Link>
+                      <Link
+                        to={`/saved-setups/${createdSetupId}/report`}
+                        className="rounded-xl border border-green-300 bg-white px-3 py-2 text-xs font-semibold text-green-900 transition hover:bg-green-100"
+                      >
+                        Open Setup Report
+                      </Link>
+                    </div>
+                  ) : null}
+                </div>
               ) : null}
             </section>
 
