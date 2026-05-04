@@ -44,6 +44,15 @@ function formatDateTime(value: string | Date | null | undefined) {
   });
 }
 
+function recommendationAlreadyCovered(recommendation: string, reviewNotes: string[]) {
+  const compactRecommendation = recommendation.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+
+  return reviewNotes.some((note) => {
+    const compactNote = note.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    return compactNote.includes(compactRecommendation) || compactRecommendation.includes(compactNote);
+  });
+}
+
 function buildReportRecommendations(result: SavedSetupCalculatedResult, reviewNotes: string[]) {
   const recommendations: string[] = [];
   const reviewText = reviewNotes.join(" ").toLowerCase();
@@ -82,7 +91,9 @@ function buildReportRecommendations(result: SavedSetupCalculatedResult, reviewNo
     recommendations.push("Add engine HP to include a power check in future reports.");
   }
 
-  return Array.from(new Set(recommendations)).slice(0, 3);
+  return Array.from(new Set(recommendations))
+    .filter((recommendation) => !recommendationAlreadyCovered(recommendation, reviewNotes))
+    .slice(0, 3);
 }
 
 function healthClass(level: SavedSetupHealth["level"]) {

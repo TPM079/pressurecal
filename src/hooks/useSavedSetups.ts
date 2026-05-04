@@ -460,27 +460,29 @@ function buildSetupHealth(args: {
   };
 }
 
-function buildDisplayArgsFromResult(result: SavedSetupCalculatedResult) {
-  return {
+
+export function getDisplayReviewNotes(result: SavedSetupCalculatedResult) {
+  const notes = buildWarnings({
     hoseLossPercent: result.hoseLossPercent,
     pressureLimited: result.pressureLimited,
     bypassPercent: result.bypassPercent,
     nozzleStatus: result.nozzleStatus,
     engineStatus: result.engineStatus,
-  };
-}
-
-export function getDisplaySetupHealth(result: SavedSetupCalculatedResult): SavedSetupHealth {
-  return buildSetupHealth(buildDisplayArgsFromResult(result));
-}
-
-export function getDisplayReviewNotes(result: SavedSetupCalculatedResult) {
-  const notes = buildWarnings(buildDisplayArgsFromResult(result)).filter(
-    (warning) => warning.length > 0
-  );
+  });
 
   return Array.from(new Set(notes));
 }
+
+export function getDisplaySetupHealth(result: SavedSetupCalculatedResult): SavedSetupHealth {
+  return buildSetupHealth({
+    hoseLossPercent: result.hoseLossPercent,
+    pressureLimited: result.pressureLimited,
+    bypassPercent: result.bypassPercent,
+    nozzleStatus: result.nozzleStatus,
+    engineStatus: result.engineStatus,
+  });
+}
+
 
 export function buildCalculatedResultFromInputs(
   inputs: Inputs,
