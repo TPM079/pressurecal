@@ -335,6 +335,8 @@ function buildWarnings(args: {
   engineStatus: SavedSetupCalculatedResult["engineStatus"];
 }) {
   const warnings: string[] = [];
+  const hasMeasurableBypass =
+    args.pressureLimited && !hasNegligibleBypass(args.bypassPercent);
 
   if (args.hoseLossPercent >= 20) {
     warnings.push("Severe hose loss — check hose ID, length, or flow.");
@@ -342,17 +344,23 @@ function buildWarnings(args: {
     warnings.push("High hose loss — consider a larger hose ID or shorter hose run.");
   }
 
-  if (args.pressureLimited) {
+  if (args.nozzleStatus === "Under-calibrated" && hasMeasurableBypass) {
     warnings.push(
-      buildNearMaxPressureNote({
-        bypassPercent: args.bypassPercent,
-        nozzleStatus: args.nozzleStatus,
-      })
+      "Selected nozzle is smaller than the rated match, so flow is reduced and calculated bypass is measurable."
     );
-  }
+  } else {
+    if (args.pressureLimited) {
+      warnings.push(
+        buildNearMaxPressureNote({
+          bypassPercent: args.bypassPercent,
+          nozzleStatus: args.nozzleStatus,
+        })
+      );
+    }
 
-  if (args.nozzleStatus !== "Calibrated") {
-    warnings.push(`Nozzle status: ${args.nozzleStatus}.`);
+    if (args.nozzleStatus !== "Calibrated") {
+      warnings.push(`Nozzle status: ${args.nozzleStatus}.`);
+    }
   }
 
   if (args.engineStatus === "Undersized") {
@@ -365,6 +373,7 @@ function buildWarnings(args: {
 
   return warnings;
 }
+
 
 function buildSetupHealth(args: {
   hoseLossPercent: number;
@@ -396,7 +405,7 @@ function buildSetupHealth(args: {
       reasons.push("Operating near max pressure. Confirm actual pressure with a gauge.");
     } else if (args.bypassPercent >= MEASURABLE_BYPASS_PERCENT) {
       score -= 18;
-      reasons.push("Operating near max pressure with measurable bypass. Confirm with a gauge if the unloader cycles.");
+      reasons.push("Operating near max pressure with measurable calculated bypass.");
     } else {
       score -= 15;
       reasons.push("Operating near max pressure. Confirm with a gauge if the unloader cycles.");
@@ -460,27 +469,26 @@ function buildSetupHealth(args: {
   };
 }
 
-
-export function getDisplayReviewNotes(result: SavedSetupCalculatedResult) {
-  const notes = buildWarnings({
+function buildDisplayArgsFromResult(result: SavedSetupCalculatedResult) {
+  return {
     hoseLossPercent: result.hoseLossPercent,
     pressureLimited: result.pressureLimited,
     bypassPercent: result.bypassPercent,
     nozzleStatus: result.nozzleStatus,
     engineStatus: result.engineStatus,
-  });
-
-  return Array.from(new Set(notes));
+  };
 }
 
 export function getDisplaySetupHealth(result: SavedSetupCalculatedResult): SavedSetupHealth {
-  return buildSetupHealth({
-    hoseLossPercent: result.hoseLossPercent,
-    pressureLimited: result.pressureLimited,
-    bypassPercent: result.bypassPercent,
-    nozzleStatus: result.nozzleStatus,
-    engineStatus: result.engineStatus,
-  });
+  return buildSetupHealth(buildDisplayArgsFromResult(result));
+}
+
+export function getDisplayReviewNotes(result: SavedSetupCalculatedResult): string[] {
+  const notes = buildWarnings(buildDisplayArgsFromResult(result)).filter(
+    (warning) => warning.length > 0
+  );
+
+  return Array.from(new Set(notes));
 }
 
 
