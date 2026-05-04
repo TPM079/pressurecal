@@ -126,14 +126,66 @@ function healthStatusClass(level: SavedSetupHealth["level"]) {
   return "border-red-200 bg-red-50 text-red-800";
 }
 
-function getDisplaySetupHealth(result: SavedSetupCalculatedResult): SavedSetupHealth {
-  if (result.setupHealth) {
-    return result.setupHealth;
+function getNearMaxPressureReviewNote(result: SavedSetupCalculatedResult) {
+  const bypassIsNegligible = !Number.isFinite(result.bypassPercent) || result.bypassPercent < 2;
+
+  if (result.nozzleStatus === "Calibrated" && bypassIsNegligible) {
+    return "Nozzle is closely matched. Confirm actual pressure with a gauge during field testing.";
   }
 
-  const reasons = result.warnings.length > 0 ? result.warnings : ["Calculated from saved result snapshot."];
+  if (bypassIsNegligible) {
+    return "Operating near max pressure — confirm actual pressure with a gauge during field testing.";
+  }
 
-  if (result.pressureLimited || result.engineStatus === "Undersized" || result.hoseLossPercent >= 20) {
+  return "Operating near max pressure — confirm with a gauge if the unloader cycles.";
+}
+
+function cleanSetupReviewText(value: string, result: SavedSetupCalculatedResult) {
+  const trimmed = value.trim();
+
+  if (
+    trimmed === "Pressure-limited setup — unloader bypass is likely." ||
+    trimmed === "Pressure-limited setup / unloader bypass likely."
+  ) {
+    return getNearMaxPressureReviewNote(result);
+  }
+
+  return trimmed;
+}
+
+function getDisplayReviewNotes(result: SavedSetupCalculatedResult) {
+  const notes = result.warnings
+    .map((warning) => cleanSetupReviewText(warning, result))
+    .filter((warning) => warning.length > 0);
+
+  if (notes.length > 0) {
+    return Array.from(new Set(notes));
+  }
+
+  if (result.pressureLimited) {
+    return [getNearMaxPressureReviewNote(result)];
+  }
+
+  return [];
+}
+
+function getDisplaySetupHealth(result: SavedSetupCalculatedResult): SavedSetupHealth {
+  if (result.setupHealth) {
+    return {
+      ...result.setupHealth,
+      reasons: result.setupHealth.reasons.map((reason) => cleanSetupReviewText(reason, result)),
+    };
+  }
+
+  const reasons = getDisplayReviewNotes(result);
+  const hasHighRiskIssue =
+    result.engineStatus === "Undersized" || result.hoseLossPercent >= 20;
+  const hasReviewIssue =
+    result.nozzleStatus !== "Calibrated" ||
+    result.engineStatus === "Near limit" ||
+    result.hoseLossPercent >= 10;
+
+  if (hasHighRiskIssue) {
     return {
       level: "warning",
       label: "Check setup",
@@ -143,12 +195,22 @@ function getDisplaySetupHealth(result: SavedSetupCalculatedResult): SavedSetupHe
     };
   }
 
-  if (result.nozzleStatus !== "Calibrated" || result.engineStatus === "Near limit" || result.hoseLossPercent >= 10) {
+  if (hasReviewIssue) {
     return {
       level: "review",
       label: "Review setup",
       score: 70,
       summary: "Check the notes below before treating this as a known-good setup.",
+      reasons,
+    };
+  }
+
+  if (result.pressureLimited) {
+    return {
+      level: "good",
+      label: "Good working setup",
+      score: result.nozzleStatus === "Calibrated" ? 88 : 85,
+      summary: "Useful working setup with minor items to keep an eye on.",
       reasons,
     };
   }
@@ -159,7 +221,7 @@ function getDisplaySetupHealth(result: SavedSetupCalculatedResult): SavedSetupHe
       label: "Excellent match",
       score: 95,
       summary: "Low loss and setup match look strong.",
-      reasons,
+      reasons: reasons.length > 0 ? reasons : ["No major setup issues detected."],
     };
   }
 
@@ -168,12 +230,13 @@ function getDisplaySetupHealth(result: SavedSetupCalculatedResult): SavedSetupHe
     label: "Good working setup",
     score: 85,
     summary: "Useful working setup with minor items to keep an eye on.",
-    reasons,
+    reasons: reasons.length > 0 ? reasons : ["No major setup issues detected."],
   };
 }
 
 function CalculatedResultSnapshot({ result }: { result: SavedSetupCalculatedResult }) {
   const health = getDisplaySetupHealth(result);
+  const reviewNotes = getDisplayReviewNotes(result);
 
   return (
     <div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50/60 p-4">
@@ -253,11 +316,11 @@ function CalculatedResultSnapshot({ result }: { result: SavedSetupCalculatedResu
         </div>
       </dl>
 
-      {result.warnings.length > 0 ? (
+      {reviewNotes.length > 0 ? (
         <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <p className="font-semibold">Review notes</p>
           <ul className="mt-2 list-disc space-y-1 pl-5">
-            {result.warnings.slice(0, 4).map((warning, index) => (
+            {reviewNotes.slice(0, 4).map((warning, index) => (
               <li key={warning + "-" + index}>{warning}</li>
             ))}
           </ul>

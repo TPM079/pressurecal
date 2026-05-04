@@ -42,14 +42,96 @@ function formatDateTime(value: string | Date | null | undefined) {
   });
 }
 
-function getDisplaySetupHealth(result: SavedSetupCalculatedResult): SavedSetupHealth {
-  if (result.setupHealth) {
-    return result.setupHealth;
+function getNearMaxPressureReviewNote(result: SavedSetupCalculatedResult) {
+  const bypassIsNegligible = !Number.isFinite(result.bypassPercent) || result.bypassPercent < 2;
+
+  if (result.nozzleStatus === "Calibrated" && bypassIsNegligible) {
+    return "Nozzle is closely matched. Confirm actual pressure with a gauge during field testing.";
   }
 
-  const reasons = result.warnings.length > 0 ? result.warnings : ["Calculated from saved result snapshot."];
+  if (bypassIsNegligible) {
+    return "Operating near max pressure — confirm actual pressure with a gauge during field testing.";
+  }
 
-  if (result.pressureLimited || result.engineStatus === "Undersized" || result.hoseLossPercent >= 20) {
+  return "Operating near max pressure — confirm with a gauge if the unloader cycles.";
+}
+
+function cleanSetupReviewText(value: string, result: SavedSetupCalculatedResult) {
+  const trimmed = value.trim();
+
+  if (
+    trimmed === "Pressure-limited setup — unloader bypass is likely." ||
+    trimmed === "Pressure-limited setup / unloader bypass likely."
+  ) {
+    return getNearMaxPressureReviewNote(result);
+  }
+
+  return trimmed;
+}
+
+function getDisplayReviewNotes(result: SavedSetupCalculatedResult) {
+  const notes = result.warnings
+    .map((warning) => cleanSetupReviewText(warning, result))
+    .filter((warning) => warning.length > 0);
+
+  if (notes.length > 0) {
+    return Array.from(new Set(notes));
+  }
+
+  if (result.pressureLimited) {
+    return [getNearMaxPressureReviewNote(result)];
+  }
+
+  return [];
+}
+
+function buildReportRecommendations(result: SavedSetupCalculatedResult) {
+  const recommendations: string[] = [];
+
+  if (result.nozzleStatus === "Calibrated") {
+    recommendations.push("Nozzle is closely matched to the rated pump point.");
+  } else if (result.nozzleStatus === "Under-calibrated") {
+    recommendations.push("Selected nozzle is smaller than the rated match. Confirm operating pressure and unloader behaviour with a gauge.");
+  } else {
+    recommendations.push("Selected nozzle is larger than the rated match. Expect lower working pressure than the rated pump point.");
+  }
+
+  if (result.pressureLimited) {
+    recommendations.push(getNearMaxPressureReviewNote(result));
+  }
+
+  if (result.hoseLossPercent < 5) {
+    recommendations.push("Hose loss is low; the current hose run looks efficient.");
+  }
+
+  if (result.engineStatus === "Healthy") {
+    recommendations.push("Engine power estimate is healthy for this calculated operating point.");
+  } else if (result.engineStatus === "Near limit") {
+    recommendations.push("Engine power is near the calculated requirement. Confirm under real load.");
+  } else if (result.engineStatus === "Undersized") {
+    recommendations.push("Engine appears undersized for this calculated operating point.");
+  }
+
+  return Array.from(new Set(recommendations)).slice(0, 3);
+}
+
+function getDisplaySetupHealth(result: SavedSetupCalculatedResult): SavedSetupHealth {
+  if (result.setupHealth) {
+    return {
+      ...result.setupHealth,
+      reasons: result.setupHealth.reasons.map((reason) => cleanSetupReviewText(reason, result)),
+    };
+  }
+
+  const reasons = getDisplayReviewNotes(result);
+  const hasHighRiskIssue =
+    result.engineStatus === "Undersized" || result.hoseLossPercent >= 20;
+  const hasReviewIssue =
+    result.nozzleStatus !== "Calibrated" ||
+    result.engineStatus === "Near limit" ||
+    result.hoseLossPercent >= 10;
+
+  if (hasHighRiskIssue) {
     return {
       level: "warning",
       label: "Check setup",
@@ -59,12 +141,22 @@ function getDisplaySetupHealth(result: SavedSetupCalculatedResult): SavedSetupHe
     };
   }
 
-  if (result.nozzleStatus !== "Calibrated" || result.engineStatus === "Near limit" || result.hoseLossPercent >= 10) {
+  if (hasReviewIssue) {
     return {
       level: "review",
       label: "Review setup",
       score: 70,
       summary: "Check the notes below before treating this as a known-good setup.",
+      reasons,
+    };
+  }
+
+  if (result.pressureLimited) {
+    return {
+      level: "good",
+      label: "Good working setup",
+      score: result.nozzleStatus === "Calibrated" ? 88 : 85,
+      summary: "Useful working setup with minor items to keep an eye on.",
       reasons,
     };
   }
@@ -75,7 +167,7 @@ function getDisplaySetupHealth(result: SavedSetupCalculatedResult): SavedSetupHe
       label: "Excellent match",
       score: 95,
       summary: "Low loss and setup match look strong.",
-      reasons,
+      reasons: reasons.length > 0 ? reasons : ["No major setup issues detected."],
     };
   }
 
@@ -84,7 +176,7 @@ function getDisplaySetupHealth(result: SavedSetupCalculatedResult): SavedSetupHe
     label: "Good working setup",
     score: 85,
     summary: "Useful working setup with minor items to keep an eye on.",
-    reasons,
+    reasons: reasons.length > 0 ? reasons : ["No major setup issues detected."],
   };
 }
 
@@ -223,6 +315,8 @@ export default function SavedSetupReportPage() {
 
   const result = setup?.calculatedResult ?? null;
   const health = result ? getDisplaySetupHealth(result) : null;
+  const reportReviewNotes = result ? getDisplayReviewNotes(result) : [];
+  const reportRecommendations = result ? buildReportRecommendations(result) : [];
   const reportOperatorNotes = setup?.notes
     ? compactReportText(setup.notes, REPORT_OPERATOR_NOTES_MAX_CHARS)
     : "";
@@ -889,7 +983,7 @@ export default function SavedSetupReportPage() {
                         detail={`${formatNumber(result.bypassFlowGpm, 2)} GPM bypass`}
                       />
                       <ReportMetric
-                        label="Pressure limited"
+                        label="Near max pressure"
                         value={result.pressureLimited ? "Yes" : "No"}
                       />
                       <ReportMetric
@@ -898,12 +992,23 @@ export default function SavedSetupReportPage() {
                       />
                     </dl>
 
-                    {result.warnings.length > 0 ? (
+                    {reportReviewNotes.length > 0 ? (
                       <div className="report-compact-box mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                         <p className="font-semibold">Review notes</p>
                         <ul className="report-compact-text mt-1 list-disc space-y-1 pl-5">
-                          {result.warnings.map((warning, index) => (
+                          {reportReviewNotes.map((warning, index) => (
                             <li key={`${warning}-${index}`}>{warning}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+
+                    {reportRecommendations.length > 0 ? (
+                      <div className="report-compact-box mt-3 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-950">
+                        <p className="font-semibold">Recommendations</p>
+                        <ul className="report-compact-text mt-1 list-disc space-y-1 pl-5">
+                          {reportRecommendations.map((recommendation, index) => (
+                            <li key={`${recommendation}-${index}`}>{recommendation}</li>
                           ))}
                         </ul>
                       </div>

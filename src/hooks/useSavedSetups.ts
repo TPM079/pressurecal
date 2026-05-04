@@ -305,9 +305,32 @@ function buildResultSummary(args: {
   )} LPM · ${roundNumber(hoseLossPsi, 0)} PSI hose loss · nozzle ${selectedTipCode} · ${nozzleStatus}`;
 }
 
+const NEGLIGIBLE_BYPASS_PERCENT = 2;
+const MEASURABLE_BYPASS_PERCENT = 10;
+
+function hasNegligibleBypass(bypassPercent: number) {
+  return !Number.isFinite(bypassPercent) || bypassPercent < NEGLIGIBLE_BYPASS_PERCENT;
+}
+
+function buildNearMaxPressureNote(args: {
+  bypassPercent: number;
+  nozzleStatus: SavedSetupCalculatedResult["nozzleStatus"];
+}) {
+  if (args.nozzleStatus === "Calibrated" && hasNegligibleBypass(args.bypassPercent)) {
+    return "Nozzle is closely matched. Confirm actual pressure with a gauge during field testing.";
+  }
+
+  if (hasNegligibleBypass(args.bypassPercent)) {
+    return "Operating near max pressure — confirm actual pressure with a gauge during field testing.";
+  }
+
+  return "Operating near max pressure — confirm with a gauge if the unloader cycles.";
+}
+
 function buildWarnings(args: {
   hoseLossPercent: number;
   pressureLimited: boolean;
+  bypassPercent: number;
   nozzleStatus: SavedSetupCalculatedResult["nozzleStatus"];
   engineStatus: SavedSetupCalculatedResult["engineStatus"];
 }) {
@@ -320,7 +343,12 @@ function buildWarnings(args: {
   }
 
   if (args.pressureLimited) {
-    warnings.push("Pressure-limited setup — unloader bypass is likely.");
+    warnings.push(
+      buildNearMaxPressureNote({
+        bypassPercent: args.bypassPercent,
+        nozzleStatus: args.nozzleStatus,
+      })
+    );
   }
 
   if (args.nozzleStatus !== "Calibrated") {
@@ -338,10 +366,10 @@ function buildWarnings(args: {
   return warnings;
 }
 
-
 function buildSetupHealth(args: {
   hoseLossPercent: number;
   pressureLimited: boolean;
+  bypassPercent: number;
   nozzleStatus: SavedSetupCalculatedResult["nozzleStatus"];
   engineStatus: SavedSetupCalculatedResult["engineStatus"];
 }): SavedSetupHealth {
@@ -360,8 +388,19 @@ function buildSetupHealth(args: {
   }
 
   if (args.pressureLimited) {
-    score -= 25;
-    reasons.push("Pressure-limited setup / unloader bypass likely.");
+    if (hasNegligibleBypass(args.bypassPercent) && args.nozzleStatus === "Calibrated") {
+      score -= 12;
+      reasons.push("Operating near max pressure with negligible calculated bypass.");
+    } else if (hasNegligibleBypass(args.bypassPercent)) {
+      score -= 15;
+      reasons.push("Operating near max pressure. Confirm actual pressure with a gauge.");
+    } else if (args.bypassPercent >= MEASURABLE_BYPASS_PERCENT) {
+      score -= 18;
+      reasons.push("Operating near max pressure with measurable bypass. Confirm with a gauge if the unloader cycles.");
+    } else {
+      score -= 15;
+      reasons.push("Operating near max pressure. Confirm with a gauge if the unloader cycles.");
+    }
   }
 
   if (args.nozzleStatus !== "Calibrated") {
@@ -421,38 +460,6 @@ function buildSetupHealth(args: {
   };
 }
 
-function normalizeSetupHealth(raw: unknown): SavedSetupHealth | null {
-  if (!raw || typeof raw !== "object") {
-    return null;
-  }
-
-  const item = raw as Record<string, unknown>;
-  const level =
-    item.level === "excellent" ||
-    item.level === "good" ||
-    item.level === "review" ||
-    item.level === "warning"
-      ? item.level
-      : null;
-
-  if (!level) {
-    return null;
-  }
-
-  return {
-    level,
-    label: typeof item.label === "string" && item.label.trim() ? item.label.trim() : "Setup health",
-    score: Math.max(0, Math.min(100, Math.round(toRequiredNumber(item.score, 0)))),
-    summary:
-      typeof item.summary === "string" && item.summary.trim()
-        ? item.summary.trim()
-        : "Calculated setup health snapshot.",
-    reasons: Array.isArray(item.reasons)
-      ? item.reasons.filter((reason): reason is string => typeof reason === "string")
-      : [],
-  };
-}
-
 export function buildCalculatedResultFromInputs(
   inputs: Inputs,
   calculatedAt = new Date().toISOString()
@@ -488,6 +495,7 @@ export function buildCalculatedResultFromInputs(
   const selectedTipCode = roundTipCodeToFive(result.selectedTipCode);
   const calibratedTipCode = roundTipCodeToFive(result.calibratedTipCode);
   const hoseLossPercent = roundNumber(result.hoseLossPct, 1);
+  const bypassPercent = roundNumber(result.bypassPct, 1);
   const pressureLimited = result.isPressureLimited;
 
   const summary = buildResultSummary({
@@ -500,12 +508,14 @@ export function buildCalculatedResultFromInputs(
   const warnings = buildWarnings({
     hoseLossPercent,
     pressureLimited,
+    bypassPercent,
     nozzleStatus,
     engineStatus,
   });
   const setupHealth = buildSetupHealth({
     hoseLossPercent,
     pressureLimited,
+    bypassPercent,
     nozzleStatus,
     engineStatus,
   });
@@ -533,7 +543,7 @@ export function buildCalculatedResultFromInputs(
     statusMessage: result.statusMessage,
     pressureLimited,
     bypassFlowGpm: roundNumber(result.bypassFlowGpm, 2),
-    bypassPercent: roundNumber(result.bypassPct, 0),
+    bypassPercent,
     resultSummary: summary,
     warnings,
     setupHealth,
@@ -574,13 +584,31 @@ function normalizeCalculatedResult(raw: unknown): SavedSetupCalculatedResult | n
       ? item.engineStatus
       : "Not provided";
 
+  const hoseLossPercent = roundNumber(toRequiredNumber(item.hoseLossPercent, 0), 1);
+  const pressureLimited = Boolean(item.pressureLimited);
+  const bypassPercent = roundNumber(toRequiredNumber(item.bypassPercent, 0), 1);
+  const warnings = buildWarnings({
+    hoseLossPercent,
+    pressureLimited,
+    bypassPercent,
+    nozzleStatus,
+    engineStatus,
+  });
+  const setupHealth = buildSetupHealth({
+    hoseLossPercent,
+    pressureLimited,
+    bypassPercent,
+    nozzleStatus,
+    engineStatus,
+  });
+
   return {
     schemaVersion: 1,
     atGunPressurePsi: roundNumber(atGunPressurePsi, 0),
     atGunPressureBar: roundNumber(toRequiredNumber(item.atGunPressureBar, barFromPsi(atGunPressurePsi)), 1),
     hoseLossPsi: roundNumber(hoseLossPsi, 0),
     hoseLossBar: roundNumber(toRequiredNumber(item.hoseLossBar, barFromPsi(hoseLossPsi)), 1),
-    hoseLossPercent: roundNumber(toRequiredNumber(item.hoseLossPercent, 0), 1),
+    hoseLossPercent,
     operatingFlowLpm: roundNumber(operatingFlowLpm, 1),
     operatingFlowGpm: roundNumber(toRequiredNumber(item.operatingFlowGpm, 0), 2),
     selectedTipCode:
@@ -607,9 +635,9 @@ function normalizeCalculatedResult(raw: unknown): SavedSetupCalculatedResult | n
       typeof item.statusMessage === "string" && item.statusMessage.trim()
         ? item.statusMessage.trim()
         : "Calculated result saved with this setup.",
-    pressureLimited: Boolean(item.pressureLimited),
+    pressureLimited,
     bypassFlowGpm: roundNumber(toRequiredNumber(item.bypassFlowGpm, 0), 2),
-    bypassPercent: roundNumber(toRequiredNumber(item.bypassPercent, 0), 0),
+    bypassPercent,
     resultSummary:
       typeof item.resultSummary === "string" && item.resultSummary.trim()
         ? item.resultSummary.trim()
@@ -621,17 +649,8 @@ function normalizeCalculatedResult(raw: unknown): SavedSetupCalculatedResult | n
               typeof item.selectedTipCode === "string" ? item.selectedTipCode : "—",
             nozzleStatus,
           }),
-    warnings: Array.isArray(item.warnings)
-      ? item.warnings.filter((warning): warning is string => typeof warning === "string")
-      : [],
-    setupHealth:
-      normalizeSetupHealth(item.setupHealth) ??
-      buildSetupHealth({
-        hoseLossPercent: roundNumber(toRequiredNumber(item.hoseLossPercent, 0), 1),
-        pressureLimited: Boolean(item.pressureLimited),
-        nozzleStatus,
-        engineStatus,
-      }),
+    warnings,
+    setupHealth,
     calculatedAt:
       typeof item.calculatedAt === "string" && item.calculatedAt
         ? item.calculatedAt
