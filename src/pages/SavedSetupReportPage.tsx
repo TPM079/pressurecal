@@ -899,8 +899,13 @@ export default function SavedSetupReportPage() {
                         detail={`${formatNumber(result.bypassFlowGpm, 2)} GPM bypass`}
                       />
                       <ReportMetric
-                        label="Near max pressure"
-                        value={result.pressureLimited ? "Yes" : "No"}
+                        label="Max pressure limit"
+                        value={result.pressureLimited ? "Reached" : "Not reached"}
+                        detail={
+                          result.pressureLimited
+                            ? "Operating at the unloader/max pressure setting. Confirm with a gauge."
+                            : "Not being limited by the unloader/max pressure setting."
+                        }
                       />
                       <ReportMetric
                         label="Calculated"
