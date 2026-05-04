@@ -904,7 +904,7 @@ export default function SavedSetupReportPage() {
                         detail={
                           result.pressureLimited
                             ? "Operating at the unloader/max pressure setting. Confirm with a gauge."
-                            : "Not being limited by the unloader/max pressure setting."
+                            : "Setup is not being limited by the unloader/max pressure setting."
                         }
                       />
                       <ReportMetric
