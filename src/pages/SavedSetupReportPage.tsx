@@ -68,7 +68,7 @@ function buildReportRecommendations(result: SavedSetupCalculatedResult, reviewNo
   }
 
   if (result.hoseLossPercent < 5) {
-    recommendations.push("Keep this hose ID and length as the preferred run for similar jobs.");
+    recommendations.push("Use a similar hose ID and length where possible to keep pressure loss low.");
   } else if (result.hoseLossPercent >= 10) {
     recommendations.push("Shorten the hose run or step up hose ID before using this as a repeat-job reference.");
   }
@@ -899,7 +899,7 @@ export default function SavedSetupReportPage() {
                         detail={`${formatNumber(result.bypassFlowGpm, 2)} GPM bypass`}
                       />
                       <ReportMetric
-                        label="Max pressure limit"
+                        label="Max pressure status"
                         value={result.pressureLimited ? "Reached" : "Not reached"}
                         detail={
                           result.pressureLimited
@@ -997,3 +997,4 @@ export default function SavedSetupReportPage() {
     </>
   );
 }
+
