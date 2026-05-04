@@ -5,6 +5,8 @@ import BackToTopButton from "../components/BackToTopButton";
 import PressureCalLayout from "../components/PressureCalLayout";
 import RequirePro from "../components/RequirePro";
 import {
+  getDisplayReviewNotes,
+  getDisplaySetupHealth,
   useSavedSetups,
   type SavedSetupCalculatedResult,
   type SavedSetupHealth,
@@ -124,114 +126,6 @@ function healthStatusClass(level: SavedSetupHealth["level"]) {
   }
 
   return "border-red-200 bg-red-50 text-red-800";
-}
-
-function getNearMaxPressureReviewNote(result: SavedSetupCalculatedResult) {
-  const bypassIsNegligible = !Number.isFinite(result.bypassPercent) || result.bypassPercent < 2;
-
-  if (result.nozzleStatus === "Calibrated" && bypassIsNegligible) {
-    return "Nozzle is closely matched. Confirm actual pressure with a gauge during field testing.";
-  }
-
-  if (bypassIsNegligible) {
-    return "Operating near max pressure — confirm actual pressure with a gauge during field testing.";
-  }
-
-  return "Operating near max pressure — confirm with a gauge if the unloader cycles.";
-}
-
-function cleanSetupReviewText(value: string, result: SavedSetupCalculatedResult) {
-  const trimmed = value.trim();
-
-  if (
-    trimmed === "Pressure-limited setup — unloader bypass is likely." ||
-    trimmed === "Pressure-limited setup / unloader bypass likely."
-  ) {
-    return getNearMaxPressureReviewNote(result);
-  }
-
-  return trimmed;
-}
-
-function getDisplayReviewNotes(result: SavedSetupCalculatedResult) {
-  const notes = result.warnings
-    .map((warning) => cleanSetupReviewText(warning, result))
-    .filter((warning) => warning.length > 0);
-
-  if (notes.length > 0) {
-    return Array.from(new Set(notes));
-  }
-
-  if (result.pressureLimited) {
-    return [getNearMaxPressureReviewNote(result)];
-  }
-
-  return [];
-}
-
-function getDisplaySetupHealth(result: SavedSetupCalculatedResult): SavedSetupHealth {
-  if (result.setupHealth) {
-    return {
-      ...result.setupHealth,
-      reasons: result.setupHealth.reasons.map((reason) => cleanSetupReviewText(reason, result)),
-    };
-  }
-
-  const reasons = getDisplayReviewNotes(result);
-  const hasHighRiskIssue =
-    result.engineStatus === "Undersized" || result.hoseLossPercent >= 20;
-  const hasReviewIssue =
-    result.nozzleStatus !== "Calibrated" ||
-    result.engineStatus === "Near limit" ||
-    result.hoseLossPercent >= 10;
-
-  if (hasHighRiskIssue) {
-    return {
-      level: "warning",
-      label: "Check setup",
-      score: 50,
-      summary: "This setup needs attention before being treated as known-good.",
-      reasons,
-    };
-  }
-
-  if (hasReviewIssue) {
-    return {
-      level: "review",
-      label: "Review setup",
-      score: 70,
-      summary: "Check the notes below before treating this as a known-good setup.",
-      reasons,
-    };
-  }
-
-  if (result.pressureLimited) {
-    return {
-      level: "good",
-      label: "Good working setup",
-      score: result.nozzleStatus === "Calibrated" ? 88 : 85,
-      summary: "Useful working setup with minor items to keep an eye on.",
-      reasons,
-    };
-  }
-
-  if (result.hoseLossPercent < 5) {
-    return {
-      level: "excellent",
-      label: "Excellent match",
-      score: 95,
-      summary: "Low loss and setup match look strong.",
-      reasons: reasons.length > 0 ? reasons : ["No major setup issues detected."],
-    };
-  }
-
-  return {
-    level: "good",
-    label: "Good working setup",
-    score: 85,
-    summary: "Useful working setup with minor items to keep an eye on.",
-    reasons: reasons.length > 0 ? reasons : ["No major setup issues detected."],
-  };
 }
 
 function CalculatedResultSnapshot({ result }: { result: SavedSetupCalculatedResult }) {
