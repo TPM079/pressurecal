@@ -85,31 +85,42 @@ function getDisplayReviewNotes(result: SavedSetupCalculatedResult) {
   return [];
 }
 
-function buildReportRecommendations(result: SavedSetupCalculatedResult) {
+function buildReportRecommendations(result: SavedSetupCalculatedResult, reviewNotes: string[]) {
   const recommendations: string[] = [];
+  const reviewText = reviewNotes.join(" ").toLowerCase();
+  const reviewAlreadyMentionsGauge =
+    reviewText.includes("gauge") || reviewText.includes("actual pressure");
 
   if (result.nozzleStatus === "Calibrated") {
-    recommendations.push("Nozzle is closely matched to the rated pump point.");
+    recommendations.push("Use this as a baseline setup for this pump, nozzle, and hose combination.");
   } else if (result.nozzleStatus === "Under-calibrated") {
-    recommendations.push("Selected nozzle is smaller than the rated match. Confirm operating pressure and unloader behaviour with a gauge.");
+    recommendations.push("Fit the rated-match nozzle or verify the selected smaller nozzle under real load.");
   } else {
-    recommendations.push("Selected nozzle is larger than the rated match. Expect lower working pressure than the rated pump point.");
-  }
-
-  if (result.pressureLimited) {
-    recommendations.push(getNearMaxPressureReviewNote(result));
+    recommendations.push("Use the rated-match nozzle if the job needs pressure closer to the pump rating.");
   }
 
   if (result.hoseLossPercent < 5) {
-    recommendations.push("Hose loss is low; the current hose run looks efficient.");
+    recommendations.push("Keep this hose ID and length as the preferred run for similar jobs.");
+  } else if (result.hoseLossPercent >= 10) {
+    recommendations.push("Shorten the hose run or step up hose ID before using this as a repeat-job reference.");
+  }
+
+  if (result.pressureLimited) {
+    recommendations.push(
+      reviewAlreadyMentionsGauge
+        ? "Record the confirmed gauge reading as the field reference for this setup."
+        : "Confirm actual pressure with a gauge if the unloader cycles."
+    );
   }
 
   if (result.engineStatus === "Healthy") {
-    recommendations.push("Engine power estimate is healthy for this calculated operating point.");
+    recommendations.push("Engine power is adequate for this calculated operating point.");
   } else if (result.engineStatus === "Near limit") {
-    recommendations.push("Engine power is near the calculated requirement. Confirm under real load.");
+    recommendations.push("Check engine load in the field before treating this as a repeat setup.");
   } else if (result.engineStatus === "Undersized") {
-    recommendations.push("Engine appears undersized for this calculated operating point.");
+    recommendations.push("Increase available engine power or reduce the operating load before use.");
+  } else if (result.engineStatus === "Not provided") {
+    recommendations.push("Add engine HP to include a power check in future reports.");
   }
 
   return Array.from(new Set(recommendations)).slice(0, 3);
@@ -316,7 +327,7 @@ export default function SavedSetupReportPage() {
   const result = setup?.calculatedResult ?? null;
   const health = result ? getDisplaySetupHealth(result) : null;
   const reportReviewNotes = result ? getDisplayReviewNotes(result) : [];
-  const reportRecommendations = result ? buildReportRecommendations(result) : [];
+  const reportRecommendations = result ? buildReportRecommendations(result, reportReviewNotes) : [];
   const reportOperatorNotes = setup?.notes
     ? compactReportText(setup.notes, REPORT_OPERATOR_NOTES_MAX_CHARS)
     : "";
