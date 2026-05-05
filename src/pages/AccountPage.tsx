@@ -287,11 +287,12 @@ function ProOnboardingChecklist({
   savedSetupCount: number | null;
   equipmentItemCount: number | null;
 }) {
+  const countsLoaded = savedSetupCount !== null && equipmentItemCount !== null;
   const equipmentCount = equipmentItemCount ?? 0;
   const setupCount = savedSetupCount ?? 0;
-  const hasStarterEquipment = equipmentCount >= 3;
-  const hasFirstSetup = setupCount >= 1;
-  const hasComparisonReady = setupCount >= 2;
+  const hasStarterEquipment = countsLoaded && equipmentCount >= 3;
+  const hasFirstSetup = countsLoaded && setupCount >= 1;
+  const hasComparisonReady = countsLoaded && setupCount >= 2;
 
   const steps: OnboardingStep[] = [
     {
@@ -349,14 +350,14 @@ function ProOnboardingChecklist({
   });
 
   useEffect(() => {
-    if (!allStepsComplete && checklistHidden) {
+    if (countsLoaded && !allStepsComplete && checklistHidden) {
       setChecklistHidden(false);
 
       if (typeof window !== "undefined") {
         window.localStorage.removeItem(PRO_ONBOARDING_HIDDEN_KEY);
       }
     }
-  }, [allStepsComplete, checklistHidden]);
+  }, [allStepsComplete, checklistHidden, countsLoaded]);
 
   function hideCompletedChecklist() {
     setChecklistHidden(true);
@@ -368,7 +369,7 @@ function ProOnboardingChecklist({
     window.localStorage.removeItem(PRO_ONBOARDING_HIDDEN_KEY);
   }
 
-  if (allStepsComplete && checklistHidden) {
+  if (checklistHidden && (!countsLoaded || allStepsComplete)) {
     return (
       <section className="rounded-3xl border border-green-100 bg-green-50/80 p-5 shadow-sm md:p-6">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
