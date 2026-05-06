@@ -1,3 +1,5 @@
+import { Helmet } from "react-helmet-async";
+import { Link } from "react-router-dom";
 import CalculationExplainer from "../components/CalculationExplainer";
 
 import {
@@ -112,6 +114,65 @@ const hosePresets = [
   { label: '3/4" (19.05 mm)', value: 19.05 },
   { label: '1" (25.40 mm)', value: 25.4 },
 ];
+
+const SITE_URL = "https://www.pressurecal.com";
+const PAGE_URL = `${SITE_URL}/target-pressure-nozzle-calculator`;
+const PAGE_TITLE =
+  "Target Pressure Nozzle Calculator | Reduce PSI by Nozzle Size | PressureCal";
+const PAGE_DESCRIPTION =
+  "Find the nozzle / tip code needed to hit a target working pressure from your pump flow. Useful when reducing PSI or matching a lower pressure job.";
+
+const targetPressureStructuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebApplication",
+      "@id": `${PAGE_URL}#webapplication`,
+      name: "Target Pressure Nozzle Calculator",
+      url: PAGE_URL,
+      applicationCategory: "Calculator",
+      operatingSystem: "Web",
+      isAccessibleForFree: true,
+      description: PAGE_DESCRIPTION,
+      publisher: {
+        "@type": "Organization",
+        "@id": `${SITE_URL}/#organization`,
+        name: "PressureCal",
+        url: `${SITE_URL}/`,
+      },
+    },
+    {
+      "@type": "FAQPage",
+      "@id": `${PAGE_URL}#faq`,
+      mainEntity: [
+        {
+          "@type": "Question",
+          name: "Can I reduce pressure by using a larger nozzle?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Yes. Increasing nozzle size can reduce working pressure because the pump flow is moving through a larger orifice.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "What nozzle size do I need for lower pressure?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Enter your pump flow and target pressure. The calculator estimates the nozzle / tip code needed to reach that lower working pressure.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Is this the same as a nozzle size calculator?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "No. A standard nozzle size calculator matches nozzle size to known pressure and flow. A target pressure nozzle calculator works backwards from the pressure you want to achieve.",
+          },
+        },
+      ],
+    },
+  ],
+};
 
 function formatNumber(value: number, decimals = 2): string {
   if (!Number.isFinite(value)) return "—";
@@ -359,7 +420,23 @@ export default function TargetPressureNozzleCalculator() {
   const roundedNozzleLabel = `${formatNumber(result.recommendedNozzleSize, 1)} (${result.recommendedTipCode})`;
 
   return (
-    <div className="space-y-8">
+    <>
+      <Helmet>
+        <title>{PAGE_TITLE}</title>
+        <meta name="description" content={PAGE_DESCRIPTION} />
+        <link rel="canonical" href={PAGE_URL} />
+        <meta property="og:title" content={PAGE_TITLE} />
+        <meta property="og:description" content={PAGE_DESCRIPTION} />
+        <meta property="og:url" content={PAGE_URL} />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:title" content={PAGE_TITLE} />
+        <meta name="twitter:description" content={PAGE_DESCRIPTION} />
+        <script type="application/ld+json">
+          {JSON.stringify(targetPressureStructuredData)}
+        </script>
+      </Helmet>
+
+      <div className="space-y-8">
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
@@ -372,13 +449,14 @@ export default function TargetPressureNozzleCalculator() {
             </h1>
 
             <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
-              Work backwards from the pressure you want to run and find the nozzle
-              size that best matches your setup.
+              Work backwards from the pressure you want to run and find the nozzle /
+              tip code needed to reach that target PSI or BAR from your pump flow.
             </p>
 
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-              PressureCal keeps PSI and LPM first, with GPM treated as US gallons
-              per minute. Smaller nozzle means higher pressure. Larger nozzle means lower pressure.
+              Use this when you want to reduce working pressure, soften the impact on a
+              surface, or match a lower pressure job without changing the pump. Smaller
+              nozzle means higher pressure. Larger nozzle means lower pressure.
             </p>
           </div>
 
@@ -841,7 +919,96 @@ export default function TargetPressureNozzleCalculator() {
           </section>
         </div>
       </section>
-    </div>
+
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+        <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+          When to use the target pressure nozzle calculator
+        </h2>
+        <div className="mt-5 space-y-4 text-sm leading-7 text-slate-600">
+          <p>
+            Use this calculator when you already know the pressure you want to run and
+            need to choose a nozzle size to get closer to that target. It is especially
+            useful when you are trying to reduce PSI for a softer wash, match a lower
+            working pressure, or compare what one nozzle size larger or smaller will do.
+          </p>
+          <p>
+            This is different from the standard nozzle size calculator. The standard
+            calculator answers “what nozzle matches my known PSI and flow?” This target
+            pressure calculator answers “what nozzle size will give me the PSI I want?”
+          </p>
+        </div>
+      </section>
+
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+        <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+          FAQ
+        </h2>
+        <div className="mt-5 space-y-5 text-sm leading-7 text-slate-600">
+          <div>
+            <h3 className="text-base font-semibold text-slate-900">
+              Can I reduce pressure by using a larger nozzle?
+            </h3>
+            <p className="mt-2">
+              Yes. Increasing nozzle size can reduce working pressure because the pump
+              flow is moving through a larger orifice. Always confirm the result with a
+              pressure gauge and stay within pump, hose, gun and nozzle limits.
+            </p>
+          </div>
+
+          <div>
+            <h3 className="text-base font-semibold text-slate-900">
+              What nozzle size do I need for lower pressure?
+            </h3>
+            <p className="mt-2">
+              Enter your pump flow and target pressure. PressureCal estimates the
+              nozzle / tip code needed to reach that lower working pressure, then shows
+              nearby standard nozzle options.
+            </p>
+          </div>
+
+          <div>
+            <h3 className="text-base font-semibold text-slate-900">
+              Is this the same as a nozzle size calculator?
+            </h3>
+            <p className="mt-2">
+              No. A standard nozzle size calculator matches nozzle size to known pressure
+              and flow. A target pressure nozzle calculator works backwards from the
+              pressure you want to achieve.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+        <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+          Related pressure washer tools
+        </h2>
+        <p className="mt-4 text-sm leading-7 text-slate-600">
+          Choose the tool that matches what you are trying to work out:
+        </p>
+        <div className="mt-5 flex flex-wrap gap-3">
+          <Link
+            to="/nozzle-size-calculator"
+            className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+          >
+            Standard pressure washer nozzle size calculator
+          </Link>
+          <Link
+            to="/nozzle-size-chart"
+            className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          >
+            Pressure washer nozzle size chart
+          </Link>
+          <Link
+            to="/calculator"
+            className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          >
+            Full pressure washer setup calculator
+          </Link>
+        </div>
+      </section>
+      </div>
+    </>
   );
 }
 

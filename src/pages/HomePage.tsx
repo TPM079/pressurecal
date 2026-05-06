@@ -29,37 +29,38 @@ type ToolCard = {
 const toolCards: ToolCard[] = [
   {
     href: "/calculator",
-    title: "Full Setup Calculator",
+    title: "Pressure Washer Setup Calculator",
     description:
-      "Check nozzle match, hose loss, at-gun pressure, flow, and likely setup behaviour in one place.",
-    cta: "Open full setup →",
+      "Model pump flow, hose pressure loss, nozzle size, and estimated at-gun performance in one full setup view.",
+    cta: "Open pressure washer setup calculator →",
   },
   {
     href: "/nozzle-size-calculator",
-    title: "Nozzle Size Calculator",
+    title: "Pressure Washer Nozzle Size Calculator",
     description:
-      "Check nozzle size against pressure and flow before you buy it, fit it, or blame the machine.",
-    cta: "Check nozzle size →",
+      "Calculate the correct nozzle / tip code from your pump flow and working pressure before you buy or fit parts.",
+    cta: "Use the pressure washer nozzle size calculator →",
   },
   {
     href: "/target-pressure-nozzle-calculator",
     title: "Target Pressure Nozzle Calculator",
-    description: "Work backwards from your target PSI and find the nozzle size that best matches your pump.",
-    cta: "Find nozzle for target pressure →",
+    description:
+      "Work backwards from your desired PSI or BAR to estimate the nozzle size needed to reduce or match pressure.",
+    cta: "Use the target pressure nozzle calculator →",
   },
   {
     href: "/hose-pressure-loss-calculator",
     title: "Hose Pressure Loss Calculator",
     description:
-      "Check what the hose run is costing you before you start chasing the wrong problem.",
-    cta: "Check hose loss →",
+      "Check what a hose run is costing before you start chasing the wrong problem at the gun.",
+    cta: "Check hose pressure loss →",
   },
   {
     href: "/nozzle-size-chart",
-    title: "Nozzle Size Chart",
+    title: "Pressure Washer Nozzle Size Chart",
     description:
-      "Use a fast field reference when you just need a quick nozzle lookup.",
-    cta: "Open nozzle chart →",
+      "Use a quick PSI, LPM and US GPM chart for common nozzle / tip sizes, then calculate exact setups when needed.",
+    cta: "Open pressure washer nozzle size chart →",
   },
 ];
 
@@ -424,7 +425,7 @@ export default function HomePage() {
           name: "PressureCal",
           url: "https://www.pressurecal.com/",
           description:
-            "PressureCal is a pressure washer calculator and setup modelling tool for nozzle sizing, hose loss, at-gun pressure, flow, and full setup checks.",
+            "PressureCal provides professional pressure washer calculator tools for nozzle sizing, target pressure, hose pressure loss, unit conversion and full setup performance checks.",
         },
         {
           "@type": "WebSite",
@@ -432,7 +433,7 @@ export default function HomePage() {
           url: "https://www.pressurecal.com/",
           name: "PressureCal",
           description:
-            "PressureCal is a pressure washer calculator and setup modelling tool for nozzle sizing, hose loss, at-gun pressure, flow, and full setup checks.",
+            "PressureCal provides professional pressure washer calculator tools for nozzle sizing, target pressure, hose pressure loss, unit conversion and full setup performance checks.",
           publisher: {
             "@id": "https://www.pressurecal.com/#organization",
           },
@@ -441,9 +442,9 @@ export default function HomePage() {
           "@type": "WebPage",
           "@id": "https://www.pressurecal.com/#webpage",
           url: "https://www.pressurecal.com/",
-          name: "Pressure Washer Calculator | Nozzle Size, Hose Loss & At-Gun Pressure | PressureCal",
+          name: "PressureCal | Professional Pressure Washer Calculator Tools",
           description:
-            "Check what your pressure washer setup is really doing at the gun with nozzle sizing, hose loss, at-gun pressure, flow, and full setup checks.",
+            "PressureCal gives pressure washing operators practical calculators for nozzle size, target pressure, hose loss, PSI/BAR, LPM/GPM and full setup performance.",
           isPartOf: {
             "@id": "https://www.pressurecal.com/#website",
           },
@@ -463,7 +464,7 @@ export default function HomePage() {
           operatingSystem: "Web",
           isAccessibleForFree: true,
           description:
-            "PressureCal is a pressure washer calculator for nozzle sizing, hose pressure loss, PSI and LPM conversions, at-gun pressure, flow, and bypass behaviour.",
+            "PressureCal is a set of pressure washer calculator tools for nozzle size, target pressure, hose pressure loss, PSI/BAR conversion, LPM/GPM conversion and full setup modelling.",
           publisher: {
             "@id": "https://www.pressurecal.com/#organization",
           },
@@ -507,29 +508,29 @@ export default function HomePage() {
   return (
     <PressureCalLayout>
       <Helmet>
-  <title>Pressure Washer Calculator | Nozzle Size, Hose Loss & At-Gun Pressure | PressureCal</title>
+  <title>PressureCal | Professional Pressure Washer Calculator Tools</title>
   <meta
     name="description"
-    content="Check what your pressure washer setup is really doing at the gun with nozzle sizing, hose loss, at-gun pressure, flow, and full setup checks."
+    content="PressureCal gives pressure washing operators practical calculators for nozzle size, target pressure, hose loss, PSI/BAR, LPM/GPM and full setup performance."
   />
   <link rel="canonical" href="https://www.pressurecal.com/" />
   <meta
     property="og:title"
-    content="Pressure Washer Calculator | Nozzle Size, Hose Loss & At-Gun Pressure | PressureCal"
+    content="PressureCal | Professional Pressure Washer Calculator Tools"
   />
   <meta
     property="og:description"
-    content="Check what your pressure washer setup is really doing at the gun with nozzle sizing, hose loss, at-gun pressure, flow, and full setup checks."
+    content="PressureCal gives pressure washing operators practical calculators for nozzle size, target pressure, hose loss, PSI/BAR, LPM/GPM and full setup performance."
   />
   <meta property="og:url" content="https://www.pressurecal.com/" />
   <meta property="og:type" content="website" />
   <meta
     name="twitter:title"
-    content="Pressure Washer Calculator | Nozzle Size, Hose Loss & At-Gun Pressure | PressureCal"
+    content="PressureCal | Professional Pressure Washer Calculator Tools"
   />
   <meta
     name="twitter:description"
-    content="Check what your pressure washer setup is really doing at the gun with nozzle sizing, hose loss, at-gun pressure, flow, and full setup checks."
+    content="PressureCal gives pressure washing operators practical calculators for nozzle size, target pressure, hose loss, PSI/BAR, LPM/GPM and full setup performance."
   />
   <script type="application/ld+json">
     {JSON.stringify(homepageStructuredData)}
@@ -544,17 +545,17 @@ export default function HomePage() {
             </div>
 
             <h1 className="mt-6 max-w-3xl text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
-  See what your pressure washer setup is actually doing at the gun
+  Pressure washer calculator tools for real setups
 </h1>
 
 <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600 sm:text-xl">
-  Check nozzle match, hose pressure loss, at-gun pressure, and flow from one setup
-  view — before you swap parts, buy the wrong nozzle, or blame the machine.
+  Choose the right PressureCal tool for nozzle size, target pressure, hose loss,
+  unit conversion, or full pump-to-gun setup modelling.
 </p>
 
 <p className="mt-4 max-w-2xl text-base leading-7 text-slate-500">
-  PressureCal is a pressure washer calculator built for operators who need more than
-  a converter, chart, or guess.
+  Built for pressure washing operators, equipment builders, and contractors who need
+  practical PSI, BAR, LPM, GPM, nozzle and hose calculations.
 </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -696,13 +697,14 @@ export default function HomePage() {
         <div className="mx-auto max-w-6xl px-4 py-12 sm:py-14">
           <div className="max-w-4xl">
             <h2 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-              More than a quick chart or converter
+              More than one generic pressure washer calculator
             </h2>
             <p className="mt-4 text-lg leading-8 text-slate-600">
-              Pump specs only tell part of the story. Hose length, hose size, nozzle size,
-              and the rest of the setup can change what you actually get at the gun.
-              PressureCal helps you check the whole picture before you buy parts, swap
-              nozzles, or start chasing the wrong problem.
+              Different jobs need different tools. Use the nozzle size calculator when
+              you need a nozzle / tip code, the nozzle chart when you want a quick
+              reference, the target pressure calculator when you want to lower PSI,
+              and the full setup calculator when hose, nozzle and pump performance all
+              need to be checked together.
             </p>
           </div>
 
@@ -719,7 +721,7 @@ export default function HomePage() {
           </div>
 
           <div className="mt-12">
-            <h3 className="text-xl font-semibold text-slate-950">More useful tools</h3>
+            <h3 className="text-xl font-semibold text-slate-950">Pressure washer calculator tools</h3>
 
             <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               {supportingToolCards.map((item, index) => (
@@ -784,12 +786,12 @@ export default function HomePage() {
         <div className="mx-auto max-w-6xl py-10 sm:py-12 lg:py-12">
           <div className="max-w-3xl">
             <h2 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-              Quick setup check
+              Quick full setup preview
             </h2>
             <p className="mt-4 text-lg leading-8 text-slate-600">
-              Enter your pressure, flow, and hose length to see your recommended tip,
-              estimated hose loss, and likely at-gun pressure and flow. Open the full
-              setup calculator when you want deeper control.
+              Enter pressure, flow and hose length for a fast preview of nozzle match,
+              estimated hose loss and likely at-gun pressure. Open the full pressure
+              washer setup calculator when you want deeper control.
             </p>
           </div>
 

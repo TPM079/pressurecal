@@ -12,9 +12,9 @@ type FlowUnit = "gpm" | "lpm";
 const SITE_URL = "https://www.pressurecal.com";
 const PAGE_URL = `${SITE_URL}/nozzle-size-calculator`;
 const PAGE_TITLE =
-  "Pressure Washer Nozzle Size Calculator | Match PSI, LPM & Tip Code | PressureCal";
+  "Pressure Washer Nozzle Size Calculator | PSI, LPM & GPM | PressureCal";
 const PAGE_DESCRIPTION =
-  "Calculate the right pressure washer nozzle size from pump pressure and flow, then check the matching nozzle / tip code before you fit the wrong nozzle to the machine. GPM refers to US gallons per minute.";
+  "Calculate the correct pressure washer nozzle / tip code from pump flow and working pressure. Supports PSI, BAR, LPM and US GPM for real pressure washer setups.";
 
 const PSI_PER_BAR = 14.5037738;
 const LPM_PER_GPM = 3.785411784;
@@ -197,14 +197,14 @@ function CalculatorCore({
             </h1>
 
             <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
-              Calculate the right pressure washer nozzle size from pump pressure and flow,
-              then check the matching nozzle / tip code before you fit the wrong nozzle to
-              the machine.
+              Calculate the correct pressure washer nozzle / tip code from your pump flow
+              and working pressure. Use it when you know the machine pressure and flow and
+              need to match the nozzle before fitting parts.
             </p>
 
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-              PressureCal keeps PSI and LPM first, with BAR and GPM (US) still available when
-              you need to compare mixed-spec equipment, manuals, or parts.
+              This is the main PressureCal page for “what size nozzle do I need?” checks,
+              with PSI and LPM first and BAR and US GPM available for mixed-spec equipment.
             </p>
 
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
@@ -557,10 +557,21 @@ function CalculatorCore({
             <div className="mt-5 space-y-5 text-sm leading-7 text-slate-600">
               <div>
                 <h3 className="text-base font-semibold text-slate-900">
-                  What nozzle size suits 15 LPM at 4000 PSI?
+                  What size nozzle do I need for my pressure washer?
                 </h3>
                 <p className="mt-2">
-                  A common 15 LPM setup at 4000 PSI lands on a 040 tip code.
+                  The correct nozzle size depends on pump flow and working pressure. Enter your LPM or GPM and PSI or BAR to calculate the nozzle / tip code that best matches your setup.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-base font-semibold text-slate-900">
+                  What does a pressure washer nozzle / tip code mean?
+                </h3>
+                <p className="mt-2">
+                  A nozzle or tip code is a practical way to identify the orifice size used
+                  to match pump flow and pressure. For example, common sizes such as 030,
+                  035 and 040 help operators compare nozzles against machine output.
                 </p>
               </div>
 
@@ -723,20 +734,54 @@ export default function NozzleCalculator({ embedded = false }: NozzleCalculatorP
   const structuredData = useMemo(
     () => ({
       "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "@id": `${PAGE_URL}#webapplication`,
-      name: "Pressure Washer Nozzle Size Calculator",
-      url: PAGE_URL,
-      applicationCategory: "Calculator",
-      operatingSystem: "Web",
-      isAccessibleForFree: true,
-      description: PAGE_DESCRIPTION,
-      publisher: {
-        "@type": "Organization",
-        "@id": `${SITE_URL}/#organization`,
-        name: "PressureCal",
-        url: `${SITE_URL}/`,
-      },
+      "@graph": [
+        {
+          "@type": "WebApplication",
+          "@id": `${PAGE_URL}#webapplication`,
+          name: "Pressure Washer Nozzle Size Calculator",
+          url: PAGE_URL,
+          applicationCategory: "Calculator",
+          operatingSystem: "Web",
+          isAccessibleForFree: true,
+          description: PAGE_DESCRIPTION,
+          publisher: {
+            "@type": "Organization",
+            "@id": `${SITE_URL}/#organization`,
+            name: "PressureCal",
+            url: `${SITE_URL}/`,
+          },
+        },
+        {
+          "@type": "FAQPage",
+          "@id": `${PAGE_URL}#faq`,
+          mainEntity: [
+            {
+              "@type": "Question",
+              name: "What size nozzle do I need for my pressure washer?",
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: "The correct nozzle size depends on pump flow and working pressure. Enter your LPM or GPM and PSI or BAR to calculate the nozzle / tip code that best matches your setup.",
+              },
+            },
+            {
+              "@type": "Question",
+              name: "What does a pressure washer nozzle / tip code mean?",
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: "A nozzle or tip code is a practical way to identify the orifice size used to match pump flow and pressure. Common sizes such as 030, 035 and 040 help operators compare nozzles against machine output.",
+              },
+            },
+            {
+              "@type": "Question",
+              name: "Can the wrong nozzle size reduce pressure?",
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: "Yes. A larger nozzle usually reduces working pressure because it allows more water through the orifice. A smaller nozzle increases restriction and can push the system closer to rated or unloader pressure.",
+              },
+            },
+          ],
+        },
+      ],
     }),
     []
   );

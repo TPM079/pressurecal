@@ -1062,10 +1062,10 @@ export default function FullRigCalculatorPage() {
   return (
     <PressureCalLayout hideFeedbackWidget={sharePanelOpen}>
       <Helmet>
-        <title>Full Setup Calculator | Hose Loss, Nozzle Match & At-Gun Pressure</title>
+        <title>Pressure Washer Setup Calculator | Pump, Hose & Nozzle | PressureCal</title>
         <meta
           name="description"
-          content="Model hose loss, nozzle match, at-gun pressure, flow, and power requirement in one full pressure washer setup calculator."
+          content="Model a complete pressure washer setup from pump specs through hose and nozzle to estimate at-gun pressure, flow, hose loss and working performance."
         />
         <link rel="canonical" href="https://www.pressurecal.com/calculator" />
       </Helmet>
@@ -1077,11 +1077,26 @@ export default function FullRigCalculatorPage() {
               Full setup calculator
             </div>
             <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
-              Full Setup Calculator
+              Pressure Washer Setup Calculator
             </h1>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              Model nozzle match, hose loss, at-gun pressure, flow, and power requirement in one working view.
+              Model a complete pressure washer setup from pump specs through hose and nozzle. Estimate hose pressure loss, nozzle match, at-gun pressure, flow and power requirement in one working view.
             </p>
+
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Link
+                to="/nozzle-size-calculator"
+                className="rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-950"
+              >
+                Only need a nozzle / tip code? Use the pressure washer nozzle size calculator
+              </Link>
+              <Link
+                to="/target-pressure-nozzle-calculator"
+                className="rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-950"
+              >
+                Trying to lower PSI? Use the target pressure nozzle calculator
+              </Link>
+            </div>
           </div>
 
           <div
