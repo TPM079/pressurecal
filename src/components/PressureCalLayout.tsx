@@ -1,5 +1,7 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+
+import { useProAccess } from "../hooks/useProAccess";
 import { supabase } from "../lib/supabase-browser";
 import FeedbackWidget from "./FeedbackWidget";
 
@@ -42,36 +44,13 @@ export default function PressureCalLayout({
   hideFeedbackWidget = false,
 }: PressureCalLayoutProps) {
   const location = useLocation();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { isAuthenticated, isPro } = useProAccess();
   const [signingOut, setSigningOut] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isCalculatorPage = location.pathname === "/calculator";
-
-  useEffect(() => {
-    let mounted = true;
-
-    async function loadSession() {
-      const { data } = await supabase.auth.getSession();
-
-      if (!mounted) return;
-      setIsAuthenticated(Boolean(data.session?.user));
-    }
-
-    void loadSession();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAuthenticated(Boolean(session?.user));
-    });
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, []);
+  const proLinkTo = isPro ? "/account" : "/pricing";
 
   useEffect(() => {
     setToolsOpen(false);
@@ -109,15 +88,15 @@ export default function PressureCalLayout({
               }
             }}
           >
- <img
-  src="/pressurecal-logo-primary.png"
-  alt="PressureCal"
-  className="block h-auto w-[170px] shrink-0 sm:w-[250px] lg:w-[270px]"
-/>
+            <img
+              src="/pressurecal-logo-primary.png"
+              alt="PressureCal"
+              className="block h-auto w-[170px] shrink-0 sm:w-[250px] lg:w-[270px]"
+            />
           </Link>
 
           <nav className="hidden items-center gap-5 md:flex">
-            <Link to="/pricing" className={navLinkClass(location.pathname === "/pricing")}>
+            <Link to={proLinkTo} className={navLinkClass(location.pathname === "/pricing")}>
               PressureCal Pro
             </Link>
 
@@ -145,6 +124,7 @@ export default function PressureCalLayout({
                     >
                       Full Setup Calculator
                     </Link>
+
                     {toolLinks.map((link) => (
                       <Link
                         key={link.to}
@@ -181,6 +161,7 @@ export default function PressureCalLayout({
                 <Link to="/account" className={navLinkClass(location.pathname === "/account")}>
                   Account
                 </Link>
+
                 <button
                   type="button"
                   onClick={handleSignOut}
@@ -231,17 +212,19 @@ export default function PressureCalLayout({
             <div className="mx-auto max-w-6xl px-4 py-4">
               <div className="grid gap-2">
                 <Link
-                  to="/pricing"
+                  to={proLinkTo}
                   className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
                 >
                   PressureCal Pro
                 </Link>
+
                 <Link
                   to="/calculator"
                   className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
                 >
                   Full Setup Calculator
                 </Link>
+
                 {toolLinks.map((link) => (
                   <Link
                     key={link.to}
@@ -251,18 +234,21 @@ export default function PressureCalLayout({
                     {link.label}
                   </Link>
                 ))}
+
                 <Link
                   to="/about"
                   className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
                 >
                   About
                 </Link>
+
                 <Link
                   to="/account"
                   className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
                 >
                   {isAuthenticated ? "Account" : "Sign in"}
                 </Link>
+
                 {isAuthenticated ? (
                   <button
                     type="button"
