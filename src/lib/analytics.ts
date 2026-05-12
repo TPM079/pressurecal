@@ -38,7 +38,7 @@ export type PressureCalPurchasePayload = {
 
 declare global {
   interface Window {
-    gtag?: (...args: any[]) => void;
+    gtag?: (...args: unknown[]) => void;
     dataLayer?: unknown[];
   }
 }
@@ -50,7 +50,8 @@ let analyticsLoadStarted = false;
 function setGaDisabled(disabled: boolean) {
   if (!GA_ID || typeof window === "undefined") return;
 
-  (window as Record<string, unknown>)[`ga-disable-${GA_ID}`] = disabled;
+  const windowWithGaDisableFlags = window as unknown as Record<string, boolean>;
+  windowWithGaDisableFlags[`ga-disable-${GA_ID}`] = disabled;
 }
 
 export function disableAnalytics() {
@@ -93,8 +94,8 @@ export function initAnalyticsIfConsented() {
 
   window.dataLayer = window.dataLayer || [];
 
-  window.gtag = function gtag() {
-    window.dataLayer?.push(arguments);
+  window.gtag = function gtag(...args: unknown[]) {
+    window.dataLayer?.push(args);
   };
 
   window.gtag("consent", "default", {
