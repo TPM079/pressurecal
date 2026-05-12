@@ -1,3 +1,5 @@
+import { getCookieConsentStatus, hasAnalyticsConsent } from "./cookieConsent";
+
 export type PressureCalEventName =
   | "homepage_viewed"
   | "calculator_section_viewed"
@@ -37,8 +39,90 @@ export type PressureCalPurchasePayload = {
 declare global {
   interface Window {
     gtag?: (...args: any[]) => void;
-    dataLayer?: any[];
+    dataLayer?: unknown[];
   }
+}
+
+const GA_ID = import.meta.env.VITE_GA_MEASUREMENT_ID as string | undefined;
+
+let analyticsLoadStarted = false;
+
+function setGaDisabled(disabled: boolean) {
+  if (!GA_ID || typeof window === "undefined") return;
+
+  (window as Record<string, unknown>)[`ga-disable-${GA_ID}`] = disabled;
+}
+
+export function disableAnalytics() {
+  if (typeof window === "undefined") return;
+
+  setGaDisabled(true);
+
+  if (typeof window.gtag === "function") {
+    window.gtag("consent", "update", {
+      analytics_storage: "denied",
+      ad_storage: "denied",
+      ad_user_data: "denied",
+      ad_personalization: "denied",
+    });
+  }
+}
+
+export function initAnalyticsIfConsented() {
+  if (typeof window === "undefined") return;
+  if (!GA_ID) return;
+
+  if (!hasAnalyticsConsent()) {
+    disableAnalytics();
+    return;
+  }
+
+  setGaDisabled(false);
+
+  if (analyticsLoadStarted || typeof window.gtag === "function") {
+    window.gtag?.("consent", "update", {
+      analytics_storage: "granted",
+      ad_storage: "denied",
+      ad_user_data: "denied",
+      ad_personalization: "denied",
+    });
+    return;
+  }
+
+  analyticsLoadStarted = true;
+
+  window.dataLayer = window.dataLayer || [];
+
+  window.gtag = function gtag() {
+    window.dataLayer?.push(arguments);
+  };
+
+  window.gtag("consent", "default", {
+    analytics_storage: "granted",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied",
+  });
+
+  window.gtag("js", new Date());
+
+  window.gtag("config", GA_ID, {
+    debug_mode: import.meta.env.DEV,
+  });
+
+  const gtagScript = document.createElement("script");
+  gtagScript.async = true;
+  gtagScript.src = `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`;
+  document.head.appendChild(gtagScript);
+}
+
+function analyticsAllowed() {
+  if (getCookieConsentStatus() !== "accepted") {
+    return false;
+  }
+
+  initAnalyticsIfConsented();
+  return typeof window !== "undefined" && typeof window.gtag === "function";
 }
 
 export function trackEvent(
@@ -47,22 +131,14 @@ export function trackEvent(
 ) {
   if (typeof window === "undefined") return;
 
-  if (typeof window.gtag === "function") {
-    window.gtag("event", name, params);
+  if (!analyticsAllowed()) {
+    if (import.meta.env.DEV) {
+      console.info("[analytics skipped - no optional cookie consent]", name, params);
+    }
     return;
   }
 
-  if (Array.isArray(window.dataLayer)) {
-    window.dataLayer.push({
-      event: name,
-      ...params,
-    });
-    return;
-  }
-
-  if (import.meta.env.DEV) {
-    console.info("[analytics]", name, params);
-  }
+  window.gtag?.("event", name, params);
 }
 
 export function trackPurchase(payload: PressureCalPurchasePayload) {
@@ -79,20 +155,12 @@ export function trackPurchase(payload: PressureCalPurchasePayload) {
     items: payload.items,
   };
 
-  if (typeof window.gtag === "function") {
-    window.gtag("event", "purchase", eventParams);
+  if (!analyticsAllowed()) {
+    if (import.meta.env.DEV) {
+      console.info("[analytics skipped - no optional cookie consent] purchase", eventParams);
+    }
     return;
   }
 
-  if (Array.isArray(window.dataLayer)) {
-    window.dataLayer.push({
-      event: "purchase",
-      ecommerce: eventParams,
-    });
-    return;
-  }
-
-  if (import.meta.env.DEV) {
-    console.info("[analytics] purchase", eventParams);
-  }
+  window.gtag?.("event", "purchase", eventParams);
 }

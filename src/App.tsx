@@ -30,7 +30,7 @@ import HosePressureLossCalculator from "./pages/HosePressureLossCalculator";
 import PsiBarCalculatorPage from "./pages/PsiBarCalculatorPage";
 import GpmLpmCalculatorPage from "./pages/GpmLpmCalculatorPage";
 import EquipmentLibraryPage from "./pages/EquipmentLibraryPage";
-
+import CookieConsentBanner from "./components/CookieConsentBanner";
 
 function PageTransition({ children }: { children: ReactNode }) {
   return (
@@ -138,14 +138,16 @@ export default function App() {
               </PageTransition>
             }
           />
-<Route
-  path="/equipment-library"
-  element={
-    <PageTransition>
-      <EquipmentLibraryPage />
-    </PageTransition>
-  }
-/>
+
+          <Route
+            path="/equipment-library"
+            element={
+              <PageTransition>
+                <EquipmentLibraryPage />
+              </PageTransition>
+            }
+          />
+
           <Route
             path="/saved-setups/:setupId/report"
             element={
@@ -251,6 +253,8 @@ export default function App() {
           />
         </Routes>
       </AnimatePresence>
+
+      <CookieConsentBanner />
     </div>
   );
 }

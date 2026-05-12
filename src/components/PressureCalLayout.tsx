@@ -2,6 +2,7 @@ import { type ReactNode, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 import { useProAccess } from "../hooks/useProAccess";
+import { openCookiePreferences } from "../lib/cookieConsent";
 import { supabase } from "../lib/supabase-browser";
 import FeedbackWidget from "./FeedbackWidget";
 
@@ -298,12 +299,20 @@ export default function PressureCalLayout({
 
               <div>
                 <p className="text-sm font-semibold text-slate-900">Company</p>
-                <div className="mt-3 flex flex-col gap-2 text-sm text-slate-500">
+                <div className="mt-3 flex flex-col items-start gap-2 text-sm text-slate-500">
                   {companyLinks.map((link) => (
                     <Link key={link.to} to={link.to} className="transition hover:text-slate-700">
                       {link.label}
                     </Link>
                   ))}
+
+                  <button
+                    type="button"
+                    onClick={openCookiePreferences}
+                    className="text-left transition hover:text-slate-700"
+                  >
+                    Cookie preferences
+                  </button>
                 </div>
               </div>
             </div>

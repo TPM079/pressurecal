@@ -16,7 +16,8 @@ export default function PrivacyPolicyPage() {
 
       <p>
         This policy applies to {siteLegal.brandName} and its related website, calculator
-        and modelling tools, account features, support communications, saved setups, and subscription services.
+        and modelling tools, account features, support communications, saved setups, and
+        subscription services.
       </p>
 
       <h2>1. Contact details</h2>
@@ -35,28 +36,20 @@ export default function PrivacyPolicyPage() {
       <h2>3. What information we may collect</h2>
       <p>Depending on how you use the site, we may collect information such as:</p>
       <ul className="my-5 ml-6 list-disc space-y-2 text-slate-700 marker:text-slate-500">
-        <li className="pl-1">
-          name, business name, and contact details you provide to us;
-        </li>
-        <li className="pl-1">
-          email address and account login details;
-        </li>
-        <li className="pl-1">
-          information submitted through contact forms or support requests;
-        </li>
-        <li className="pl-1">
-          saved setups, preferences, calculator inputs, and related usage data;
-        </li>
+        <li className="pl-1">name, business name, and contact details you provide to us;</li>
+        <li className="pl-1">email address and account login details;</li>
+        <li className="pl-1">information submitted through contact forms or support requests;</li>
+        <li className="pl-1">saved setups, preferences, calculator inputs, and related usage data;</li>
         <li className="pl-1">
           subscription status, plan type, billing events, and transaction references;
         </li>
         <li className="pl-1">
-          technical and usage information such as device type, browser type, pages
-          viewed, approximate location, referral source, and site interactions;
+          technical and usage information such as device type, browser type, pages viewed,
+          approximate location, referral source, and site interactions;
         </li>
         <li className="pl-1">
-          cookies and similar technologies used for analytics, authentication, or site
-          performance.
+          cookies, local storage, and similar technologies used for authentication,
+          preferences, checkout, analytics, security, or site performance.
         </li>
       </ul>
 
@@ -73,24 +66,12 @@ export default function PrivacyPolicyPage() {
       <h2>5. How we collect information</h2>
       <p>We may collect information when you:</p>
       <ul className="my-5 ml-6 list-disc space-y-2 text-slate-700 marker:text-slate-500">
-        <li className="pl-1">
-          visit or browse the website;
-        </li>
-        <li className="pl-1">
-          use calculator or modelling features;
-        </li>
-        <li className="pl-1">
-          create an account or sign in;
-        </li>
-        <li className="pl-1">
-          save setups or preferences;
-        </li>
-        <li className="pl-1">
-          join a waitlist, newsletter, or promotional list;
-        </li>
-        <li className="pl-1">
-          contact us for support or business enquiries;
-        </li>
+        <li className="pl-1">visit or browse the website;</li>
+        <li className="pl-1">use calculator or modelling features;</li>
+        <li className="pl-1">create an account or sign in;</li>
+        <li className="pl-1">save setups or preferences;</li>
+        <li className="pl-1">join a waitlist, newsletter, or promotional list;</li>
+        <li className="pl-1">contact us for support or business enquiries;</li>
         <li className="pl-1">
           start, manage, upgrade, downgrade, renew, or cancel a subscription.
         </li>
@@ -99,39 +80,69 @@ export default function PrivacyPolicyPage() {
       <h2>6. Why we collect and use information</h2>
       <p>We may use personal information to:</p>
       <ul className="my-5 ml-6 list-disc space-y-2 text-slate-700 marker:text-slate-500">
-        <li className="pl-1">
-          operate, maintain, and improve the site and its features;
-        </li>
+        <li className="pl-1">operate, maintain, and improve the site and its features;</li>
         <li className="pl-1">
           provide calculator outputs, saved setups, user accounts, and subscription access;
         </li>
+        <li className="pl-1">respond to support requests and general enquiries;</li>
+        <li className="pl-1">monitor performance, diagnose issues, and improve user experience;</li>
         <li className="pl-1">
-          respond to support requests and general enquiries;
+          understand how users engage with the platform through analytics, where analytics
+          has been enabled or consented to where required;
         </li>
-        <li className="pl-1">
-          monitor performance, diagnose issues, and improve user experience;
-        </li>
-        <li className="pl-1">
-          understand how users engage with the platform through analytics;
-        </li>
-        <li className="pl-1">
-          administer billing, renewals, cancellations, and account changes;
-        </li>
+        <li className="pl-1">administer billing, renewals, cancellations, and account changes;</li>
         <li className="pl-1">
           send service-related notices, legal notices, and important account communications;
         </li>
         <li className="pl-1">
-          send marketing communications where permitted by law or where you have
-          consented, and allow you to opt out where required.
+          send marketing communications where permitted by law or where you have consented,
+          and allow you to opt out where required.
         </li>
       </ul>
 
-      <h2>7. Analytics, cookies, and similar tools</h2>
+      <h2>7. Cookies, local storage, and similar technologies</h2>
       <p>
-        We may use analytics and similar tools to understand traffic, usage patterns,
-        feature engagement, and general site performance. These tools may use cookies or
-        similar technologies. You can usually control cookies through your browser
-        settings, although disabling them may affect functionality.
+        {siteLegal.brandName} uses cookies, local storage, and similar technologies to keep
+        the site working, remember preferences, support account and subscription features,
+        understand site performance, and improve the user experience.
+      </p>
+
+      <h3>Essential cookies and local storage</h3>
+      <p>
+        Essential cookies and local storage are required for the site to function properly.
+        They may be used for sign-in, account sessions, checkout, security, saved
+        preferences, and remembering your cookie choice. These are always enabled because
+        they are needed to provide the service.
+      </p>
+
+      <h3>Optional analytics</h3>
+      <p>
+        With your permission, we may use optional analytics tools such as Google Analytics,
+        Vercel Analytics, or similar services to understand how visitors use the site. This
+        may include information such as pages visited, tools opened, approximate device or
+        browser information, referral source, and interaction events.
+      </p>
+
+      <p>
+        Optional analytics are used to improve {siteLegal.brandName}, understand which
+        calculators are useful, identify technical issues, and make the site clearer and
+        easier to use. Optional analytics do not load unless you accept optional cookies.
+      </p>
+
+      <h3>Marketing pixels</h3>
+      <p>
+        We may use marketing or advertising pixels in the future, such as Meta, TikTok,
+        LinkedIn, Google Ads, or similar platforms. If these are added, they should only
+        load after you have accepted optional cookies or a more specific marketing
+        preference where required.
+      </p>
+
+      <h3>Changing your choice</h3>
+      <p>
+        You can change your cookie preference at any time by selecting{" "}
+        <strong>Cookie preferences</strong> in the footer of the website. You can also
+        control cookies through your browser settings, although disabling some technologies
+        may affect site functionality.
       </p>
 
       <h2>8. Disclosure to third parties</h2>
@@ -145,9 +156,7 @@ export default function PrivacyPolicyPage() {
         <li className="pl-1">
           where reasonably necessary to enforce our terms or protect our rights;
         </li>
-        <li className="pl-1">
-          where required or authorised by law;
-        </li>
+        <li className="pl-1">where required or authorised by law;</li>
         <li className="pl-1">
           as part of a business restructure, sale, merger, or asset transfer, subject to
           appropriate safeguards where practical.
@@ -156,33 +165,33 @@ export default function PrivacyPolicyPage() {
 
       <h2>9. Overseas disclosure</h2>
       <p>
-        Some third-party service providers may store or process data outside Australia.
-        By using the service, you acknowledge that your information may be transferred to
-        other jurisdictions where those providers operate. We aim to use reputable
-        providers and take reasonable steps to protect data handled on our behalf.
+        Some third-party service providers may store or process data outside Australia. By
+        using the service, you acknowledge that your information may be transferred to other
+        jurisdictions where those providers operate. We aim to use reputable providers and
+        take reasonable steps to protect data handled on our behalf.
       </p>
 
       <h2>10. Data storage and security</h2>
       <p>
-        We take reasonable steps to protect personal information from misuse,
-        interference, loss, unauthorised access, modification, or disclosure. No internet
-        transmission or electronic storage system is completely secure, so we cannot
-        guarantee absolute security.
+        We take reasonable steps to protect personal information from misuse, interference,
+        loss, unauthorised access, modification, or disclosure. No internet transmission or
+        electronic storage system is completely secure, so we cannot guarantee absolute
+        security.
       </p>
 
       <h2>11. Data retention</h2>
       <p>
-        We retain personal information for as long as reasonably necessary for the
-        purposes described in this policy, including providing services, maintaining
-        records, resolving disputes, meeting legal obligations, and enforcing agreements.
-        We may delete or de-identify information when it is no longer reasonably required.
+        We retain personal information for as long as reasonably necessary for the purposes
+        described in this policy, including providing services, maintaining records,
+        resolving disputes, meeting legal obligations, and enforcing agreements. We may
+        delete or de-identify information when it is no longer reasonably required.
       </p>
 
       <h2>12. Access and correction</h2>
       <p>
         You may request access to personal information we hold about you and ask us to
-        correct information that is inaccurate, incomplete, or out of date. We may need
-        to verify your identity before processing a request.
+        correct information that is inaccurate, incomplete, or out of date. We may need to
+        verify your identity before processing a request.
       </p>
 
       <h2>13. Marketing communications</h2>
@@ -201,8 +210,8 @@ export default function PrivacyPolicyPage() {
       <h2>15. Third-party links and services</h2>
       <p>
         Our site may contain links to third-party websites or services. We are not
-        responsible for the privacy practices of those third parties, and you should
-        review their own policies where relevant.
+        responsible for the privacy practices of those third parties, and you should review
+        their own policies where relevant.
       </p>
 
       <h2>16. Australian privacy law</h2>
