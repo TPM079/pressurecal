@@ -36,7 +36,7 @@ export default function AboutPage() {
         <title>About PressureCal</title>
         <meta
           name="description"
-          content="Learn what PressureCal is, who it is for, and why it exists. PressureCal is a practical pressure washer setup tool built for pressure washing operators."
+          content="Learn what PressureCal is, who it is for, why it exists, and who created it. PressureCal is a practical pressure washer setup tool built by Tim Mead for pressure washing operators."
         />
         <link rel="canonical" href="https://www.pressurecal.com/about" />
       </Helmet>
@@ -133,6 +133,41 @@ export default function AboutPage() {
                 <p className="mt-3 text-sm leading-7 text-slate-600">{item.body}</p>
               </div>
             ))}
+          </section>
+
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+            <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
+              <div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Created by Tim Mead
+                </div>
+
+                <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
+                  Built from practical equipment experience.
+                </h2>
+
+                <p className="mt-4 text-base leading-7 text-slate-600">
+                  PressureCal was created by Tim Mead, a qualified motor mechanic with a
+                  background spanning automotive spare parts, workshop management, small
+                  engines, outdoor power equipment, and pressure cleaning equipment.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <p className="text-base leading-7 text-slate-600">
+                  After more than eight years in outdoor power equipment and small engines —
+                  and years working hands-on with pressure cleaning equipment — Tim built
+                  PressureCal to help operators make better sense of real-world pressure washer
+                  performance.
+                </p>
+
+                <p className="text-base leading-7 text-slate-600">
+                  That background shapes the way PressureCal is designed: practical language,
+                  familiar units, clear outputs, and a focus on the setup questions operators
+                  actually deal with when matching pumps, hoses, and nozzles.
+                </p>
+              </div>
+            </div>
           </section>
 
           <section className="grid gap-8 lg:grid-cols-[1fr_1fr]">
