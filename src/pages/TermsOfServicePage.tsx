@@ -74,7 +74,7 @@ export default function TermsOfServicePage() {
 
       <h2>6. Free and paid features</h2>
       <p>
-        We may offer both free and paid features, including a {siteLegal.brandName}
+        We may offer both free and paid features, including a {siteLegal.brandName}{" "}
         Pro subscription. Features, limits, eligibility, pricing, inclusions, and
         availability may change over time as the platform evolves.
       </p>
@@ -83,7 +83,7 @@ export default function TermsOfServicePage() {
       <p>
         Paid subscriptions may renew automatically unless cancelled before the
         next billing cycle, subject to the billing terms presented at checkout.
-        Billing may be managed through <strong>{siteLegal.billingProvider}</strong>
+        Billing may be managed through <strong>{siteLegal.billingProvider}</strong>{" "}
         or another payment provider. You authorise the applicable payment provider
         to charge the fees associated with your selected plan.
       </p>
@@ -244,7 +244,7 @@ export default function TermsOfServicePage() {
       <h2>20. Governing law</h2>
       <p>
         These terms are governed by the laws of <strong>{siteLegal.jurisdiction}</strong>,
-        unless mandatory law requires otherwise. You and {siteLegal.brandName}
+        unless mandatory law requires otherwise. You and {siteLegal.brandName}{" "}
         submit to the non-exclusive jurisdiction of the courts of that
         jurisdiction.
       </p>
