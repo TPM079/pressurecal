@@ -282,7 +282,7 @@ export default function PressureCalLayout({
                 recognises their continuing connection to land, waters and community. We pay our
                 respects to Elders past and present.
               </p>
-              <p className="mt-4 text-sm text-slate-500">© {new Date().getFullYear()} PressureCal</p>
+              <p className="mt-4 text-sm text-slate-500">© {new Date().getFullYear()} PressureCal. All rights reserved.</p>
             </div>
 
             <div className="grid gap-6 sm:grid-cols-2">
