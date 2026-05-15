@@ -8,6 +8,7 @@ import PressureCalLayout from "../components/PressureCalLayout";
 import { useProAccess } from "../hooks/useProAccess";
 import { useSavedSetups } from "../hooks/useSavedSetups";
 import { buildFullRigSearchParams, parseRigSearchParams } from "../lib/rigUrlState";
+import { buildFullSetupShareUrl } from "../lib/fullSetupShareLinks";
 import {
   copyTextToClipboard,
   createShortShareLink,
@@ -564,11 +565,7 @@ export default function FullRigCalculatorPage() {
     },
   ];
 
-  const shareUrl = useMemo(() => {
-    const params = buildFullRigSearchParams(inputs);
-    const qs = params.toString();
-    return `${window.location.origin}/calculator${qs ? `?${qs}` : ""}`;
-  }, [inputs]);
+  const shareUrl = useMemo(() => buildFullSetupShareUrl(inputs), [inputs]);
 
   const liveCompareHref = useMemo(
     () =>

@@ -1,7 +1,7 @@
 import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
-import { useEffect, useMemo, useState, type FocusEvent } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState, type FocusEvent } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import BackToTopButton from "../components/BackToTopButton";
 import CalculationExplainer from "../components/CalculationExplainer";
 import PressureCalLayout from "../components/PressureCalLayout";
@@ -12,11 +12,13 @@ import {
   solvePressureCal,
 } from "../pressurecal";
 import type { FlowUnit, Inputs, LengthUnit, PressureUnit } from "../pressurecal";
+import { parseRigSearchParams } from "../lib/rigUrlState";
 import {
-  buildFullRigSearchParams,
-  buildLiteRigSearchParams,
-  parseRigSearchParams,
-} from "../lib/rigUrlState";
+  buildCalculatorPathWithSearch,
+  buildFullSetupHref,
+  buildFullSetupShareUrl,
+  hasFullSetupQueryParams,
+} from "../lib/fullSetupShareLinks";
 import { trackEvent } from "../lib/analytics";
 
 type ToolCard = {
@@ -221,11 +223,15 @@ function getStatusBadge(status: string) {
 }
 
 export default function HomePage() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const [inputs, setInputs] = useState<Inputs>(() => ({
     ...defaultInputs,
     ...parseRigSearchParams(window.location.search),
   }));
   const [copyMessage, setCopyMessage] = useState("");
+  const copyMessageTimeoutRef = useRef<number | null>(null);
   const [loadedFromLink, setLoadedFromLink] = useState(false);
 
   const pressurePsi = toPsi(Number(inputs.pumpPressure || 0), inputs.pumpPressureUnit);
@@ -251,8 +257,18 @@ export default function HomePage() {
   );
 
   useEffect(() => {
+    if (!hasFullSetupQueryParams(location.search)) return;
+
+    navigate(buildCalculatorPathWithSearch(location.search), {
+      replace: true,
+    });
+  }, [location.search, navigate]);
+
+  useEffect(() => {
+    if (hasFullSetupQueryParams(location.search)) return;
+
     trackEvent("homepage_viewed", { page: "home" });
-  }, []);
+  }, [location.search]);
 
   useEffect(() => {
     if (window.location.hash === "#calculator") {
@@ -261,27 +277,23 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
+    return () => {
+      if (copyMessageTimeoutRef.current !== null) {
+        window.clearTimeout(copyMessageTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (hasFullSetupQueryParams(location.search)) return;
+
     const parsed = parseRigSearchParams(window.location.search);
     if (Object.keys(parsed).length > 0) {
       setLoadedFromLink(true);
       const timer = window.setTimeout(() => setLoadedFromLink(false), 2600);
       return () => window.clearTimeout(timer);
     }
-  }, []);
-
-  useEffect(() => {
-    const params = buildLiteRigSearchParams({
-      ...inputs,
-      nozzleSizeText: recommendedTip,
-    });
-
-    const queryString = params.toString();
-    const nextUrl = queryString
-      ? `${window.location.pathname}?${queryString}`
-      : window.location.pathname;
-
-    window.history.replaceState({}, "", nextUrl);
-  }, [inputs, recommendedTip]);
+  }, [location.search]);
 
   const gunBar = barFromPsi(solved.gunPressurePsi);
   const gunLpm = lpmFromGpm(solved.gunFlowGpm);
@@ -316,10 +328,10 @@ export default function HomePage() {
 
   const fullRigHref = useMemo(
     () =>
-      `/calculator?${buildFullRigSearchParams({
+      buildFullSetupHref({
         ...inputs,
         nozzleSizeText: recommendedTip,
-      }).toString()}`,
+      }),
     [inputs, recommendedTip]
   );
 
@@ -480,28 +492,36 @@ export default function HomePage() {
     []
   );
 
+  function showCopyMessage(message: string) {
+    setCopyMessage(message);
+
+    if (copyMessageTimeoutRef.current !== null) {
+      window.clearTimeout(copyMessageTimeoutRef.current);
+    }
+
+    copyMessageTimeoutRef.current = window.setTimeout(() => {
+      setCopyMessage("");
+      copyMessageTimeoutRef.current = null;
+    }, 2200);
+  }
+
   async function copySetupLink() {
     trackEvent("copy_setup_link_clicked", {
       page: "home",
       recommended_tip: recommendedTip,
     });
 
-    const params = buildLiteRigSearchParams({
+    const url = buildFullSetupShareUrl({
       ...inputs,
       nozzleSizeText: recommendedTip,
     });
 
-    const queryString = params.toString();
-    const url = `${window.location.origin}${window.location.pathname}${
-      queryString ? `?${queryString}` : ""
-    }`;
-
     try {
       await navigator.clipboard.writeText(url);
-      setCopyMessage("Setup link copied");
-      window.setTimeout(() => setCopyMessage(""), 2000);
+      showCopyMessage("Setup link copied");
     } catch {
       window.prompt("Copy this link:", url);
+      showCopyMessage("Copy link opened");
     }
   }
 
@@ -627,11 +647,15 @@ export default function HomePage() {
                   onClick={copySetupLink}
                   className="rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/15"
                 >
-                  Copy link
+                  {copyMessage ? "Copied!" : "Copy link"}
                 </button>
               </div>
 
-              {copyMessage ? <p className="mt-3 text-sm text-green-300">{copyMessage}</p> : null}
+              {copyMessage ? (
+                <p role="status" aria-live="polite" className="mt-3 text-sm text-green-300">
+                  {copyMessage}
+                </p>
+              ) : null}
 
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 {liveSetupItems.map((item) => (
@@ -1080,7 +1104,7 @@ export default function HomePage() {
                     onClick={copySetupLink}
                     className="rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
                   >
-                    Copy link
+                    {copyMessage ? "Copied!" : "Copy link"}
                   </button>
 
                   <Link
@@ -1096,6 +1120,16 @@ export default function HomePage() {
                     Open Full Setup Calculator
                   </Link>
                 </div>
+
+                {copyMessage ? (
+                  <p
+                    role="status"
+                    aria-live="polite"
+                    className="mt-3 text-center text-sm font-semibold text-green-700"
+                  >
+                    {copyMessage}
+                  </p>
+                ) : null}
               </div>
             </div>
 
