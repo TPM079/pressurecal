@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-
+import FooterSocialLinks from "./FooterSocialLinks";
 const currentYear = new Date().getFullYear();
 
 const quickLinks = [
@@ -34,8 +34,10 @@ export default function SiteFooter() {
           </p>
 
           <p className="mt-5 text-sm">
-            © {currentYear} PressureCal. All rights reserved.
-          </p>
+  © {currentYear} PressureCal. All rights reserved.
+</p>
+
+<FooterSocialLinks />
         </div>
 
         <nav aria-label="Quick links" className="min-w-48">

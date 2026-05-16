@@ -5,6 +5,7 @@ import { useProAccess } from "../hooks/useProAccess";
 import { openCookiePreferences } from "../lib/cookieConsent";
 import { supabase } from "../lib/supabase-browser";
 import FeedbackWidget from "./FeedbackWidget";
+import FooterSocialLinks from "./FooterSocialLinks";
 
 type PressureCalLayoutProps = {
   children: ReactNode;
@@ -282,7 +283,11 @@ export default function PressureCalLayout({
                 recognises their continuing connection to land, waters and community. We pay our
                 respects to Elders past and present.
               </p>
-              <p className="mt-4 text-sm text-slate-500">© {new Date().getFullYear()} PressureCal. All rights reserved.</p>
+              <p className="mt-4 text-sm text-slate-500">
+  © {new Date().getFullYear()} PressureCal. All rights reserved.
+</p>
+
+<FooterSocialLinks />
             </div>
 
             <div className="grid gap-6 sm:grid-cols-2">
