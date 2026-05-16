@@ -1,10 +1,11 @@
+import type { ReactNode } from "react";
 type SocialLink = {
     label: string;
     href: string;
-    icon: JSX.Element;
+    icon: ReactNode;
   };
   
-  function IconSvg({ children }: { children: React.ReactNode }) {
+  function IconSvg({ children }: { children: ReactNode }) {
     return (
       <svg
         aria-hidden="true"
