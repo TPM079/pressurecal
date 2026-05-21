@@ -52,10 +52,10 @@ const toolCards: ToolCard[] = [
   },
   {
     href: "/hose-pressure-loss-calculator",
-    title: "Hose Pressure Loss Calculator",
+    title: "Pressure Washer Hose Pressure Loss Calculator",
     description:
-      "Check what a hose run is costing before you start chasing the wrong problem at the gun.",
-    cta: "Check hose pressure loss →",
+      "Estimate pressure drop through pressure washer hose using hose length, internal diameter, and flow rate before water reaches the gun.",
+    cta: "Use the hose pressure loss calculator →",
   },
   {
     href: "/nozzle-size-chart",
@@ -575,7 +575,15 @@ export default function HomePage() {
 
 <p className="mt-4 max-w-2xl text-base leading-7 text-slate-500">
   Built for pressure washing operators, equipment builders, and contractors who need
-  practical PSI, BAR, LPM, GPM, nozzle and hose calculations.
+  practical PSI, BAR, LPM, GPM, nozzle and hose calculations. If hose length is the
+  first thing you want to check, use the{" "}
+  <Link
+    to="/hose-pressure-loss-calculator"
+    className="font-semibold text-slate-800 underline decoration-slate-300 underline-offset-4 hover:text-slate-950"
+  >
+    hose pressure loss calculator
+  </Link>{" "}
+  to estimate pressure drop through your pressure washer hose.
 </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -727,8 +735,15 @@ export default function HomePage() {
               Different jobs need different tools. Use the nozzle size calculator when
               you need a nozzle / tip code, the nozzle chart when you want a quick
               reference, the target pressure calculator when you want to lower PSI,
-              and the full setup calculator when hose, nozzle and pump performance all
-              need to be checked together.
+              the{" "}
+              <Link
+                to="/hose-pressure-loss-calculator"
+                className="font-semibold text-slate-800 underline decoration-slate-300 underline-offset-4 hover:text-slate-950"
+              >
+                pressure washer hose pressure loss calculator
+              </Link>{" "}
+              when hose length or hose ID needs checking, and the full setup calculator when
+              hose, nozzle and pump performance all need to be checked together.
             </p>
           </div>
 
@@ -740,6 +755,15 @@ export default function HomePage() {
               >
                 <h3 className="text-lg font-semibold text-slate-950">{item.title}</h3>
                 <p className="mt-3 text-sm leading-6 text-slate-600">{item.description}</p>
+
+                {item.title === "Hose loss" ? (
+                  <Link
+                    to="/hose-pressure-loss-calculator"
+                    className="mt-4 inline-flex text-sm font-semibold text-slate-950 underline decoration-slate-300 underline-offset-4 hover:decoration-slate-700"
+                  >
+                    Check hose pressure drop →
+                  </Link>
+                ) : null}
               </div>
             ))}
           </div>
@@ -814,7 +838,15 @@ export default function HomePage() {
             </h2>
             <p className="mt-4 text-lg leading-8 text-slate-600">
               Enter pressure, flow and hose length for a fast preview of nozzle match,
-              estimated hose loss and likely at-gun pressure. Open the full pressure
+              estimated hose loss and likely at-gun pressure. For a dedicated hose check,
+              use the{" "}
+              <Link
+                to="/hose-pressure-loss-calculator"
+                className="font-semibold text-slate-800 underline decoration-slate-300 underline-offset-4 hover:text-slate-950"
+              >
+                hose pressure loss calculator
+              </Link>{" "}
+              to see how hose length affects at-gun pressure. Open the full pressure
               washer setup calculator when you want deeper control.
             </p>
           </div>
@@ -961,7 +993,14 @@ export default function HomePage() {
                     Hose length ({hoseLengthLabel})
                   </label>
                   <p className="mt-1 text-xs leading-5 text-slate-500">
-                    Assumes 9.53 mm (3/8&quot;) hose ID
+                    Assumes 9.53 mm (3/8&quot;) hose ID. For hose ID and length comparisons,{" "}
+                    <Link
+                      to="/hose-pressure-loss-calculator"
+                      className="font-semibold text-slate-700 underline decoration-slate-300 underline-offset-4 hover:text-slate-950"
+                    >
+                      estimate pressure loss through your hose
+                    </Link>
+                    .
                   </p>
                   <div className="mt-2 flex gap-3">
                     <input
@@ -1171,6 +1210,12 @@ export default function HomePage() {
                 <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <p className="text-sm font-semibold text-slate-900">What the loss means</p>
                   <p className="mt-2 text-sm leading-6 text-slate-600">{efficiencyNote}</p>
+                  <Link
+                    to="/hose-pressure-loss-calculator"
+                    className="mt-3 inline-flex text-sm font-semibold text-slate-950 underline decoration-slate-300 underline-offset-4 hover:decoration-slate-700"
+                  >
+                    Check hose pressure drop in detail →
+                  </Link>
                 </div>
               </div>
 
@@ -1295,6 +1340,15 @@ export default function HomePage() {
                 <p className="mt-3 text-sm leading-7 text-slate-600">
                   {item.description}
                 </p>
+
+                {item.title === "You added hose length and want to know what it is costing you" ? (
+                  <Link
+                    to="/hose-pressure-loss-calculator"
+                    className="mt-4 inline-flex text-sm font-semibold text-slate-950 underline decoration-slate-300 underline-offset-4 hover:decoration-slate-700"
+                  >
+                    Estimate pressure loss through your hose →
+                  </Link>
+                ) : null}
               </div>
             ))}
           </div>
@@ -1334,5 +1388,6 @@ export default function HomePage() {
     </PressureCalLayout>
   );
 }
+
 
 
