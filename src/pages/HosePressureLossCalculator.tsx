@@ -37,6 +37,45 @@ const hosePresets = [
   { label: '1" (25.40 mm)', value: 25.4, unit: "mm" as DiameterUnit },
 ];
 
+const PAGE_TITLE = "Pressure Washer Hose Pressure Loss Calculator | PressureCal";
+const PAGE_DESCRIPTION =
+  "Estimate pressure loss through pressure washer hose by hose length, flow rate and internal diameter. Built for operators using PSI, BAR, LPM and GPM.";
+
+const faqItems = [
+  {
+    question: "How do I calculate pressure loss through a pressure washer hose?",
+    answer:
+      "Enter the hose length, hose internal diameter and flow rate. PressureCal estimates the pressure drop through the hose and shows the estimated pressure left at the gun.",
+  },
+  {
+    question: "Does a longer pressure washer hose reduce pressure at the gun?",
+    answer:
+      "Yes. A longer pressure washer hose gives water more distance to travel, so friction loss increases. Doubling hose length will usually increase pressure drop by roughly the same proportion when the same hose ID and flow rate are used.",
+  },
+  {
+    question: "Does 3/8 inch hose lose less pressure than 1/4 inch hose?",
+    answer:
+      "Usually, yes. A larger hose internal diameter gives the water more room to move, which can reduce pressure loss. This becomes more important with higher flow rates and longer hose runs.",
+  },
+  {
+    question: "Why is pressure lower at the gun than at the pump?",
+    answer:
+      "Pressure can be lost through the hose, reel, fittings, gun, lance and nozzle. Hose pressure loss is one common reason the pressure at the gun is lower than the pump rating.",
+  },
+  {
+    question: "Should I change hose size or nozzle size first?",
+    answer:
+      "Check both. Hose size affects pressure loss before the gun, while nozzle size controls the operating pressure and flow relationship at the nozzle. The full setup calculator is the better tool when you want to model the whole system.",
+  },
+] as const;
+
+const relatedTools = [
+  { label: "Full Pressure Washer Setup Calculator", path: "/calculator" },
+  { label: "Pressure Washer Nozzle Size Calculator", path: "/nozzle-size-calculator" },
+  { label: "PSI to BAR Converter", path: "/psi-bar-calculator" },
+  { label: "LPM to GPM Converter", path: "/lpm-gpm-calculator" },
+] as const;
+
 function fmt(n: number, dp = 2) {
   if (!Number.isFinite(n)) return "—";
   return n.toFixed(dp);
@@ -111,6 +150,19 @@ function estimateHoseLossPsi(flowGpm: number, lengthM: number, hoseIdMm: number)
 
   return Math.max(dpPsi, 0);
 }
+const EXAMPLE_FLOW_LPM = 15;
+const EXAMPLE_FLOW_GPM = toGpm(EXAMPLE_FLOW_LPM, "lpm");
+const EXAMPLE_HOSE_ID_MM = 9.53;
+const EXAMPLE_30M_LOSS_PSI = estimateHoseLossPsi(
+  EXAMPLE_FLOW_GPM,
+  30,
+  EXAMPLE_HOSE_ID_MM
+);
+const EXAMPLE_60M_LOSS_PSI = estimateHoseLossPsi(
+  EXAMPLE_FLOW_GPM,
+  60,
+  EXAMPLE_HOSE_ID_MM
+);
 
 export default function HosePressureLossCalculator() {
   const [pressure, setPressure] = useState<number>(DEFAULTS.pressure);
@@ -264,48 +316,45 @@ export default function HosePressureLossCalculator() {
   return (
     <>
       <Helmet>
-        <title>
-          Pressure Washer Hose Pressure Loss Calculator | Metres, PSI &amp; LPM | PressureCal
-        </title>
-        <meta
-          name="description"
-          content="Estimate pressure loss through pressure washer hose using metres, PSI and LPM first, while still supporting feet, BAR and GPM (US) when needed. Useful for checking at-gun pressure and real setup performance."
-        />
+        <title>{PAGE_TITLE}</title>
+        <meta name="description" content={PAGE_DESCRIPTION} />
         <link
           rel="canonical"
           href="https://www.pressurecal.com/hose-pressure-loss-calculator"
         />
-        <meta
-          property="og:title"
-          content="Pressure Washer Hose Pressure Loss Calculator | Metres, PSI & LPM | PressureCal"
-        />
-        <meta
-          property="og:description"
-          content="Estimate pressure loss through pressure washer hose using metres, PSI and LPM first, while still supporting feet, BAR and GPM (US) when needed. Useful for checking at-gun pressure and real setup performance."
-        />
+        <meta property="og:title" content={PAGE_TITLE} />
+        <meta property="og:description" content={PAGE_DESCRIPTION} />
         <meta
           property="og:url"
           content="https://www.pressurecal.com/hose-pressure-loss-calculator"
         />
         <meta property="og:type" content="website" />
-        <meta
-          name="twitter:title"
-          content="Pressure Washer Hose Pressure Loss Calculator | Metres, PSI & LPM | PressureCal"
-        />
-        <meta
-          name="twitter:description"
-          content="Estimate pressure loss through pressure washer hose using metres, PSI and LPM first, while still supporting feet, BAR and GPM (US) when needed. Useful for checking at-gun pressure and real setup performance."
-        />
+        <meta name="twitter:title" content={PAGE_TITLE} />
+        <meta name="twitter:description" content={PAGE_DESCRIPTION} />
         <script type="application/ld+json">
           {JSON.stringify({
             "@context": "https://schema.org",
-            "@type": "SoftwareApplication",
-            name: "Pressure Washer Hose Pressure Loss Calculator",
-            url: "https://www.pressurecal.com/hose-pressure-loss-calculator",
-            applicationCategory: "EngineeringApplication",
-            operatingSystem: "Web",
-            description:
-              "Estimate pressure loss through pressure washer hose using metres, PSI and LPM first, while still supporting feet, BAR and GPM (US) when needed. Useful for checking at-gun pressure and real setup performance.",
+            "@graph": [
+              {
+                "@type": "SoftwareApplication",
+                name: "Pressure Washer Hose Pressure Loss Calculator",
+                url: "https://www.pressurecal.com/hose-pressure-loss-calculator",
+                applicationCategory: "EngineeringApplication",
+                operatingSystem: "Web",
+                description: PAGE_DESCRIPTION,
+              },
+              {
+                "@type": "FAQPage",
+                mainEntity: faqItems.map((item) => ({
+                  "@type": "Question",
+                  name: item.question,
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: item.answer,
+                  },
+                })),
+              },
+            ],
           })}
         </script>
       </Helmet>
@@ -324,14 +373,15 @@ export default function HosePressureLossCalculator() {
                 </h1>
 
                 <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
-                  Estimate how much pressure your setup is losing through hose length and hose size.
-                  Use this calculator to check pressure drop before the gun, compare different hose
-                  runs, and see why a machine can feel different at the trigger than it does at the pump.
+                  Use this calculator to estimate how much pressure is lost through a pressure
+                  washer hose before water reaches the gun or nozzle. Enter hose length, hose
+                  internal diameter and flow rate to estimate pressure drop for your setup.
                 </p>
 
                 <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-                  PressureCal keeps metres, PSI and LPM first, with feet, BAR and GPM (US) still
-                  available when needed. Useful estimates for real setup checks.
+                  Built for pressure washing operators using PSI, BAR, LPM and GPM. PressureCal
+                  keeps the numbers practical so you can compare hose runs, check at-gun pressure,
+                  and understand what your setup is actually doing.
                 </p>
               </div>
 
@@ -503,7 +553,7 @@ export default function HosePressureLossCalculator() {
 
                         <div className="rounded-2xl border border-blue-200 bg-white px-4 py-3 text-sm leading-6 text-slate-600">
                           Useful for checking how much pressure the hose itself may be taking
-                          before the nozzle.
+                          before the gun and nozzle.
                         </div>
                       </div>
                     </div>
@@ -637,58 +687,152 @@ export default function HosePressureLossCalculator() {
 
               <div className="mt-4 space-y-4 text-sm leading-7 text-slate-600">
                 <p>
-                  Even if your pump is rated for a certain pressure and flow, that is not always
-                  what you get at the gun. Longer hose runs and smaller hose sizes increase pressure
-                  loss, which can affect cleaning performance, nozzle matching, surface cleaner
-                  performance, and how a setup feels in real use.
+                  A pressure washer may be rated at a certain PSI and flow rate at the pump, but
+                  that is not always what reaches the gun. Water loses pressure as it moves through
+                  hose, reels, fittings and the rest of the setup.
                 </p>
 
                 <p>
-                  If pressure feels weak at the gun, hose loss is one of the first things worth
-                  checking. This calculator helps you estimate whether the hose itself is only a small
-                  part of the story or a meaningful contributor to the pressure you are losing before
-                  the nozzle.
+                  Hose pressure loss matters because it can change how the machine feels at the
+                  trigger, how well a surface cleaner performs, and whether the nozzle is matched
+                  properly to the real at-gun pressure.
                 </p>
 
                 <p>
-                  PressureCal keeps metres, PSI and LPM first, with feet, BAR and GPM (US) still visible
-                  when you need to compare mixed-spec equipment, manuals, or parts.
+                  This page is focused on pressure loss through hose. To model pump pressure, hose
+                  loss, nozzle size and at-gun performance together, use the{" "}
+                  <Link
+                    to="/calculator"
+                    className="font-semibold text-blue-700 underline-offset-4 hover:underline"
+                  >
+                    Full Pressure Washer Setup Calculator
+                  </Link>
+                  .
                 </p>
               </div>
             </section>
 
             <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
               <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-                Common use case
+                How hose length affects pressure drop
               </h2>
 
-              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <div className="mt-4 space-y-4 text-sm leading-7 text-slate-600">
+                <p>
+                  Longer hose runs create more friction loss. If the hose ID and flow rate stay the
+                  same, increasing hose length usually increases pressure drop in a fairly direct way.
+                  That is why a machine can feel sharper on a short hose and softer on a long hose,
+                  even when the pump and nozzle have not changed.
+                </p>
+
+                <p>
+                  For pressure washing operators, the practical question is not only how much hose is
+                  on the job, but how much pressure is left at the gun once that hose loss has been
+                  taken into account.
+                </p>
+              </div>
+
+              <div className="mt-6 rounded-3xl border border-blue-200 bg-blue-50 p-5">
+                <h3 className="text-lg font-semibold text-blue-950">
+                  Example: 30 m vs 60 m of 3/8 inch pressure washer hose
+                </h3>
+
+                <p className="mt-2 text-sm leading-6 text-blue-900">
+                  Using a 4000 PSI pump, {EXAMPLE_FLOW_LPM} LPM flow and 3/8 inch hose
+                  internal diameter, PressureCal estimates:
+                </p>
+
+                <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-blue-200 bg-white p-5">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
+                      30 m hose
+                    </p>
+                    <p className="mt-2 text-3xl font-semibold text-slate-900">
+                      {fmtRounded(EXAMPLE_30M_LOSS_PSI)} PSI
+                    </p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      {fmt(fromPsi(EXAMPLE_30M_LOSS_PSI, "bar"), 1)} BAR estimated pressure drop
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-blue-200 bg-white p-5">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
+                      60 m hose
+                    </p>
+                    <p className="mt-2 text-3xl font-semibold text-slate-900">
+                      {fmtRounded(EXAMPLE_60M_LOSS_PSI)} PSI
+                    </p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      {fmt(fromPsi(EXAMPLE_60M_LOSS_PSI, "bar"), 1)} BAR estimated pressure drop
+                    </p>
+                  </div>
+                </div>
+
+                <p className="mt-5 text-sm leading-6 text-blue-900">
+                  Same pump. Same nozzle assumption. Same 3/8 inch hose ID. More hose means more
+                  pressure loss before the water reaches the gun.
+                </p>
+              </div>
+            </section>
+
+            <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+              <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+                What changes pressure loss through hose?
+              </h2>
+
+              <p className="mt-4 text-sm leading-7 text-slate-600">
+                Hose friction loss is mainly driven by hose length, hose internal diameter and flow
+                rate. PressureCal keeps those inputs front and centre because they are the values
+                operators can usually check or change in the real setup.
+              </p>
+
+              <div className="mt-6 grid gap-4 md:grid-cols-3">
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                    Pump pressure
+                  <h3 className="text-base font-semibold text-slate-900">
+                    Hose length
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    Longer hose gives water more distance to travel. A 60 m hose run will usually
+                    lose more pressure than a 30 m run with the same hose ID and flow rate.
                   </p>
-                  <p className="mt-2 text-2xl font-semibold text-slate-900">4000 PSI</p>
-                  <p className="mt-1 text-sm text-slate-500">(276 BAR)</p>
                 </div>
 
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                    Pump flow
+                  <h3 className="text-base font-semibold text-slate-900">
+                    Hose internal diameter
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    Smaller hose ID increases restriction. Moving from a smaller hose to 3/8 inch
+                    or 1/2 inch hose can reduce pressure drop in higher-flow or longer-hose setups.
                   </p>
-                  <p className="mt-2 text-2xl font-semibold text-slate-900">15 LPM</p>
-                  <p className="mt-1 text-sm text-slate-500">(4.0 GPM)</p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                  <h3 className="text-base font-semibold text-slate-900">
+                    Flow rate
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    Higher LPM or GPM pushes more water through the same hose. That usually increases
+                    friction loss, especially when the hose ID is tight for the flow.
+                  </p>
                 </div>
               </div>
 
-              <div className="mt-4 rounded-2xl border border-blue-200 bg-blue-50 p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-800">
-                  Example check
-                </p>
-                <p className="mt-3 text-sm leading-6 text-blue-900">
-                  A 4000 PSI / 15 LPM machine running 30 metres of 3/8 inch hose will usually lose a
-                  noticeable amount of pressure before the gun. This calculator helps you see whether
-                  that drop is minor, moderate, or meaningful before you start changing other parts of
-                  the setup.
+              <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
+                <h3 className="text-base font-semibold text-slate-900">
+                  Hose pressure drop is only one part of the setup
+                </h3>
+                <p className="mt-2 text-sm leading-7 text-slate-600">
+                  If the result shows meaningful pressure loss, the next step is to compare the hose
+                  result with nozzle sizing and full setup performance. The{" "}
+                  <Link
+                    to="/nozzle-size-calculator"
+                    className="font-semibold text-blue-700 underline-offset-4 hover:underline"
+                  >
+                    Pressure Washer Nozzle Size Calculator
+                  </Link>{" "}
+                  helps check nozzle match, while the full setup calculator combines pump, hose and
+                  nozzle behaviour in one place.
                 </p>
               </div>
             </section>
@@ -699,80 +843,37 @@ export default function HosePressureLossCalculator() {
               </h2>
 
               <div className="mt-5 space-y-5 text-sm leading-7 text-slate-600">
-                <div>
-                  <h3 className="text-base font-semibold text-slate-900">
-                    How much pressure do you lose through pressure washer hose?
-                  </h3>
-                  <p className="mt-2">
-                    It depends on hose length, hose size, flow rate, and operating pressure. Longer
-                    hose and smaller hose size generally increase pressure loss.
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="text-base font-semibold text-slate-900">
-                    Does a larger hose reduce pressure loss?
-                  </h3>
-                  <p className="mt-2">
-                    Yes. In many setups, increasing hose size can reduce pressure loss, especially
-                    over longer hose runs or higher flow rates.
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="text-base font-semibold text-slate-900">
-                    Why is pressure lower at the gun than at the pump?
-                  </h3>
-                  <p className="mt-2">
-                    Some pressure is lost through the hose, fittings, reels, and other components in
-                    the setup. Hose pressure loss is one of the most common reasons the pressure at
-                    the gun is lower than expected.
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="text-base font-semibold text-slate-900">
-                    Should I change hose size or nozzle size?
-                  </h3>
-                  <p className="mt-2">
-                    That depends on what you are trying to fix. If the issue is pressure loss through
-                    the hose, hose size may matter. If the issue is operating pressure at the gun,
-                    nozzle size also plays a major role.
-                  </p>
-                </div>
+                {faqItems.map((item) => (
+                  <div key={item.question}>
+                    <h3 className="text-base font-semibold text-slate-900">
+                      {item.question}
+                    </h3>
+                    <p className="mt-2">{item.answer}</p>
+                  </div>
+                ))}
               </div>
             </section>
 
             <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
               <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-                Related tools
+                Related PressureCal tools
               </h2>
 
               <p className="mt-4 text-sm leading-7 text-slate-600">
-                Need more than hose loss alone? Move into the live tools:
+                Hose pressure loss is only one part of pressure washer setup matching. These tools
+                help you check pressure, flow, nozzle size and real at-gun performance.
               </p>
 
-              <div className="mt-5 flex flex-wrap gap-3">
-                <Link
-                  to="/calculator"
-                  className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
-                >
-                  Full Setup Calculator
-                </Link>
-
-                <Link
-                  to="/nozzle-size-calculator"
-                  className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                >
-                  Nozzle Size Calculator
-                </Link>
-
-                <Link
-                  to="/nozzle-size-chart"
-                  className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                >
-                  Nozzle Size Chart
-                </Link>
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                {relatedTools.map((tool) => (
+                  <Link
+                    key={tool.path}
+                    to={tool.path}
+                    className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  >
+                    {tool.label}
+                  </Link>
+                ))}
               </div>
 
               <p className="mt-6 text-xs text-slate-500">
@@ -780,6 +881,7 @@ export default function HosePressureLossCalculator() {
                 manufacturer limits, or operator judgment.
               </p>
             </section>
+
           </div>
 
           <BackToTopButton />
@@ -788,3 +890,5 @@ export default function HosePressureLossCalculator() {
     </>
   );
 }
+
+
