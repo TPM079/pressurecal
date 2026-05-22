@@ -2,11 +2,13 @@ import { Helmet } from "react-helmet-async";
 import { useEffect, useMemo, useRef, useState, type FocusEvent } from "react";
 import { Link } from "react-router-dom";
 import BackToTopButton from "../components/BackToTopButton";
+import CalculationExplainer from "../components/CalculationExplainer";
 import CompactCurrentVsSavedComparePanel from "../components/CompactCurrentVsSavedComparePanel";
 import PressureCalLayout from "../components/PressureCalLayout";
 import { useProAccess } from "../hooks/useProAccess";
 import { useSavedSetups } from "../hooks/useSavedSetups";
 import { buildFullRigSearchParams, parseRigSearchParams } from "../lib/rigUrlState";
+import { buildFullSetupShareUrl } from "../lib/fullSetupShareLinks";
 import {
   copyTextToClipboard,
   createShortShareLink,
@@ -15,11 +17,19 @@ import {
 import { solvePressureCal, barFromPsi, lpmFromGpm, roundTipCodeToFive } from "../pressurecal";
 import type { Inputs, PressureUnit, FlowUnit, LengthUnit } from "../pressurecal";
 
+type EnginePowerUnit = "hp" | "kw";
+
+const KW_PER_HP = 0.745699872;
+
 const hosePresets = [
+  { label: '1/8" (3.18 mm)', valueMm: 3.18 },
+  { label: '3/16" (4.76 mm)', valueMm: 4.76 },
   { label: '1/4" (6.35 mm)', valueMm: 6.35 },
   { label: '5/16" (7.94 mm)', valueMm: 7.94 },
   { label: '3/8" (9.53 mm)', valueMm: 9.53 },
   { label: '1/2" (12.70 mm)', valueMm: 12.7 },
+  { label: '3/4" (19.05 mm)', valueMm: 19.05 },
+  { label: '1" (25.40 mm)', valueMm: 25.4 },
 ];
 
 const defaultInputs: Inputs = {
@@ -42,6 +52,14 @@ const defaultInputs: Inputs = {
   dischargeCoeffCd: 0.62,
   waterDensity: 1000,
   hoseRoughnessMm: 0.0015,
+};
+
+const EXPORT_CARD = {
+  width: 1600,
+  height: 1040,
+  padding: 80,
+  radius: 36,
+  fontFamily: 'Inter, Arial, sans-serif',
 };
 
 function fmt(n: number, dp: number) {
@@ -75,6 +93,19 @@ function fromMeters(value: number, unit: LengthUnit) {
 
 function roundForUnit(value: number, decimals: number) {
   return Number(value.toFixed(decimals));
+}
+
+function hpToKw(valueHp: number) {
+  return valueHp * KW_PER_HP;
+}
+
+function kwToHp(valueKw: number) {
+  return valueKw / KW_PER_HP;
+}
+
+function formatEnginePowerFromHp(valueHp: number) {
+  if (!Number.isFinite(valueHp) || valueHp <= 0) return "—";
+  return `${fmt(valueHp, 1)} HP (${fmt(hpToKw(valueHp), 1)} kW)`;
 }
 
 function selectAllOnFocus(e: FocusEvent<HTMLInputElement>) {
@@ -192,7 +223,7 @@ function buildShareSummaryText(args: {
     inputs.sprayMode === "surfaceCleaner"
       ? `Nozzle ${inputs.nozzleSizeText || "—"} × ${inputs.nozzleCount}`
       : `Nozzle ${inputs.nozzleSizeText || "—"}`,
-    inputs.engineHp === "" ? "Engine HP optional" : `Engine ${fmt(Number(inputs.engineHp || 0), 1)} HP`,
+    inputs.engineHp === "" ? "Engine power optional" : `Engine ${formatEnginePowerFromHp(Number(inputs.engineHp || 0))}`,
   ].join(" · ");
 
   return [
@@ -222,11 +253,177 @@ function buildLiveCompareHref(inputs: Inputs, savedSetupId: string, liveName: st
   return `/compare-setups?${params.toString()}`;
 }
 
+function buildExportSetupLine(inputs: Inputs) {
+  const nozzlePart =
+    inputs.sprayMode === "surfaceCleaner"
+      ? `Nozzle ${inputs.nozzleSizeText || "—"} × ${inputs.nozzleCount}`
+      : `Nozzle ${inputs.nozzleSizeText || "—"}`;
+
+  const enginePart =
+    inputs.engineHp === "" ? "Engine power optional" : `Engine ${formatEnginePowerFromHp(Number(inputs.engineHp || 0))}`;
+
+  return [
+    `${fmt(Number(inputs.pumpFlow || 0), inputs.pumpFlowUnit === "gpm" ? 2 : 1)} ${inputs.pumpFlowUnit.toUpperCase()}`,
+    `${fmt(Number(inputs.pumpPressure || 0), 0)} ${inputs.pumpPressureUnit.toUpperCase()}`,
+    `${fmt(Number(inputs.hoseLength || 0), 0)} ${inputs.hoseLengthUnit}`,
+    `${fmt(Number(inputs.hoseId || 0), inputs.hoseIdUnit === "in" ? 2 : 1)} ${inputs.hoseIdUnit}`,
+    nozzlePart,
+    enginePart,
+  ].join(" · ");
+}
+
+function roundedRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number
+) {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + width - radius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+  ctx.lineTo(x + width, y + height - radius);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  ctx.lineTo(x + radius, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+}
+
+function wrapCanvasText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number
+) {
+  const words = text.split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let currentLine = "";
+
+  for (const word of words) {
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    if (ctx.measureText(testLine).width <= maxWidth) {
+      currentLine = testLine;
+    } else {
+      if (currentLine) {
+        lines.push(currentLine);
+      }
+      currentLine = word;
+    }
+  }
+
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+
+  return lines;
+}
+
+function fillRoundedCard(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+  fillStyle: string,
+  strokeStyle?: string
+) {
+  roundedRect(ctx, x, y, width, height, radius);
+  ctx.fillStyle = fillStyle;
+  ctx.fill();
+  if (strokeStyle) {
+    ctx.strokeStyle = strokeStyle;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+}
+
+function drawMetricCard(args: {
+  ctx: CanvasRenderingContext2D;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  label: string;
+  value: string;
+  secondary: string;
+}) {
+  const { ctx, x, y, width, height, label, value, secondary } = args;
+
+  fillRoundedCard(ctx, x, y, width, height, 28, "#F8FAFC", "#E2E8F0");
+
+  ctx.fillStyle = "#64748B";
+  ctx.font = `600 22px ${EXPORT_CARD.fontFamily}`;
+  ctx.textBaseline = "top";
+  ctx.fillText(label.toUpperCase(), x + 28, y + 26);
+
+  ctx.fillStyle = "#0F172A";
+  ctx.font = `700 50px ${EXPORT_CARD.fontFamily}`;
+  ctx.fillText(value, x + 28, y + 74);
+
+  ctx.fillStyle = "#475569";
+  ctx.font = `500 24px ${EXPORT_CARD.fontFamily}`;
+  ctx.fillText(secondary, x + 28, y + 144);
+}
+
+function drawBadge(args: {
+  ctx: CanvasRenderingContext2D;
+  x: number;
+  y: number;
+  text: string;
+  variant: "green" | "amber" | "red";
+}) {
+  const { ctx, x, y, text, variant } = args;
+
+  const styles = {
+    green: { bg: "#ECFDF5", border: "#BBF7D0", fg: "#166534" },
+    amber: { bg: "#FFFBEB", border: "#FDE68A", fg: "#92400E" },
+    red: { bg: "#FEF2F2", border: "#FECACA", fg: "#991B1B" },
+  }[variant];
+
+  ctx.font = `700 24px ${EXPORT_CARD.fontFamily}`;
+  const width = ctx.measureText(text).width + 40;
+  const height = 50;
+
+  fillRoundedCard(ctx, x, y, width, height, 25, styles.bg, styles.border);
+
+  ctx.fillStyle = styles.fg;
+  ctx.textBaseline = "middle";
+  ctx.fillText(text, x + 20, y + height / 2);
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const objectUrl = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = objectUrl;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+}
+
+async function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        reject(new Error("Failed to create PNG blob"));
+        return;
+      }
+      resolve(blob);
+    }, "image/png");
+  });
+}
+
 export default function FullRigCalculatorPage() {
   const [inputs, setInputs] = useState<Inputs>(() => ({
     ...defaultInputs,
     ...parseRigSearchParams(window.location.search),
   }));
+  const [enginePowerUnit, setEnginePowerUnit] = useState<EnginePowerUnit>("hp");
   const [copyMessage, setCopyMessage] = useState("");
   const [highlightSetup, setHighlightSetup] = useState(false);
   const [loadedFromLink, setLoadedFromLink] = useState(false);
@@ -237,10 +434,14 @@ export default function FullRigCalculatorPage() {
   const [sharePanelOpen, setSharePanelOpen] = useState(false);
   const [shareMessage, setShareMessage] = useState("");
   const [shareBusy, setShareBusy] = useState(false);
+  const [pngBusy, setPngBusy] = useState(false);
   const [shortShareUrl, setShortShareUrl] = useState("");
   const [comparePanelOpen, setComparePanelOpen] = useState(false);
   const [compareTargetSetupId, setCompareTargetSetupId] = useState("");
+  const [mobileMoreActionsOpen, setMobileMoreActionsOpen] = useState(false);
+  const [mobileSystemDetailsOpen, setMobileSystemDetailsOpen] = useState(false);
   const maxWasManuallyEditedRef = useRef(false);
+  const sharePanelRef = useRef<HTMLDivElement | null>(null);
 
   const { loading: proAccessLoading, isAuthenticated, isPro, userId } = useProAccess();
   const { setups, isReady: savedSetupsReady, saveSetup } = useSavedSetups(userId);
@@ -288,6 +489,27 @@ export default function FullRigCalculatorPage() {
     }
   }, [comparePanelOpen, compareTargetSetupId, setups]);
 
+  useEffect(() => {
+    if (!sharePanelOpen) return;
+
+    const timer = window.setTimeout(() => {
+      sharePanelRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 50);
+
+    return () => window.clearTimeout(timer);
+  }, [sharePanelOpen]);
+  useEffect(() => {
+    if (sharePanelOpen || savePanelOpen || comparePanelOpen) {
+      setMobileMoreActionsOpen(false);
+    }
+  }, [sharePanelOpen, savePanelOpen, comparePanelOpen]);
+
+
+  const engineHpValue = Number(inputs.engineHp || 0);
+
   const safeInputs = {
     ...inputs,
     pumpPressure: Number(inputs.pumpPressure || 0),
@@ -295,7 +517,7 @@ export default function FullRigCalculatorPage() {
     maxPressure: Number(inputs.maxPressure || 0),
     hoseLength: Number(inputs.hoseLength || 0),
     hoseId: Number(inputs.hoseId || 0),
-    engineHp: Number(inputs.engineHp || 0),
+    engineHp: engineHpValue,
   };
 
   const r = solvePressureCal(safeInputs);
@@ -303,7 +525,7 @@ export default function FullRigCalculatorPage() {
   const gunLpm = lpmFromGpm(r.gunFlowGpm);
   const lossBar = barFromPsi(r.hoseLossPsi);
   const requiredHp = calculateRequiredHp(r.gunPressurePsi, r.gunFlowGpm, 0.9);
-  const usableEngineHp = calculateUsableEngineHp(Number(inputs.engineHp || 0), 0.85);
+  const usableEngineHp = calculateUsableEngineHp(engineHpValue, 0.85);
   const enginePowerBadge = hpStatus(requiredHp, usableEngineHp);
   const ratedPsi = toPsi(Number(inputs.pumpPressure || 0), inputs.pumpPressureUnit);
   const pressureVariancePct = ratedPsi > 0 ? ((r.gunPressurePsi - ratedPsi) / ratedPsi) * 100 : 0;
@@ -331,6 +553,13 @@ export default function FullRigCalculatorPage() {
   const pqClassGun = pqAtGun >= 5600 ? "Class B" : "Class A";
   const selectedDisplayTipCode = roundTipCodeToFive(r.selectedTipCode);
   const calibratedDisplayTipCode = roundTipCodeToFive(r.calibratedTipCode);
+  const nozzleDisplaySuffix = inputs.sprayMode === "surfaceCleaner" ? " each" : "";
+  const enginePowerInputValue =
+    inputs.engineHp === ""
+      ? ""
+      : enginePowerUnit === "hp"
+        ? inputs.engineHp
+        : roundForUnit(hpToKw(engineHpValue), 2);
 
   const liveSetupItems = [
     {
@@ -358,15 +587,11 @@ export default function FullRigCalculatorPage() {
     },
     {
       label: "Engine",
-      value: inputs.engineHp === "" ? "Optional" : `${fmt(Number(inputs.engineHp || 0), 1)} HP`,
+      value: inputs.engineHp === "" ? "Optional" : formatEnginePowerFromHp(engineHpValue),
     },
   ];
 
-  const shareUrl = useMemo(() => {
-    const params = buildFullRigSearchParams(inputs);
-    const qs = params.toString();
-    return `${window.location.origin}/calculator${qs ? `?${qs}` : ""}`;
-  }, [inputs]);
+  const shareUrl = useMemo(() => buildFullSetupShareUrl(inputs), [inputs]);
 
   const liveCompareHref = useMemo(
     () =>
@@ -404,7 +629,7 @@ export default function FullRigCalculatorPage() {
     },
     {
       label: "Engine",
-      value: inputs.engineHp === "" ? "Not provided" : `${inputs.engineHp} HP`,
+      value: inputs.engineHp === "" ? "Not provided" : formatEnginePowerFromHp(engineHpValue),
     },
     {
       label: "Hose",
@@ -442,10 +667,12 @@ export default function FullRigCalculatorPage() {
   function handleOpenComparePanel() {
     setComparePanelOpen(true);
     setSavePanelOpen(false);
+    setMobileMoreActionsOpen(false);
   }
 
   function handleCloseComparePanel() {
     setComparePanelOpen(false);
+    setMobileMoreActionsOpen(false);
   }
 
   function handleOpenSavePanel() {
@@ -453,23 +680,30 @@ export default function FullRigCalculatorPage() {
     setComparePanelOpen(false);
     setSaveMessage("");
     setSaveName((current) => (current.trim() ? current : suggestedSetupName));
+    setMobileMoreActionsOpen(false);
   }
 
   function handleCloseSavePanel() {
     setSavePanelOpen(false);
     setSaveMessage("");
+    setMobileMoreActionsOpen(false);
   }
 
   function handleOpenSharePanel() {
     setSharePanelOpen(true);
+    setSavePanelOpen(false);
+    setComparePanelOpen(false);
     setShareMessage("");
+    setMobileMoreActionsOpen(false);
   }
 
   function handleCloseSharePanel() {
     setSharePanelOpen(false);
     setShareMessage("");
     setShareBusy(false);
+    setPngBusy(false);
     setShortShareUrl("");
+    setMobileMoreActionsOpen(false);
   }
 
   async function getOrCreateShortShareUrl() {
@@ -522,6 +756,184 @@ export default function FullRigCalculatorPage() {
       // user cancelled or share failed
     } finally {
       setShareBusy(false);
+    }
+  }
+
+  async function handleDownloadPng() {
+    try {
+      setPngBusy(true);
+
+      const canvas = document.createElement("canvas");
+      canvas.width = EXPORT_CARD.width;
+      canvas.height = EXPORT_CARD.height;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        throw new Error("Unable to create export canvas");
+      }
+
+      ctx.fillStyle = "#F8FAFC";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.shadowColor = "rgba(15, 23, 42, 0.10)";
+      ctx.shadowBlur = 40;
+      ctx.shadowOffsetY = 18;
+      fillRoundedCard(
+        ctx,
+        EXPORT_CARD.padding,
+        EXPORT_CARD.padding,
+        canvas.width - EXPORT_CARD.padding * 2,
+        canvas.height - EXPORT_CARD.padding * 2,
+        EXPORT_CARD.radius,
+        "#FFFFFF",
+        "#E2E8F0"
+      );
+      ctx.shadowColor = "transparent";
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
+
+      const cardX = EXPORT_CARD.padding;
+      const cardY = EXPORT_CARD.padding;
+      const cardWidth = canvas.width - EXPORT_CARD.padding * 2;
+      const innerX = cardX + 52;
+      const innerY = cardY + 48;
+      const innerWidth = cardWidth - 104;
+
+      ctx.textBaseline = "top";
+      ctx.fillStyle = "#183170";
+      ctx.font = `700 28px ${EXPORT_CARD.fontFamily}`;
+      ctx.fillText("PressureCal", innerX, innerY);
+
+      ctx.fillStyle = "#0F172A";
+      ctx.font = `700 56px ${EXPORT_CARD.fontFamily}`;
+      ctx.fillText("PressureCal result", innerX, innerY + 56);
+
+      ctx.fillStyle = "#475569";
+      ctx.font = `500 28px ${EXPORT_CARD.fontFamily}`;
+      const setupLines = wrapCanvasText(ctx, suggestedSetupName, innerWidth - 340);
+      let setupY = innerY + 136;
+      for (const line of setupLines.slice(0, 2)) {
+        ctx.fillText(line, innerX, setupY);
+        setupY += 36;
+      }
+
+      const badgeVariant =
+        badge.text === "Calibrated"
+          ? "green"
+          : badge.text === "Under-calibrated"
+            ? "amber"
+            : "red";
+
+      drawBadge({
+        ctx,
+        x: cardX + cardWidth - 280,
+        y: innerY + 8,
+        text: badge.text,
+        variant: badgeVariant,
+      });
+
+      const dividerY = innerY + 230;
+      ctx.strokeStyle = "#E2E8F0";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(innerX, dividerY);
+      ctx.lineTo(cardX + cardWidth - 52, dividerY);
+      ctx.stroke();
+
+      ctx.fillStyle = "#64748B";
+      ctx.font = `600 22px ${EXPORT_CARD.fontFamily}`;
+      ctx.fillText("SETUP", innerX, dividerY + 34);
+
+      ctx.fillStyle = "#334155";
+      ctx.font = `500 24px ${EXPORT_CARD.fontFamily}`;
+      const exportSetupLine = buildExportSetupLine(inputs);
+      const exportSetupLines = wrapCanvasText(ctx, exportSetupLine, innerWidth);
+      let exportSetupY = dividerY + 72;
+      for (const line of exportSetupLines.slice(0, 2)) {
+        ctx.fillText(line, innerX, exportSetupY);
+        exportSetupY += 34;
+      }
+
+      const metricY = dividerY + 168;
+      const metricGap = 24;
+      const metricWidth = (innerWidth - metricGap * 2) / 3;
+      const metricHeight = 220;
+
+      drawMetricCard({
+        ctx,
+        x: innerX,
+        y: metricY,
+        width: metricWidth,
+        height: metricHeight,
+        label: "At-gun pressure",
+        value: `${fmt(r.gunPressurePsi, 0)} PSI`,
+        secondary: `${fmt(gunBar, 1)} bar`,
+      });
+
+      drawMetricCard({
+        ctx,
+        x: innerX + metricWidth + metricGap,
+        y: metricY,
+        width: metricWidth,
+        height: metricHeight,
+        label: "Flow",
+        value: `${fmt(gunLpm, 1)} L/min`,
+        secondary: `${fmt(r.gunFlowGpm, 2)} GPM`,
+      });
+
+      drawMetricCard({
+        ctx,
+        x: innerX + (metricWidth + metricGap) * 2,
+        y: metricY,
+        width: metricWidth,
+        height: metricHeight,
+        label: "Hose loss",
+        value: `${fmt(r.hoseLossPsi, 0)} PSI`,
+        secondary: `${fmt(lossBar, 1)} bar`,
+      });
+
+      const footerY = metricY + metricHeight + 20;
+      const footerCardHeight = 108;
+
+      fillRoundedCard(ctx, innerX, footerY, innerWidth, footerCardHeight, 28, "#F8FAFC", "#E2E8F0");
+
+      ctx.fillStyle = "#64748B";
+      ctx.font = `600 20px ${EXPORT_CARD.fontFamily}`;
+      ctx.fillText("DETAILS", innerX + 24, footerY + 18);
+
+      ctx.fillStyle = "#0F172A";
+      ctx.font = `700 24px ${EXPORT_CARD.fontFamily}`;
+      ctx.fillText(`Selected nozzle ${selectedDisplayTipCode}${nozzleDisplaySuffix}`, innerX + 24, footerY + 48);
+      ctx.fillText(`Recommended nozzle for rated pump output ${calibratedDisplayTipCode}${nozzleDisplaySuffix}`, innerX + 24, footerY + 80);
+
+      ctx.fillStyle = "#475569";
+      ctx.font = `500 22px ${EXPORT_CARD.fontFamily}`;
+      ctx.fillText(`Pressure loss guide: ${efficiencyTier}`, innerX + 520, footerY + 48);
+
+      const noteLines = wrapCanvasText(ctx, efficiencyNote, innerWidth - 560);
+      let noteY = footerY + 80;
+      for (const line of noteLines.slice(0, 1)) {
+        ctx.fillText(line, innerX + 520, noteY);
+        noteY += 28;
+      }
+
+      ctx.fillStyle = "#475569";
+      ctx.font = `600 22px ${EXPORT_CARD.fontFamily}`;
+      ctx.fillText("pressurecal.com", innerX, canvas.height - 150);
+
+      ctx.fillStyle = "#64748B";
+      ctx.font = `500 20px ${EXPORT_CARD.fontFamily}`;
+      ctx.fillText("Model your machine from pump to gun.", innerX, canvas.height - 114);
+
+      const blob = await canvasToBlob(canvas);
+      downloadBlob(blob, "pressurecal-result.png");
+
+      setShareMessage("PNG downloaded");
+      window.setTimeout(() => setShareMessage(""), 2200);
+    } catch {
+      window.alert("Unable to export PNG right now.");
+    } finally {
+      setPngBusy(false);
     }
   }
 
@@ -593,13 +1005,106 @@ export default function FullRigCalculatorPage() {
     setInputs((current) => ({ ...current, [key]: value }));
   }
 
+  function updateEnginePowerFromDisplay(value: string) {
+    if (value === "") {
+      updateInput("engineHp", "" as Inputs["engineHp"]);
+      return;
+    }
+
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) return;
+
+    const nextHp = enginePowerUnit === "hp" ? parsed : kwToHp(parsed);
+    updateInput("engineHp", roundForUnit(nextHp, 2) as Inputs["engineHp"]);
+  }
+
+  const calculatedNozzleLabel = `${calibratedDisplayTipCode}${nozzleDisplaySuffix}`;
+  const selectedNozzleLabel = `${selectedDisplayTipCode}${nozzleDisplaySuffix}`;
+  const sprayModeLabel =
+    inputs.sprayMode === "surfaceCleaner"
+      ? `Surface cleaner (${inputs.nozzleCount} nozzles)`
+      : "Wand (single nozzle)";
+
+  const fullSetupExplainerInputs = [
+    {
+      label: "Rated pressure",
+      value: `${fmt(Number(inputs.pumpPressure || 0), 0)} ${inputs.pumpPressureUnit.toUpperCase()}`,
+      note: `${fmt(ratedPsi, 0)} PSI used internally`,
+    },
+    {
+      label: "Rated flow",
+      value: `${fmt(ratedLpm, 1)} LPM (${fmt(ratedGpm, 2)} US GPM)`,
+      note: "PressureCal uses US gallons per minute for GPM calculations.",
+    },
+    {
+      label: "Max pressure",
+      value: `${fmt(Number(inputs.maxPressure || 0), 0)} ${inputs.maxPressureUnit.toUpperCase()}`,
+      note: "Used to flag bypass/pressure-limited behaviour when the setup would exceed the limit.",
+    },
+    {
+      label: "Hose",
+      value: `${fmt(Number(inputs.hoseLength || 0), 1)} ${inputs.hoseLengthUnit} · ${fmt(Number(inputs.hoseId || 0), inputs.hoseIdUnit === "in" ? 2 : 1)} ${inputs.hoseIdUnit} ID`,
+    },
+    {
+      label: "Spray mode",
+      value: sprayModeLabel,
+      note:
+        inputs.sprayMode === "surfaceCleaner"
+          ? "PressureCal treats the entered nozzle size as the size of each individual nozzle."
+          : "PressureCal treats this as a single-nozzle wand setup.",
+    },
+    {
+      label: "Selected nozzle",
+      value: selectedNozzleLabel,
+    },
+    {
+      label: "Engine power",
+      value: inputs.engineHp === "" ? "Not provided" : formatEnginePowerFromHp(engineHpValue),
+      note:
+        inputs.engineHp === ""
+          ? "Optional. Add engine power as HP or kW to check power headroom."
+          : `${formatEnginePowerFromHp(usableEngineHp)} usable guide after allowance factor.`,
+    },
+  ];
+
+  const fullSetupExplainerResults = [
+    {
+      label: "At-gun pressure",
+      value: `${fmt(r.gunPressurePsi, 0)} PSI (${fmt(gunBar, 1)} bar)`,
+    },
+    {
+      label: "Flow",
+      value: `${fmt(gunLpm, 1)} LPM (${fmt(r.gunFlowGpm, 2)} US GPM)`,
+    },
+    {
+      label: "Hose loss",
+      value: `${fmt(r.hoseLossPsi, 0)} PSI (${fmt(lossBar, 1)} bar)`,
+      note: efficiencyTier,
+    },
+    {
+      label: "Nozzle match",
+      value: `${badge.text}: selected ${selectedNozzleLabel}, recommended ${calculatedNozzleLabel}`,
+      note: r.statusMessage,
+    },
+    {
+      label: "Required power",
+      value: formatEnginePowerFromHp(requiredHp),
+      note: usableEngineHp > 0 ? `Usable engine power guide: ${formatEnginePowerFromHp(usableEngineHp)}` : "Enter engine power to compare available power.",
+    },
+    {
+      label: "P × Q reference",
+      value: `${fmt(pqAtGun, 0)} at gun (${pqClassGun})`,
+      note: `Rated reference: ${fmt(pqRated, 0)} (${pqClassRated})`,
+    },
+  ];
+
   return (
-    <PressureCalLayout>
+    <PressureCalLayout hideFeedbackWidget={sharePanelOpen}>
       <Helmet>
-        <title>Full Pressure Washer Setup Calculator | PressureCal</title>
+        <title>Pressure Washer Setup Calculator | Pump, Hose & Nozzle | PressureCal</title>
         <meta
           name="description"
-          content="Full setup calculator for pressure washer systems, including hose loss, nozzle sizing, operating pressure, flow, and power requirement."
+          content="Model a complete pressure washer setup from pump specs through hose and nozzle to estimate at-gun pressure, flow, hose loss and required power in HP or kW."
         />
         <link rel="canonical" href="https://www.pressurecal.com/calculator" />
       </Helmet>
@@ -611,11 +1116,26 @@ export default function FullRigCalculatorPage() {
               Full setup calculator
             </div>
             <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
-              Full Pressure Washer Setup Calculator
+              Pressure Washer Setup Calculator
             </h1>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              Model hose loss, nozzle match, at-gun pressure, flow, and power requirement in one setup view.
+              Model a complete pressure washer setup from pump specs through hose and nozzle. Estimate hose pressure loss, nozzle match, at-gun pressure, flow and required power in HP or kW in one working view.
             </p>
+
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Link
+                to="/nozzle-size-calculator"
+                className="rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-950"
+              >
+                Only need a nozzle / tip code? Use the pressure washer nozzle size calculator
+              </Link>
+              <Link
+                to="/target-pressure-nozzle-calculator"
+                className="rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-950"
+              >
+                Trying to lower PSI? Use the target pressure nozzle calculator
+              </Link>
+            </div>
           </div>
 
           <div
@@ -627,10 +1147,10 @@ export default function FullRigCalculatorPage() {
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    Current setup
+                    Current setup snapshot
                   </div>
                   <div className="mt-1 text-sm text-slate-600">
-                    Everything PressureCal is modelling right now.
+                    Everything PressureCal is modelling right now, ready to share, save, or compare.
                   </div>
 
                   {loadedFromLink ? (
@@ -646,21 +1166,74 @@ export default function FullRigCalculatorPage() {
                   ) : null}
                 </div>
 
-                <div className="flex flex-wrap gap-2">
+                <div className="sm:hidden">
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={handleOpenSharePanel}
+                      className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-slate-800"
+                    >
+                      Share result
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleOpenSavePanel}
+                      disabled={proAccessLoading || (isAuthenticated && isPro && !savedSetupsReady)}
+                      className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      Save setup
+                    </button>
+                  </div>
+
+                  <div className="mt-2">
+                    <button
+                      type="button"
+                      onClick={() => setMobileMoreActionsOpen((current) => !current)}
+                      className="inline-flex w-full items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                    >
+                      {mobileMoreActionsOpen ? "Close more actions" : "More actions"}
+                    </button>
+
+                    {mobileMoreActionsOpen ? (
+                      <div className="mt-2 grid gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                        <button
+                          type="button"
+                          onClick={handleOpenComparePanel}
+                          disabled={proAccessLoading || (isAuthenticated && isPro && !savedSetupsReady)}
+                          className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          Compare to saved
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={copySetupLink}
+                          className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                        >
+                          {copyMessage ? "Copied ✓" : "Copy setup link"}
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="hidden flex-wrap gap-2 sm:flex">
                   <button
                     type="button"
-                    onClick={copySetupLink}
+                    onClick={handleOpenSharePanel}
                     className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-slate-800"
                   >
-                    {copyMessage ? "Copied ✓" : "Copy setup link"}
+                    Share result
                   </button>
 
                   <button
                     type="button"
-                    onClick={handleOpenSharePanel}
-                    className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                    onClick={handleOpenSavePanel}
+                    disabled={proAccessLoading || (isAuthenticated && isPro && !savedSetupsReady)}
+                    className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    Share result
+                    Save setup
                   </button>
 
                   <button
@@ -674,11 +1247,10 @@ export default function FullRigCalculatorPage() {
 
                   <button
                     type="button"
-                    onClick={handleOpenSavePanel}
-                    disabled={proAccessLoading || (isAuthenticated && isPro && !savedSetupsReady)}
-                    className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    onClick={copySetupLink}
+                    className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
                   >
-                    Save setup
+                    {copyMessage ? "Copied ✓" : "Copy setup link"}
                   </button>
                 </div>
               </div>
@@ -701,8 +1273,8 @@ export default function FullRigCalculatorPage() {
 
               <div className="text-xs text-slate-500">
                 {isAuthenticated && isPro
-                  ? "Save, share, or compare this exact setup."
-                  : "Share this exact setup."}
+                  ? "Share this exact setup, or save and compare it once it becomes a repeat-job setup."
+                  : "Share this exact setup, then save or compare it later if it becomes repeat work."}
               </div>
             </div>
 
@@ -859,7 +1431,10 @@ export default function FullRigCalculatorPage() {
           </div>
 
           {sharePanelOpen ? (
-            <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div
+              ref={sharePanelRef}
+              className="mb-6 scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+            >
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
@@ -867,7 +1442,7 @@ export default function FullRigCalculatorPage() {
                   </div>
                   <h2 className="mt-2 text-2xl font-semibold text-slate-900">Share this PressureCal result</h2>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
-                    Copy a clean result summary or share a short branded link with the exact setup loaded.
+                    Copy a clean result summary, download a PNG card, or share a short branded link with the exact setup loaded.
                   </p>
                 </div>
 
@@ -921,7 +1496,7 @@ export default function FullRigCalculatorPage() {
                 <button
                   type="button"
                   onClick={handleNativeShareResult}
-                  disabled={shareBusy}
+                  disabled={shareBusy || pngBusy}
                   className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {shareBusy ? "Preparing share link..." : "Share result"}
@@ -929,8 +1504,17 @@ export default function FullRigCalculatorPage() {
 
                 <button
                   type="button"
+                  onClick={handleDownloadPng}
+                  disabled={pngBusy || shareBusy}
+                  className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {pngBusy ? "Preparing PNG..." : "Download PNG"}
+                </button>
+
+                <button
+                  type="button"
                   onClick={handleCopyShareResultLink}
-                  disabled={shareBusy}
+                  disabled={shareBusy || pngBusy}
                   className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Copy share link
@@ -939,61 +1523,16 @@ export default function FullRigCalculatorPage() {
                 <button
                   type="button"
                   onClick={handleCopyResultSummary}
-                  disabled={shareBusy}
+                  disabled={shareBusy || pngBusy}
                   className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Copy result summary
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleCloseSharePanel}
-                  className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                >
-                  Close
                 </button>
               </div>
 
               {shareMessage ? <p className="mt-3 text-sm font-semibold text-green-700">{shareMessage}</p> : null}
             </div>
           ) : null}
-
-          <section className="mb-6 rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
-            <div className="max-w-4xl">
-              <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-                What this full setup calculator checks
-              </h2>
-              <p className="mt-3 text-sm leading-7 text-slate-600">
-                This full pressure washer setup calculator is designed for operators who want to understand
-                how the whole setup behaves, not just one number at a time. It combines machine pressure,
-                machine flow, hose length, hose internal diameter, nozzle size, and optional engine power
-                so you can estimate the real operating point at the gun.
-              </p>
-              <p className="mt-4 text-sm leading-7 text-slate-600">
-                Use this page when a simple nozzle chart or conversion tool is not enough. It is especially
-                useful when the machine feels weak at the gun, when hose runs are long, when surface cleaner
-                nozzle counts change the required nozzle size, or when you want to compare rated pump pressure
-                with the pressure you are likely to see while working.
-              </p>
-              <div className="mt-5 flex flex-wrap gap-3">
-                <Link to="/nozzle-size-calculator" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
-                  Nozzle Size Calculator
-                </Link>
-                <Link to="/hose-pressure-loss-calculator" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
-                  Hose Pressure Loss Calculator
-                </Link>
-                <Link to="/nozzle-size-chart" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
-                  Nozzle Size Chart
-                </Link>
-                <Link to="/psi-bar-calculator" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
-                  PSI ↔ BAR Converter
-                </Link>
-                <Link to="/lpm-gpm-calculator" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
-                  LPM ↔ GPM Converter
-                </Link>
-              </div>
-            </div>
-          </section>
 
           <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
             <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -1062,9 +1601,12 @@ export default function FullRigCalculatorPage() {
                       className="rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
                     >
                       <option value="lpm">LPM</option>
-                      <option value="gpm">GPM</option>
+                      <option value="gpm">GPM (US)</option>
                     </select>
                   </div>
+                  <p className="mt-2 text-xs leading-5 text-slate-500">
+                    GPM in PressureCal means US gallons per minute, matching the convention used by most pressure washer nozzle charts and pump specifications.
+                  </p>
                 </div>
 
                 <div>
@@ -1098,16 +1640,31 @@ export default function FullRigCalculatorPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-slate-800">Engine HP</label>
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    value={inputs.engineHp}
-                    onFocus={selectAllOnFocus}
-                    onChange={(event) => updateInput("engineHp", (event.target.value === "" ? "" : Number(event.target.value)) as Inputs["engineHp"])}
-                    placeholder="Optional"
-                    className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
-                  />
+                  <label className="block text-sm font-semibold text-slate-800">
+                    Engine power ({enginePowerUnit === "hp" ? "HP" : "kW"})
+                  </label>
+                  <div className="mt-2 flex gap-3">
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      value={enginePowerInputValue}
+                      onFocus={selectAllOnFocus}
+                      onChange={(event) => updateEnginePowerFromDisplay(event.target.value)}
+                      placeholder="Optional"
+                      className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                    />
+                    <select
+                      value={enginePowerUnit}
+                      onChange={(event) => setEnginePowerUnit(event.target.value as EnginePowerUnit)}
+                      className="rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                    >
+                      <option value="hp">HP</option>
+                      <option value="kw">kW</option>
+                    </select>
+                  </div>
+                  <p className="mt-2 text-xs leading-5 text-slate-500">
+                    Optional. Enter engine power as horsepower or kilowatts. PressureCal stores this internally as HP for the power check.
+                  </p>
                 </div>
 
                 <div>
@@ -1144,7 +1701,10 @@ export default function FullRigCalculatorPage() {
                   <div className="mt-2 flex gap-3">
                     <select
                       value={String(inputs.hoseId)}
-                      onChange={(event) => updateInput("hoseId", Number(event.target.value) as Inputs["hoseId"])}
+                      onChange={(event) => {
+                        updateInput("hoseId", Number(event.target.value) as Inputs["hoseId"]);
+                        updateInput("hoseIdUnit", "mm");
+                      }}
                       className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
                     >
                       {hosePresets.map((preset) => (
@@ -1202,13 +1762,20 @@ export default function FullRigCalculatorPage() {
                 ) : null}
 
                 <div className="lg:col-span-2">
-                  <label className="block text-sm font-semibold text-slate-800">Nozzle size</label>
+                  <label className="block text-sm font-semibold text-slate-800">
+                    {inputs.sprayMode === "surfaceCleaner" ? "Nozzle size per nozzle" : "Nozzle size"}
+                  </label>
                   <input
                     type="text"
                     value={inputs.nozzleSizeText}
                     onChange={(event) => updateInput("nozzleSizeText", event.target.value as Inputs["nozzleSizeText"])}
                     className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
                   />
+                  {inputs.sprayMode === "surfaceCleaner" ? (
+                    <p className="mt-2 text-xs leading-5 text-slate-500">
+                      Enter the size of each individual nozzle. PressureCal multiplies this by the nozzle count.
+                    </p>
+                  ) : null}
                 </div>
               </div>
             </section>
@@ -1246,9 +1813,12 @@ export default function FullRigCalculatorPage() {
                     <div className="mt-1 text-sm text-slate-600">{fmt(lossBar, 1)} bar · {efficiencyTier}</div>
                   </div>
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Recommended nozzle</div>
-                    <div className="mt-2 text-2xl font-semibold text-slate-950">{calibratedDisplayTipCode}</div>
-                    <div className="mt-1 text-sm text-slate-600">Selected nozzle {selectedDisplayTipCode}</div>
+                    <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Recommended nozzle for rated pump output</div>
+                    <div className="mt-2 text-2xl font-semibold text-slate-950">{calibratedDisplayTipCode}{nozzleDisplaySuffix}</div>
+                    <div className="mt-1 text-sm text-slate-600">Selected nozzle {selectedDisplayTipCode}{nozzleDisplaySuffix}</div>
+                    <p className="mt-3 text-xs leading-5 text-slate-500">
+                      Recommended size is based on rated pump pressure and flow. At-gun pressure may be lower once hose loss is included.
+                    </p>
                   </div>
                 </div>
 
@@ -1256,17 +1826,99 @@ export default function FullRigCalculatorPage() {
                   <p className="text-sm font-semibold text-slate-900">Pressure loss guide</p>
                   <p className="mt-2 text-sm leading-6 text-slate-600">{efficiencyNote}</p>
                 </div>
+
+                <CalculationExplainer
+                  className="mt-5"
+                  formula={
+                    <div className="space-y-2">
+                      <p>
+                        PressureCal models the setup by converting the rated pressure and flow into
+                        PSI/US GPM, applying the selected nozzle relationship, estimating hose loss,
+                        then subtracting that loss to estimate at-gun pressure.
+                      </p>
+                      <p>
+                        Hose loss is estimated from flow, hose length, hose ID, water properties,
+                        and roughness. Required power is estimated as: HP = (PSI × US GPM) ÷ (1714 × efficiency), then also shown in kW.
+                      </p>
+                      <p>
+                        In PressureCal, GPM means US gallons per minute unless otherwise stated.
+                      </p>
+                    </div>
+                  }
+                  inputs={fullSetupExplainerInputs}
+                  results={fullSetupExplainerResults}
+                  explanation={
+                    <p>
+                      This is intended to show what the complete pressure washer setup is likely
+                      doing from pump to gun. The nozzle controls the operating point, the hose
+                      removes pressure before the gun, and the engine power check helps flag whether
+                      the setup is likely to be short on usable power.
+                    </p>
+                  }
+                  disclaimer={
+                    <p>
+                      Use this as a setup estimate only. Always confirm with a pressure gauge and
+                      check pump, hose, gun, lance, surface cleaner, nozzle, unloader, and engine
+                      limits before changing equipment or operating pressure.
+                    </p>
+                  }
+                />
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:hidden">
+                <button
+                  type="button"
+                  onClick={() => setMobileSystemDetailsOpen((current) => !current)}
+                  className="flex w-full items-center justify-between gap-3 text-left"
+                >
+                  <div>
+                    <h2 className="text-2xl font-semibold text-slate-900">System details</h2>
+                    <p className="mt-1 text-sm text-slate-600">
+                      Required power, pressure variance, and P × Q reference.
+                    </p>
+                  </div>
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-lg font-semibold text-slate-700">
+                    {mobileSystemDetailsOpen ? "−" : "+"}
+                  </span>
+                </button>
+
+                {mobileSystemDetailsOpen ? (
+                  <div className="mt-5 grid gap-3">
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Required power</div>
+                      <div className="mt-2 text-xl font-semibold text-slate-950">{formatEnginePowerFromHp(requiredHp)}</div>
+                      <div className="mt-1 text-sm text-slate-600">
+                        Usable engine power {usableEngineHp > 0 ? formatEnginePowerFromHp(usableEngineHp) : "—"}
+                      </div>
+                    </div>
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Pressure variance</div>
+                      <div className="mt-2 text-xl font-semibold text-slate-950">{fmt(pressureVariancePct, 1)}%</div>
+                      <div className="mt-1 text-sm text-slate-600">{r.statusMessage}</div>
+                    </div>
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Rated P × Q</div>
+                      <div className="mt-2 text-xl font-semibold text-slate-950">{fmt(pqRated, 0)} ({pqClassRated})</div>
+                      <div className="mt-1 text-sm text-slate-600">{fmt(ratedBar, 1)} BAR × {fmt(ratedLpm, 1)} LPM</div>
+                    </div>
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="text-xs uppercase tracking-[0.14em] text-slate-500">At-gun P × Q</div>
+                      <div className="mt-2 text-xl font-semibold text-slate-950">{fmt(pqAtGun, 0)} ({pqClassGun})</div>
+                      <div className="mt-1 text-sm text-slate-600">{fmt(gunBar, 1)} BAR × {fmt(gunLpm, 1)} LPM</div>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:block">
                 <h2 className="text-2xl font-semibold text-slate-900">System details</h2>
 
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Required HP</div>
-                    <div className="mt-2 text-xl font-semibold text-slate-950">{fmt(requiredHp, 1)} HP</div>
+                    <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Required power</div>
+                    <div className="mt-2 text-xl font-semibold text-slate-950">{formatEnginePowerFromHp(requiredHp)}</div>
                     <div className="mt-1 text-sm text-slate-600">
-                      Usable engine HP {usableEngineHp > 0 ? fmt(usableEngineHp, 1) : "—"}
+                      Usable engine power {usableEngineHp > 0 ? formatEnginePowerFromHp(usableEngineHp) : "—"}
                     </div>
                   </div>
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -1288,6 +1940,44 @@ export default function FullRigCalculatorPage() {
               </div>
             </section>
           </div>
+          <section className="mt-6 rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
+            <div className="max-w-4xl">
+              <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+                What this full setup calculator checks
+              </h2>
+              <p className="mt-3 text-sm leading-7 text-slate-600">
+                This full setup calculator is for operators who want to check the whole
+                setup in one place, not just one number at a time. It combines machine
+                pressure, machine flow, hose length, hose internal diameter, nozzle size,
+                and optional engine power in HP or kW so you can estimate the real operating point at
+                the gun.
+              </p>
+              <p className="mt-4 text-sm leading-7 text-slate-600">
+                Use this page when a chart or simple converter is not enough — especially
+                when the machine feels weak at the gun, hose runs are long, surface cleaner
+                nozzle counts change the required nozzle size, or you want to compare rated
+                pump pressure with what you are likely to see while working.
+              </p>
+              <div className="mt-5 flex flex-wrap gap-3">
+                <Link to="/nozzle-size-calculator" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+                  Nozzle Size Calculator
+                </Link>
+                <Link to="/hose-pressure-loss-calculator" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+                  Hose Pressure Loss Calculator
+                </Link>
+                <Link to="/nozzle-size-chart" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+                  Nozzle Size Chart
+                </Link>
+                <Link to="/psi-bar-calculator" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+                  PSI ↔ BAR Converter
+                </Link>
+                <Link to="/lpm-gpm-calculator" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+                  LPM ↔ GPM (US) Converter
+                </Link>
+              </div>
+            </div>
+          </section>
+
         </div>
       </section>
 
@@ -1295,3 +1985,4 @@ export default function FullRigCalculatorPage() {
     </PressureCalLayout>
   );
 }
+
