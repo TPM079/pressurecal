@@ -9,9 +9,9 @@ const PSI_TO_BAR = 0.0689476;
 const BAR_TO_PSI = 14.5038;
 
 const PAGE_URL = "https://www.pressurecal.com/psi-bar-calculator";
-const SEO_TITLE = "4000 PSI to BAR Converter | PSI ↔ BAR | PressureCal";
+const SEO_TITLE = "PSI to BAR Calculator | Convert PSI to BAR for Pressure Washers";
 const SEO_DESCRIPTION =
-  "4000 PSI = 275.79 BAR. Convert any PSI or BAR rating for pressure washer pumps, gauges, nozzles, unloaders and machine specs.";
+  "Convert PSI to BAR instantly. Includes common pressure washer ratings like 3000, 3500 and 4000 PSI, with practical context for pumps, gauges, nozzles and setup checks.";
 
 function formatNumber(value: number, maxDecimals = 4) {
   if (!Number.isFinite(value)) return "";
@@ -88,24 +88,19 @@ const popularPsiConversions: ConversionRow[] = [
 
 const faqs: FaqItem[] = [
   {
-    question: "What is 4000 PSI in BAR?",
-    answer:
-      "4000 PSI is approximately 275.79 BAR. For pressure washer work, that is commonly rounded to 276 BAR when comparing machine ratings, pumps, gauges, nozzles, and manuals.",
-  },
-  {
     question: "How do you convert PSI to BAR?",
     answer:
-      "Multiply the PSI value by 0.0689476. For example, 4000 PSI × 0.0689476 = 275.7904 BAR, which rounds to 275.79 BAR.",
+      "Multiply the PSI value by 0.0689476. For example, 4000 PSI × 0.0689476 = 275.7904 BAR, which is commonly shown as 275.79 BAR or rounded to 276 BAR.",
   },
   {
-    question: "How do you convert BAR to PSI?",
+    question: "What is 4000 PSI in BAR?",
     answer:
-      "Multiply the BAR value by 14.5038. For example, 250 BAR × 14.5038 = 3625.95 PSI, which is usually rounded to 3626 PSI.",
+      "4000 PSI is approximately 275.79 BAR. For pressure washer work, this is commonly rounded to 276 BAR when comparing machine ratings, pumps, gauges, nozzles, and manuals.",
   },
   {
-    question: "Is 4000 PSI the same as 275 BAR?",
+    question: "Is 4000 PSI the same as 276 BAR?",
     answer:
-      "4000 PSI is slightly higher than 275 BAR. The exact conversion is 275.79 BAR, but 275 BAR is often close enough for quick pressure washer spec comparisons.",
+      "4000 PSI is just under 276 BAR. The exact conversion is 275.79 BAR, so 276 BAR is a practical rounded figure for pressure washer spec comparisons.",
   },
   {
     question: "Why do pressure washers use both PSI and BAR?",
@@ -113,14 +108,19 @@ const faqs: FaqItem[] = [
       "It depends on the brand, market, gauge, manual, or component. Many operators talk in PSI, while European equipment, pump data plates, and some manuals often use BAR.",
   },
   {
+    question: "Is pressure the only thing that matters in a pressure washer setup?",
+    answer:
+      "No. Pressure is only one part of a pressure washer setup. Flow rate, nozzle size, hose pressure loss, surface cleaner size, and at-gun pressure all affect real-world performance.",
+  },
+  {
+    question: "How do you convert BAR to PSI?",
+    answer:
+      "Multiply the BAR value by 14.5038. For example, 250 BAR × 14.5038 = 3625.95 PSI, which is usually rounded to 3626 PSI.",
+  },
+  {
     question: "Should I use rated pressure or working pressure?",
     answer:
       "Use rated pressure for a quick spec comparison, but use measured working pressure when checking real machine performance. Hose length, hose ID, fittings, nozzle size, unloader setting, and nozzle wear can all change what you actually see at the gun.",
-  },
-  {
-    question: "Does converting PSI to BAR tell me cleaning performance?",
-    answer:
-      "Not by itself. Pressure is only one part of a pressure washer setup. Flow rate, nozzle size, hose pressure loss, surface cleaner size, and at-gun pressure all affect real-world performance.",
   },
 ];
 
@@ -148,7 +148,7 @@ const jsonLd = {
     {
       "@type": "WebApplication",
       "@id": `${PAGE_URL}#app`,
-      name: "PSI to BAR Converter",
+      name: "PSI to BAR Calculator",
       url: PAGE_URL,
       applicationCategory: "UtilitiesApplication",
       operatingSystem: "Web",
@@ -332,18 +332,32 @@ export default function PsiBarCalculatorPage() {
               </div>
 
               <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-900 md:text-5xl">
-                PSI to BAR Converter
+                PSI to BAR Calculator
               </h1>
 
               <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
-                Convert PSI to BAR or BAR to PSI for pressure washer pumps,
-                gauges, nozzles, unloaders, manuals, and machine ratings.
+                Convert PSI to BAR instantly, with practical pressure washer
+                context for machine ratings, pumps, gauges, nozzles, and setup
+                checks.
               </p>
 
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
                 Built for operators who need quick pressure conversions without
                 losing the pressure-washing context. Useful when a machine,
                 pump, gauge, or parts manual lists pressure in a different unit.
+              </p>
+            </div>
+
+            <div className="mt-6 rounded-3xl border border-blue-200 bg-blue-50 p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
+                Featured pressure washer example
+              </p>
+              <p className="mt-2 text-2xl font-bold tracking-tight text-slate-900">
+                4000 PSI = 275.8 BAR
+              </p>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                The exact conversion is 275.79 BAR, commonly rounded to 276 BAR
+                for pressure washer work.
               </p>
             </div>
 
@@ -581,14 +595,14 @@ export default function PsiBarCalculatorPage() {
                 </p>
 
                 <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
-                  4000 PSI to BAR: 4000 PSI = 275.79 BAR
+                  What does 4000 PSI mean in BAR?
                 </h2>
 
                 <p className="mt-4 text-sm leading-7 text-slate-700">
-                  If you are comparing a 4000 PSI pressure washer against a
-                  pump, gauge, unloader, or manual listed in BAR, the direct
-                  conversion is 275.79 BAR. In the field, this is often rounded
-                  to about 276 BAR.
+                  4000 PSI = 275.8 BAR when rounded to one decimal place. The
+                  exact conversion is 275.79 BAR, and pressure washer operators
+                  commonly round this to 276 BAR when comparing machine
+                  ratings, pumps, gauges, unloaders, nozzles, and manuals.
                 </p>
 
                 <p className="mt-3 text-sm leading-7 text-slate-700">
@@ -617,9 +631,13 @@ export default function PsiBarCalculatorPage() {
                     <div className="text-xs font-semibold uppercase tracking-wide text-blue-100">
                       BAR
                     </div>
-                    <div className="mt-1 text-3xl font-bold">275.79</div>
+                    <div className="mt-1 text-3xl font-bold">275.8</div>
                   </div>
                 </div>
+
+                <p className="mt-3 text-center text-xs leading-5 text-slate-500">
+                  Exact result: 275.79 BAR. Practical rounded value: 276 BAR.
+                </p>
 
                 <button
                   type="button"
@@ -634,14 +652,52 @@ export default function PsiBarCalculatorPage() {
 
           <section className="mt-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
             <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-              Popular PSI to BAR conversions
+              How to convert PSI to BAR
+            </h2>
+
+            <div className="mt-4 grid gap-5 md:grid-cols-[1fr_0.9fr]">
+              <div className="space-y-4 text-sm leading-7 text-slate-600">
+                <p>
+                  To convert PSI to BAR, multiply the PSI value by 0.0689476.
+                  This gives you the equivalent pressure in BAR for pressure
+                  washer ratings, pump data plates, gauges, manuals, and
+                  component specifications.
+                </p>
+
+                <p>
+                  To convert BAR back to PSI, multiply the BAR value by 14.5038.
+                  These are direct pressure unit conversions. They do not change
+                  the actual performance of the pressure washer setup.
+                </p>
+              </div>
+
+              <div className="rounded-2xl bg-slate-50 p-5">
+                <h3 className="text-base font-semibold text-slate-900">
+                  Conversion formulas
+                </h3>
+                <p className="mt-3 text-sm text-slate-600">
+                  BAR = PSI × 0.0689476
+                </p>
+                <p className="mt-2 text-sm text-slate-600">
+                  PSI = BAR × 14.5038
+                </p>
+                <p className="mt-4 text-xs leading-5 text-slate-500">
+                  Example: 4000 PSI × 0.0689476 = 275.7904 BAR.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section className="mt-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+            <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+              Common PSI to BAR conversions
             </h2>
 
             <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600">
-              These common pressure washer pressure ratings are useful for
-              comparing machine labels, pump data plates, gauges, manuals, and
-              component specs. Treat the context column as a guide only and
-              always stay within manufacturer limits.
+              These common PSI to BAR conversions are useful for comparing
+              pressure washer machine labels, pump data plates, gauges,
+              manuals, and component specs. Treat the context column as a guide
+              only and always stay within manufacturer limits.
             </p>
 
             <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200">
@@ -682,7 +738,7 @@ export default function PsiBarCalculatorPage() {
 
           <section className="mt-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
             <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-              PSI, BAR, and real pressure washer setup checks
+              PSI vs BAR for pressure washer ratings
             </h2>
 
             <div className="mt-4 space-y-4 text-sm leading-7 text-slate-600">
@@ -700,23 +756,24 @@ export default function PsiBarCalculatorPage() {
                 L/min. This page helps bridge those specs so you can compare
                 parts and ratings without doing the maths manually.
               </p>
-
-              <p>
-                For a quick pressure rating check, this converter is enough. For
-                actual setup behaviour, use the related PressureCal tools to
-                model nozzle size, hose pressure loss, flow, and at-gun
-                pressure together.
-              </p>
             </div>
 
             <div className="mt-6 rounded-2xl bg-slate-50 p-5">
               <h3 className="text-base font-semibold text-slate-900">
-                Conversion formulas
+                Pressure is only one part of the setup
               </h3>
-              <p className="mt-2 text-sm text-slate-600">
-                BAR = PSI × 0.0689476
+              <p className="mt-3 text-sm leading-7 text-slate-600">
+                Pressure conversion is useful for comparing ratings, but it does
+                not tell the full performance story. Flow, nozzle size, hose
+                pressure loss, fittings, nozzle wear, unloader setting, and
+                at-gun pressure all affect how a pressure washer setup behaves
+                in the real world.
               </p>
-              <p className="text-sm text-slate-600">PSI = BAR × 14.5038</p>
+              <p className="mt-3 text-sm leading-7 text-slate-600">
+                For actual setup checks, use the related PressureCal tools to
+                model nozzle size, hose pressure loss, flow, and at-gun
+                pressure together.
+              </p>
             </div>
           </section>
 
@@ -743,9 +800,9 @@ export default function PsiBarCalculatorPage() {
             </h2>
 
             <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600">
-              Pressure conversion is only the first check. Use these tools when
-              you need to understand what the full pressure washer setup is
-              actually doing.
+              Pressure is only one part of the setup. Check nozzle size, hose
+              loss, flow, and at-gun pressure with PressureCal when you need to
+              understand what the full pressure washer setup is actually doing.
             </p>
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
