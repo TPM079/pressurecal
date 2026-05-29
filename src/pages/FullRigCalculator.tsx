@@ -444,6 +444,7 @@ export default function FullRigCalculatorPage() {
   const [saveGateVariant, setSaveGateVariant] = useState<"signed_out" | "pro_required" | null>(null);
   const maxWasManuallyEditedRef = useRef(false);
   const sharePanelRef = useRef<HTMLDivElement | null>(null);
+  const saveSetupGateRef = useRef<HTMLDivElement | null>(null);
   const lastResultSignatureRef = useRef<string | null>(null);
 
   const { loading: proAccessLoading, isAuthenticated, isPro, userId } = useProAccess();
@@ -504,6 +505,27 @@ export default function FullRigCalculatorPage() {
 
     return () => window.clearTimeout(timer);
   }, [sharePanelOpen]);
+
+  useEffect(() => {
+    if (!savePanelOpen || !saveGateVariant) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      const gate = saveSetupGateRef.current;
+
+      if (!gate) {
+        return;
+      }
+
+      gate.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+      gate.focus({ preventScroll: true });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [saveGateVariant, savePanelOpen]);
+
   useEffect(() => {
     if (sharePanelOpen || savePanelOpen || comparePanelOpen) {
       setMobileMoreActionsOpen(false);
@@ -1494,7 +1516,11 @@ export default function FullRigCalculatorPage() {
                     <p className="text-sm text-slate-700">Checking Pro access…</p>
                   </div>
                 ) : saveGateVariant || !isAuthenticated || !isPro ? (
-                  <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
+                  <div
+                    ref={saveSetupGateRef}
+                    tabIndex={-1}
+                    className="mt-4 scroll-mt-28 rounded-2xl border border-slate-200 bg-white p-3 outline-none sm:p-4"
+                  >
                     <p className="text-sm font-semibold text-slate-900">
                       Save this setup with PressureCal Pro
                     </p>
