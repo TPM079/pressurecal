@@ -13,6 +13,7 @@ import {
 } from "../hooks/useSavedSetups";
 import { buildFullRigSearchParams } from "../lib/rigUrlState";
 import { savedSetupToInputs } from "../lib/savedSetupToInputs";
+import { trackEvent } from "../lib/analytics";
 import { supabase } from "../lib/supabase-browser";
 
 type SetupFormState = {
@@ -372,6 +373,7 @@ export default function SavedSetupsPage() {
       return;
     }
 
+    const wasCreating = selectedSetupId === null;
     const hoseLength = toNumberOrNull(form.hoseLength);
     const hoseId = toNumberOrNull(form.hoseId);
     const pumpPressure = toNumberOrNull(form.pumpPressure);
@@ -418,6 +420,13 @@ export default function SavedSetupsPage() {
       });
 
       setSelectedSetupId(saved.id);
+
+      if (wasCreating) {
+        trackEvent("saved_setup_created", {
+          source: "saved_setups_page",
+          setup_id: saved.id,
+        });
+      }
     } catch (error) {
       setActionError(getActionErrorMessage(error));
     } finally {
@@ -483,7 +492,14 @@ export default function SavedSetupsPage() {
     setBusySetupId(setupId);
 
     try {
-      await duplicateSetup(setupId);
+      const duplicated = await duplicateSetup(setupId);
+
+      if (duplicated) {
+        trackEvent("saved_setup_created", {
+          source: "saved_setups_duplicate",
+          setup_id: duplicated.id,
+        });
+      }
     } catch (error) {
       setActionError(getActionErrorMessage(error));
     } finally {
@@ -536,10 +552,10 @@ export default function SavedSetupsPage() {
           Sign In
         </Link>
         <Link
-          to="/pro"
+          to="/pricing"
           className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
         >
-          View PressureCal Pro
+          View Pro
         </Link>
       </div>
     </div>
@@ -554,15 +570,15 @@ export default function SavedSetupsPage() {
         Saved Setups is a Pro feature
       </h2>
       <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
-        Upgrade to PressureCal Pro to save full setups, compare changes, and keep repeat-job
-        workflow organised.
+        Free lets you calculate a setup. Pro lets you save setups, duplicate them,
+        and build a working library of machine, hose, nozzle, and pressure loss calculations.
       </p>
       <div className="mt-6">
         <Link
-          to="/pro"
+          to="/pricing"
           className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
         >
-          View PressureCal Pro Plans
+          View Pro
         </Link>
       </div>
     </div>
@@ -911,7 +927,8 @@ export default function SavedSetupsPage() {
                   <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6">
                     <p className="text-sm font-semibold text-slate-900">No saved setups yet</p>
                     <p className="mt-2 text-sm leading-6 text-slate-600">
-                      Create your first saved setup on the left to start building your Pro library.
+                      Create your first saved setup on the left, or save one from the calculator once it
+                      becomes repeat work. This is where your working library starts.
                     </p>
                   </div>
                 ) : (

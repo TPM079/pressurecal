@@ -8,11 +8,18 @@ export type PressureCalEventName =
   | "homepage_tool_clicked"
   | "saved_setups_page_clicked"
   | "pro_bridge_clicked"
+  | "calculator_result_viewed"
+  | "save_setup_clicked"
+  | "pro_gate_shown"
+  | "pricing_viewed"
   | "pricing_page_viewed"
   | "pricing_view_plans_clicked"
   | "pricing_use_free_calculator_clicked"
   | "pricing_choose_monthly_clicked"
-  | "pricing_choose_yearly_clicked";
+  | "pricing_choose_yearly_clicked"
+  | "checkout_started"
+  | "checkout_completed"
+  | "saved_setup_created";
 
 export type PressureCalEventParams = Record<string, string | number | boolean | null | undefined>;
 

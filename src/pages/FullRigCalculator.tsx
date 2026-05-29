@@ -14,6 +14,7 @@ import {
   createShortShareLink,
   shareUrlWithNavigator,
 } from "../lib/shareLinks";
+import { trackEvent } from "../lib/analytics";
 import { solvePressureCal, barFromPsi, lpmFromGpm, roundTipCodeToFive } from "../pressurecal";
 import type { Inputs, PressureUnit, FlowUnit, LengthUnit } from "../pressurecal";
 
@@ -440,8 +441,10 @@ export default function FullRigCalculatorPage() {
   const [compareTargetSetupId, setCompareTargetSetupId] = useState("");
   const [mobileMoreActionsOpen, setMobileMoreActionsOpen] = useState(false);
   const [mobileSystemDetailsOpen, setMobileSystemDetailsOpen] = useState(false);
+  const [saveGateVariant, setSaveGateVariant] = useState<"signed_out" | "pro_required" | null>(null);
   const maxWasManuallyEditedRef = useRef(false);
   const sharePanelRef = useRef<HTMLDivElement | null>(null);
+  const lastResultSignatureRef = useRef<string | null>(null);
 
   const { loading: proAccessLoading, isAuthenticated, isPro, userId } = useProAccess();
   const { setups, isReady: savedSetupsReady, saveSetup } = useSavedSetups(userId);
@@ -618,6 +621,78 @@ export default function FullRigCalculatorPage() {
     [badge.text, gunBar, gunLpm, inputs, lossBar, r.gunFlowGpm, r.gunPressurePsi, r.hoseLossPsi, r.statusMessage, selectedDisplayTipCode]
   );
 
+  const resultSignature = useMemo(
+    () =>
+      [
+        inputs.pumpPressure,
+        inputs.pumpPressureUnit,
+        inputs.pumpFlow,
+        inputs.pumpFlowUnit,
+        inputs.maxPressure,
+        inputs.maxPressureUnit,
+        inputs.hoseLength,
+        inputs.hoseLengthUnit,
+        inputs.hoseId,
+        inputs.hoseIdUnit,
+        inputs.sprayMode,
+        inputs.nozzleCount,
+        inputs.nozzleSizeText,
+        r.gunPressurePsi.toFixed(2),
+        r.gunFlowGpm.toFixed(3),
+        r.hoseLossPsi.toFixed(2),
+        r.status,
+        r.isPressureLimited,
+      ].join("|"),
+    [
+      inputs.pumpPressure,
+      inputs.pumpPressureUnit,
+      inputs.pumpFlow,
+      inputs.pumpFlowUnit,
+      inputs.maxPressure,
+      inputs.maxPressureUnit,
+      inputs.hoseLength,
+      inputs.hoseLengthUnit,
+      inputs.hoseId,
+      inputs.hoseIdUnit,
+      inputs.sprayMode,
+      inputs.nozzleCount,
+      inputs.nozzleSizeText,
+      r.gunPressurePsi,
+      r.gunFlowGpm,
+      r.hoseLossPsi,
+      r.status,
+      r.isPressureLimited,
+    ]
+  );
+
+  useEffect(() => {
+    if (!Number.isFinite(r.gunPressurePsi) || !Number.isFinite(r.gunFlowGpm)) {
+      return;
+    }
+
+    if (lastResultSignatureRef.current === resultSignature) {
+      return;
+    }
+
+    lastResultSignatureRef.current = resultSignature;
+
+    trackEvent("calculator_result_viewed", {
+      calculator: "full_setup",
+      spray_mode: inputs.sprayMode,
+      nozzle_count: Number(inputs.nozzleCount || 1),
+      nozzle_status: r.status,
+      pressure_limited: r.isPressureLimited,
+    });
+  }, [
+    inputs.nozzleCount,
+    inputs.sprayMode,
+    r.gunFlowGpm,
+    r.gunPressurePsi,
+    r.isPressureLimited,
+    r.status,
+    resultSignature,
+  ]);
+
   const compactCompareSnapshotItems = [
     {
       label: "Pump",
@@ -675,16 +750,49 @@ export default function FullRigCalculatorPage() {
     setMobileMoreActionsOpen(false);
   }
 
+  function showSaveSetupGate(reason: "signed_out" | "pro_required") {
+    setSaveGateVariant(reason);
+    trackEvent("pro_gate_shown", {
+      calculator: "full_setup",
+      gate: "save_setup",
+      reason,
+    });
+  }
+
   function handleOpenSavePanel() {
+    trackEvent("save_setup_clicked", {
+      calculator: "full_setup",
+      source: "results_snapshot",
+      is_authenticated: isAuthenticated,
+      is_pro: isPro,
+    });
+
     setSavePanelOpen(true);
     setComparePanelOpen(false);
     setSaveMessage("");
-    setSaveName((current) => (current.trim() ? current : suggestedSetupName));
     setMobileMoreActionsOpen(false);
+
+    if (proAccessLoading) {
+      return;
+    }
+
+    if (!isAuthenticated || !userId) {
+      showSaveSetupGate("signed_out");
+      return;
+    }
+
+    if (!isPro) {
+      showSaveSetupGate("pro_required");
+      return;
+    }
+
+    setSaveGateVariant(null);
+    setSaveName((current) => (current.trim() ? current : suggestedSetupName));
   }
 
   function handleCloseSavePanel() {
     setSavePanelOpen(false);
+    setSaveGateVariant(null);
     setSaveMessage("");
     setMobileMoreActionsOpen(false);
   }
@@ -947,14 +1055,14 @@ export default function FullRigCalculatorPage() {
     }
   }
 
-  function handleSaveCurrentSetup() {
+  async function handleSaveCurrentSetup() {
     if (!isAuthenticated || !userId) {
-      window.alert("Please sign in before saving setups.");
+      showSaveSetupGate("signed_out");
       return;
     }
 
     if (!isPro) {
-      window.alert("Save Setup is available on PressureCal Pro.");
+      showSaveSetupGate("pro_required");
       return;
     }
 
@@ -966,39 +1074,52 @@ export default function FullRigCalculatorPage() {
 
     const nozzleSizeText = (inputs.nozzleSizeText || "").trim() || null;
 
-    saveSetup({
-      name: trimmedName,
-      notes: saveNotes.trim() || null,
+    try {
+      const saved = await saveSetup({
+        name: trimmedName,
+        notes: saveNotes.trim() || null,
 
-      machinePsi: inputs.pumpPressureUnit === "psi" ? toNumberOrNull(inputs.pumpPressure) : null,
-      machineLpm: inputs.pumpFlowUnit === "lpm" ? toNumberOrNull(inputs.pumpFlow) : null,
-      hoseLengthM: inputs.hoseLengthUnit === "m" ? toNumberOrNull(inputs.hoseLength) : null,
-      hoseIdMm: inputs.hoseIdUnit === "mm" ? toNumberOrNull(inputs.hoseId) : null,
-      nozzleSize: nozzleSizeText,
+        machinePsi: inputs.pumpPressureUnit === "psi" ? toNumberOrNull(inputs.pumpPressure) : null,
+        machineLpm: inputs.pumpFlowUnit === "lpm" ? toNumberOrNull(inputs.pumpFlow) : null,
+        hoseLengthM: inputs.hoseLengthUnit === "m" ? toNumberOrNull(inputs.hoseLength) : null,
+        hoseIdMm: inputs.hoseIdUnit === "mm" ? toNumberOrNull(inputs.hoseId) : null,
+        nozzleSize: nozzleSizeText,
 
-      pumpPressure: toNumberOrNull(inputs.pumpPressure),
-      pumpPressureUnit: inputs.pumpPressureUnit,
-      pumpFlow: toNumberOrNull(inputs.pumpFlow),
-      pumpFlowUnit: inputs.pumpFlowUnit,
-      maxPressure: toNumberOrNull(inputs.maxPressure),
-      maxPressureUnit: inputs.maxPressureUnit,
-      hoseLength: toNumberOrNull(inputs.hoseLength),
-      hoseLengthUnit: inputs.hoseLengthUnit,
-      hoseId: toNumberOrNull(inputs.hoseId),
-      hoseIdUnit: inputs.hoseIdUnit,
-      engineHp: toNumberOrNull(inputs.engineHp),
-      sprayMode: inputs.sprayMode,
-      nozzleCount: Math.max(inputs.sprayMode === "surfaceCleaner" ? 2 : 1, Number(inputs.nozzleCount || 1)),
-      nozzleSizeText,
-      orificeMm: toNumberOrNull(inputs.orificeMm) ?? 1.2,
-      dischargeCoeffCd: toNumberOrNull(inputs.dischargeCoeffCd) ?? 0.62,
-      waterDensity: toNumberOrNull(inputs.waterDensity) ?? 1000,
-      hoseRoughnessMm: toNumberOrNull(inputs.hoseRoughnessMm) ?? 0.0015,
-    });
+        pumpPressure: toNumberOrNull(inputs.pumpPressure),
+        pumpPressureUnit: inputs.pumpPressureUnit,
+        pumpFlow: toNumberOrNull(inputs.pumpFlow),
+        pumpFlowUnit: inputs.pumpFlowUnit,
+        maxPressure: toNumberOrNull(inputs.maxPressure),
+        maxPressureUnit: inputs.maxPressureUnit,
+        hoseLength: toNumberOrNull(inputs.hoseLength),
+        hoseLengthUnit: inputs.hoseLengthUnit,
+        hoseId: toNumberOrNull(inputs.hoseId),
+        hoseIdUnit: inputs.hoseIdUnit,
+        engineHp: toNumberOrNull(inputs.engineHp),
+        sprayMode: inputs.sprayMode,
+        nozzleCount: Math.max(inputs.sprayMode === "surfaceCleaner" ? 2 : 1, Number(inputs.nozzleCount || 1)),
+        nozzleSizeText,
+        orificeMm: toNumberOrNull(inputs.orificeMm) ?? 1.2,
+        dischargeCoeffCd: toNumberOrNull(inputs.dischargeCoeffCd) ?? 0.62,
+        waterDensity: toNumberOrNull(inputs.waterDensity) ?? 1000,
+        hoseRoughnessMm: toNumberOrNull(inputs.hoseRoughnessMm) ?? 0.0015,
+      });
 
-    setSaveMessage("Setup saved");
-    setSavePanelOpen(false);
-    window.setTimeout(() => setSaveMessage(""), 2500);
+      trackEvent("saved_setup_created", {
+        source: "full_setup_calculator",
+        setup_id: saved.id,
+        spray_mode: inputs.sprayMode,
+        nozzle_count: Number(inputs.nozzleCount || 1),
+      });
+
+      setSaveMessage("Setup saved");
+      setSavePanelOpen(false);
+      setSaveGateVariant(null);
+      window.setTimeout(() => setSaveMessage(""), 2500);
+    } catch (error) {
+      console.error(error);
+      window.alert("Unable to save this setup right now.");
+    }
   }
 
   function updateInput<K extends keyof Inputs>(key: K, value: Inputs[K]) {
@@ -1271,10 +1392,10 @@ export default function FullRigCalculatorPage() {
                 ))}
               </div>
 
-              <div className="text-xs text-slate-500">
-                {isAuthenticated && isPro
-                  ? "Share this exact setup, or save and compare it once it becomes a repeat-job setup."
-                  : "Share this exact setup, then save or compare it later if it becomes repeat work."}
+              <div className="rounded-2xl border border-slate-200 bg-white/70 px-4 py-3 text-sm leading-6 text-slate-700">
+                <span className="font-semibold text-slate-950">Free:</span> calculate a setup.{" "}
+                <span className="font-semibold text-slate-950">Pro:</span> save setups, duplicate them,
+                and build a working library of machine, hose, and nozzle combinations.
               </div>
             </div>
 
@@ -1346,41 +1467,45 @@ export default function FullRigCalculatorPage() {
                   </p>
                 </div>
 
-                {!proAccessLoading && !isAuthenticated ? (
+                {proAccessLoading ? (
                   <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
-                    <p className="text-sm text-slate-700">Sign in to save setups to your PressureCal account.</p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <Link
-                        to="/account"
-                        className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
-                      >
-                        Sign in
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={handleCloseSavePanel}
-                        className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                      >
-                        Cancel
-                      </button>
-                    </div>
+                    <p className="text-sm text-slate-700">Checking Pro access…</p>
                   </div>
-                ) : !proAccessLoading && isAuthenticated && !isPro ? (
+                ) : saveGateVariant || !isAuthenticated || !isPro ? (
                   <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
-                    <p className="text-sm text-slate-700">Save Setup is part of PressureCal Pro.</p>
-                    <div className="mt-3 flex flex-wrap gap-2">
+                    <p className="text-sm font-semibold text-slate-900">
+                      Save this setup with PressureCal Pro
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-slate-700">
+                      Keep your machine, hose, nozzle, and pressure loss calculations in one place so
+                      you can come back to them later.
+                    </p>
+                    <p className="mt-3 text-xs leading-5 text-slate-500">
+                      <span className="font-semibold text-slate-700">Free:</span> calculate a setup.{" "}
+                      <span className="font-semibold text-slate-700">Pro:</span> save setups, duplicate them,
+                      and build a working library.
+                    </p>
+
+                    <div className="mt-4 flex flex-wrap gap-2">
                       <Link
-                        to="/pro"
+                        to="/pricing"
+                        onClick={() =>
+                          trackEvent("pro_bridge_clicked", {
+                            source: "save_setup_gate",
+                            calculator: "full_setup",
+                          })
+                        }
                         className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
                       >
-                        View PressureCal Pro
+                        View Pro
                       </Link>
+
                       <button
                         type="button"
                         onClick={handleCloseSavePanel}
                         className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
                       >
-                        Cancel
+                        Keep calculating
                       </button>
                     </div>
                   </div>
@@ -1825,6 +1950,16 @@ export default function FullRigCalculatorPage() {
                 <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <p className="text-sm font-semibold text-slate-900">Pressure loss guide</p>
                   <p className="mt-2 text-sm leading-6 text-slate-600">{efficiencyNote}</p>
+                </div>
+
+                <div className="mt-5 rounded-2xl border border-blue-100 bg-blue-50/70 p-4">
+                  <p className="text-sm font-semibold text-slate-900">
+                    Save this setup when it becomes repeat work
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-slate-700">
+                    You’ve modelled this setup. With PressureCal Pro, you can save it, duplicate it,
+                    and build a working library of machine, hose, and nozzle combinations.
+                  </p>
                 </div>
 
                 <CalculationExplainer

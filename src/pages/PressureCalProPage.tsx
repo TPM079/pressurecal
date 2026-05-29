@@ -99,6 +99,7 @@ function clearVerifiedPurchase() {
 
 
 const freeFeatures = [
+  "Calculate a setup without saving it",
   "Full setup calculator",
   "Nozzle size calculator",
   "Hose pressure loss calculator",
@@ -108,7 +109,8 @@ const freeFeatures = [
 ];
 
 const proFeatures = [
-  "Save known-good setups with operator notes",
+  "Save setups, duplicate them, and build a working library",
+  "Keep machine, hose, and nozzle combinations in one place",
   "Build calculator checks from saved equipment",
   "Compare changes before you swap parts",
   "Generate printable one-page setup reports",
@@ -259,7 +261,7 @@ export default function PressureCalProPage() {
   const purchaseVerificationHandledRef = useRef<string | null>(null);
 
   useEffect(() => {
-    trackEvent("pricing_page_viewed", { page: "pricing" });
+    trackEvent("pricing_viewed", { page: "pricing" });
   }, []);
 
   useEffect(() => {
@@ -322,6 +324,13 @@ export default function PressureCalProPage() {
 
           if (!hasTrackedPurchase(purchase.transactionId)) {
             trackPurchase(purchase);
+            trackEvent("checkout_completed", {
+              page: "pricing",
+              provider: "stripe",
+              plan: purchase.plan,
+              value: purchase.value,
+              currency: purchase.currency,
+            });
             markPurchaseTracked(purchase.transactionId);
           }
 
@@ -336,6 +345,13 @@ export default function PressureCalProPage() {
       if (provider === "paypal" && storedPurchase) {
         if (!hasTrackedPurchase(storedPurchase.transactionId)) {
           trackPurchase(storedPurchase);
+          trackEvent("checkout_completed", {
+            page: "pricing",
+            provider: "paypal",
+            plan: storedPurchase.plan,
+            value: storedPurchase.value,
+            currency: storedPurchase.currency,
+          });
           markPurchaseTracked(storedPurchase.transactionId);
         }
 
@@ -504,6 +520,13 @@ export default function PressureCalProPage() {
     userId: string,
     email: string
   ) {
+    trackEvent("checkout_started", {
+      page: "pricing",
+      provider: "stripe",
+      plan,
+      location,
+    });
+
     setBusyPlan(plan);
     setTransitionMessage(
       location === "resume"
@@ -671,6 +694,13 @@ export default function PressureCalProPage() {
       setSignInMessage("You already have PressureCal Pro.");
       return null;
     }
+
+    trackEvent("checkout_started", {
+      page: "pricing",
+      provider: "paypal",
+      plan,
+      location,
+    });
 
     setSelectedPlan(plan);
     setSelectedLocation(location);
@@ -866,16 +896,12 @@ export default function PressureCalProPage() {
         <div className="mx-auto max-w-6xl py-14 sm:py-20">
           <div className="max-w-3xl">
             <h1 className="text-3xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-              Save your gear. Build setups faster. Compare before you test.
+              Keep real setups ready instead of re-entering the same details.
             </h1>
 
             <p className="mt-5 max-w-2xl text-base leading-7 text-slate-300 sm:text-xl sm:leading-8">
-              <span className="sm:hidden">
-                Save common gear, build setup checks faster, compare changes, and print clean setup reports.
-              </span>
-              <span className="hidden sm:inline">
-                PressureCal Pro helps you save known-good setups, build calculator checks from saved equipment, compare changes, keep operator notes, and generate printable setup reports.
-              </span>
+              PressureCal Pro is for operators who want to keep track of real setups, not
+              re-enter the same machine, hose, and nozzle details every time.
             </p>
 
             <div className={`mt-6 hidden rounded-2xl border px-4 py-4 sm:block sm:px-5 ${authBanner.cls}`}>
@@ -894,7 +920,7 @@ export default function PressureCalProPage() {
                 }
                 className="inline-flex items-center justify-center rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-200"
               >
-                View plans
+                Start saving setups
               </a>
 
               <Link
@@ -930,7 +956,7 @@ export default function PressureCalProPage() {
             </div>
 
             <p className="mt-4 text-sm text-slate-400">
-              The core calculator stays free. Pro adds saved setups, equipment library, comparison tools, operator notes, and printable setup reports.
+              The core calculator stays free. Pro adds saved setups, duplication, comparison tools, operator notes, and printable setup reports.
             </p>
           </div>
         </div>
@@ -949,10 +975,12 @@ export default function PressureCalProPage() {
         <div className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
           <div className="max-w-3xl">
             <h2 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-              Free calculators. Pro workflow tools.
+              Free: calculate a setup. Pro: save your setup library.
             </h2>
             <p className="mt-4 text-base leading-7 text-slate-600 sm:text-lg sm:leading-8">
-              PressureCal keeps the core calculators useful on their own. Pro adds the workflow tools that help regular operators save common gear, build setups faster, compare changes, and keep cleaner job records.
+              Use the calculator for one-off checks, then upgrade when you want to save setups,
+              duplicate them, and keep your machine, hose, nozzle, and pressure loss calculations
+              in one place.
             </p>
           </div>
 
@@ -1038,7 +1066,7 @@ export default function PressureCalProPage() {
                 <>
                   <h3 className="text-2xl font-semibold">PressureCal Pro</h3>
                   <p className="mt-2 text-sm font-medium text-slate-300">
-                    For repeat-job setups and saved workflow
+                    For operators who reuse setups and want a working library
                   </p>
 
                   <div className="mt-6 flex flex-wrap items-end gap-3">
@@ -1244,7 +1272,7 @@ export default function PressureCalProPage() {
                 disabled={busyPlan !== null || signInBusy || portalBusy}
                 className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {busyPlan === "monthly" ? "Starting…" : "Start PressureCal Pro"}
+                {busyPlan === "monthly" ? "Starting…" : "Start saving setups"}
               </button>
             )}
           </div>
