@@ -1503,7 +1503,7 @@ export default function FullRigCalculatorPage() {
                       you can come back to them later.
                     </p>
                     <p className="mt-3 text-xs leading-5 text-slate-500">
-                      Free users can calculate a setup. Pro users can save, duplicate, and build a working library.
+                      Free users can calculate a setup. Pro users can save, duplicate, and build a working setup library.
                     </p>
 
                     <div className="mt-4 flex flex-wrap gap-2">
