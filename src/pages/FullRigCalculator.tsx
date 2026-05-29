@@ -432,6 +432,7 @@ export default function FullRigCalculatorPage() {
   const [saveName, setSaveName] = useState("");
   const [saveNotes, setSaveNotes] = useState("");
   const [saveMessage, setSaveMessage] = useState("");
+  const [saveNudgeDismissed, setSaveNudgeDismissed] = useState(false);
   const [sharePanelOpen, setSharePanelOpen] = useState(false);
   const [shareMessage, setShareMessage] = useState("");
   const [shareBusy, setShareBusy] = useState(false);
@@ -1271,7 +1272,7 @@ export default function FullRigCalculatorPage() {
                     Current setup snapshot
                   </div>
                   <div className="mt-1 text-sm text-slate-600">
-                    Everything PressureCal is modelling right now, ready to share, save, or compare.
+                    A quick snapshot of the setup PressureCal is modelling, ready to share, save, or compare.
                   </div>
 
                   {loadedFromLink ? (
@@ -1392,11 +1393,40 @@ export default function FullRigCalculatorPage() {
                 ))}
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-white/70 px-4 py-3 text-sm leading-6 text-slate-700">
-                <span className="font-semibold text-slate-950">Free:</span> calculate a setup.{" "}
-                <span className="font-semibold text-slate-950">Pro:</span> save setups, duplicate them,
-                and build a working library of machine, hose, and nozzle combinations.
-              </div>
+              {!proAccessLoading && !isPro && !savePanelOpen && !saveNudgeDismissed ? (
+                <div className="rounded-2xl border border-slate-200 bg-white/70 px-4 py-3 text-sm leading-6 text-slate-700">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="font-semibold text-slate-950">Want to keep this setup?</p>
+                      <p className="mt-1">
+                        Save your machine, hose, nozzle, and pressure loss calculation with PressureCal Pro.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      <Link
+                        to="/pricing"
+                        onClick={() =>
+                          trackEvent("pro_bridge_clicked", {
+                            source: "save_setup_nudge",
+                            calculator: "full_setup",
+                          })
+                        }
+                        className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-xs font-semibold text-white transition hover:bg-slate-800"
+                      >
+                        Start saving setups
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => setSaveNudgeDismissed(true)}
+                        className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                      >
+                        Keep calculating
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
             </div>
 
             {comparePanelOpen ? (
@@ -1460,12 +1490,14 @@ export default function FullRigCalculatorPage() {
 
             {savePanelOpen ? (
               <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
-                <div className="max-w-xl">
-                  <div className="text-sm font-semibold text-slate-900">Save current setup</div>
-                  <p className="mt-1 text-sm leading-6 text-slate-600">
-                    Save the current calculator snapshot directly to Saved Setups.
-                  </p>
-                </div>
+                {!proAccessLoading && isAuthenticated && isPro ? (
+                  <div className="max-w-xl">
+                    <div className="text-sm font-semibold text-slate-900">Save current setup</div>
+                    <p className="mt-1 text-sm leading-6 text-slate-600">
+                      Save the current calculator snapshot directly to Saved Setups.
+                    </p>
+                  </div>
+                ) : null}
 
                 {proAccessLoading ? (
                   <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
@@ -1481,9 +1513,7 @@ export default function FullRigCalculatorPage() {
                       you can come back to them later.
                     </p>
                     <p className="mt-3 text-xs leading-5 text-slate-500">
-                      <span className="font-semibold text-slate-700">Free:</span> calculate a setup.{" "}
-                      <span className="font-semibold text-slate-700">Pro:</span> save setups, duplicate them,
-                      and build a working library.
+                      Free users can calculate a setup. Pro users can save, duplicate, and build a working library.
                     </p>
 
                     <div className="mt-4 flex flex-wrap gap-2">
@@ -1497,7 +1527,7 @@ export default function FullRigCalculatorPage() {
                         }
                         className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
                       >
-                        View Pro
+                        Start saving setups
                       </Link>
 
                       <button
