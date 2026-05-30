@@ -57,7 +57,7 @@ const defaultInputs: Inputs = {
 
 const EXPORT_CARD = {
   width: 1600,
-  height: 1040,
+  minHeight: 1040,
   padding: 80,
   radius: 36,
   fontFamily: 'Inter, Arial, sans-serif',
@@ -320,6 +320,24 @@ function wrapCanvasText(
   }
 
   return lines;
+}
+
+function canvasLinesHeight(lineCount: number, lineHeight: number) {
+  return lineCount > 0 ? lineCount * lineHeight : 0;
+}
+
+function drawCanvasTextLines(
+  ctx: CanvasRenderingContext2D,
+  lines: string[],
+  x: number,
+  y: number,
+  lineHeight: number
+) {
+  lines.forEach((line, index) => {
+    ctx.fillText(line, x, y + index * lineHeight);
+  });
+
+  return y + canvasLinesHeight(lines.length, lineHeight);
 }
 
 function fillRoundedCard(
@@ -893,9 +911,85 @@ export default function FullRigCalculatorPage() {
     try {
       setPngBusy(true);
 
+      const measureCanvas = document.createElement("canvas");
+      measureCanvas.width = EXPORT_CARD.width;
+      const measureCtx = measureCanvas.getContext("2d");
+      if (!measureCtx) {
+        throw new Error("Unable to create export canvas");
+      }
+
+      const cardX = EXPORT_CARD.padding;
+      const cardY = EXPORT_CARD.padding;
+      const cardWidth = EXPORT_CARD.width - EXPORT_CARD.padding * 2;
+      const innerX = cardX + 52;
+      const innerY = cardY + 48;
+      const innerWidth = cardWidth - 104;
+
+      measureCtx.textBaseline = "top";
+      measureCtx.font = `500 28px ${EXPORT_CARD.fontFamily}`;
+      const setupLines = wrapCanvasText(measureCtx, suggestedSetupName, innerWidth - 340);
+      const setupLineHeight = 36;
+      const setupBottom = innerY + 136 + canvasLinesHeight(setupLines.length, setupLineHeight);
+
+      const dividerY = Math.max(innerY + 230, setupBottom + 54);
+
+      measureCtx.font = `500 24px ${EXPORT_CARD.fontFamily}`;
+      const exportSetupLine = buildExportSetupLine(inputs);
+      const exportSetupLines = wrapCanvasText(measureCtx, exportSetupLine, innerWidth);
+      const exportSetupLineHeight = 34;
+      const exportSetupBottom = dividerY + 72 + canvasLinesHeight(exportSetupLines.length, exportSetupLineHeight);
+
+      const metricY = exportSetupBottom + 52;
+      const metricGap = 24;
+      const metricWidth = (innerWidth - metricGap * 2) / 3;
+      const metricHeight = 220;
+
+      const detailsY = metricY + metricHeight + 36;
+      const detailsInsetX = 24;
+      const detailsGap = 72;
+      const detailAvailableWidth = innerWidth - detailsInsetX * 2;
+      const detailColumnWidth = (detailAvailableWidth - detailsGap) / 2;
+      const useStackedDetails = detailColumnWidth < 560;
+      const detailTextWidth = useStackedDetails ? detailAvailableWidth : detailColumnWidth;
+      const detailLineHeight = 30;
+      const detailItemGap = 10;
+      const stackedDetailGap = 24;
+
+      const selectedDetailText = `Selected nozzle ${selectedDisplayTipCode}${nozzleDisplaySuffix}`;
+      const recommendedDetailText = `Recommended nozzle for rated pump output: ${calibratedDisplayTipCode}${nozzleDisplaySuffix}`;
+      const pressureGuideText = `Pressure loss guide: ${efficiencyTier}`;
+
+      measureCtx.font = `700 24px ${EXPORT_CARD.fontFamily}`;
+      const selectedDetailLines = wrapCanvasText(measureCtx, selectedDetailText, detailTextWidth);
+      const recommendedDetailLines = wrapCanvasText(measureCtx, recommendedDetailText, detailTextWidth);
+
+      measureCtx.font = `600 22px ${EXPORT_CARD.fontFamily}`;
+      const pressureGuideLines = wrapCanvasText(measureCtx, pressureGuideText, detailTextWidth);
+
+      measureCtx.font = `500 22px ${EXPORT_CARD.fontFamily}`;
+      const pressureNoteLines = wrapCanvasText(measureCtx, efficiencyNote, detailTextWidth);
+
+      const leftDetailHeight =
+        canvasLinesHeight(selectedDetailLines.length, detailLineHeight) +
+        detailItemGap +
+        canvasLinesHeight(recommendedDetailLines.length, detailLineHeight);
+      const rightDetailHeight =
+        canvasLinesHeight(pressureGuideLines.length, detailLineHeight) +
+        detailItemGap +
+        canvasLinesHeight(pressureNoteLines.length, detailLineHeight);
+      const detailsContentHeight = useStackedDetails
+        ? leftDetailHeight + stackedDetailGap + rightDetailHeight
+        : Math.max(leftDetailHeight, rightDetailHeight);
+      const detailsHeight = 48 + detailsContentHeight + 30;
+
+      const footerY = detailsY + detailsHeight + 36;
+      const footerHeight = 64;
+      const cardBottom = footerY + footerHeight + 48;
+      const canvasHeight = Math.ceil(Math.max(EXPORT_CARD.minHeight, cardBottom + EXPORT_CARD.padding));
+
       const canvas = document.createElement("canvas");
       canvas.width = EXPORT_CARD.width;
-      canvas.height = EXPORT_CARD.height;
+      canvas.height = canvasHeight;
 
       const ctx = canvas.getContext("2d");
       if (!ctx) {
@@ -910,9 +1004,9 @@ export default function FullRigCalculatorPage() {
       ctx.shadowOffsetY = 18;
       fillRoundedCard(
         ctx,
-        EXPORT_CARD.padding,
-        EXPORT_CARD.padding,
-        canvas.width - EXPORT_CARD.padding * 2,
+        cardX,
+        cardY,
+        cardWidth,
         canvas.height - EXPORT_CARD.padding * 2,
         EXPORT_CARD.radius,
         "#FFFFFF",
@@ -921,13 +1015,6 @@ export default function FullRigCalculatorPage() {
       ctx.shadowColor = "transparent";
       ctx.shadowBlur = 0;
       ctx.shadowOffsetY = 0;
-
-      const cardX = EXPORT_CARD.padding;
-      const cardY = EXPORT_CARD.padding;
-      const cardWidth = canvas.width - EXPORT_CARD.padding * 2;
-      const innerX = cardX + 52;
-      const innerY = cardY + 48;
-      const innerWidth = cardWidth - 104;
 
       ctx.textBaseline = "top";
       ctx.fillStyle = "#183170";
@@ -940,12 +1027,7 @@ export default function FullRigCalculatorPage() {
 
       ctx.fillStyle = "#475569";
       ctx.font = `500 28px ${EXPORT_CARD.fontFamily}`;
-      const setupLines = wrapCanvasText(ctx, suggestedSetupName, innerWidth - 340);
-      let setupY = innerY + 136;
-      for (const line of setupLines.slice(0, 2)) {
-        ctx.fillText(line, innerX, setupY);
-        setupY += 36;
-      }
+      drawCanvasTextLines(ctx, setupLines, innerX, innerY + 136, setupLineHeight);
 
       const badgeVariant =
         badge.text === "Calibrated"
@@ -962,7 +1044,6 @@ export default function FullRigCalculatorPage() {
         variant: badgeVariant,
       });
 
-      const dividerY = innerY + 230;
       ctx.strokeStyle = "#E2E8F0";
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -976,18 +1057,7 @@ export default function FullRigCalculatorPage() {
 
       ctx.fillStyle = "#334155";
       ctx.font = `500 24px ${EXPORT_CARD.fontFamily}`;
-      const exportSetupLine = buildExportSetupLine(inputs);
-      const exportSetupLines = wrapCanvasText(ctx, exportSetupLine, innerWidth);
-      let exportSetupY = dividerY + 72;
-      for (const line of exportSetupLines.slice(0, 2)) {
-        ctx.fillText(line, innerX, exportSetupY);
-        exportSetupY += 34;
-      }
-
-      const metricY = dividerY + 168;
-      const metricGap = 24;
-      const metricWidth = (innerWidth - metricGap * 2) / 3;
-      const metricHeight = 220;
+      drawCanvasTextLines(ctx, exportSetupLines, innerX, dividerY + 72, exportSetupLineHeight);
 
       drawMetricCard({
         ctx,
@@ -1022,38 +1092,38 @@ export default function FullRigCalculatorPage() {
         secondary: `${fmt(lossBar, 1)} bar`,
       });
 
-      const footerY = metricY + metricHeight + 20;
-      const footerCardHeight = 108;
-
-      fillRoundedCard(ctx, innerX, footerY, innerWidth, footerCardHeight, 28, "#F8FAFC", "#E2E8F0");
+      fillRoundedCard(ctx, innerX, detailsY, innerWidth, detailsHeight, 28, "#F8FAFC", "#E2E8F0");
 
       ctx.fillStyle = "#64748B";
       ctx.font = `600 20px ${EXPORT_CARD.fontFamily}`;
-      ctx.fillText("DETAILS", innerX + 24, footerY + 18);
+      ctx.fillText("DETAILS", innerX + detailsInsetX, detailsY + 18);
+
+      const detailsContentX = innerX + detailsInsetX;
+      const detailsContentY = detailsY + 48;
+      let leftDetailY = detailsContentY;
 
       ctx.fillStyle = "#0F172A";
       ctx.font = `700 24px ${EXPORT_CARD.fontFamily}`;
-      ctx.fillText(`Selected nozzle ${selectedDisplayTipCode}${nozzleDisplaySuffix}`, innerX + 24, footerY + 48);
-      ctx.fillText(`Recommended nozzle for rated pump output ${calibratedDisplayTipCode}${nozzleDisplaySuffix}`, innerX + 24, footerY + 80);
+      leftDetailY = drawCanvasTextLines(ctx, selectedDetailLines, detailsContentX, leftDetailY, detailLineHeight) + detailItemGap;
+      drawCanvasTextLines(ctx, recommendedDetailLines, detailsContentX, leftDetailY, detailLineHeight);
 
-      ctx.fillStyle = "#475569";
-      ctx.font = `500 22px ${EXPORT_CARD.fontFamily}`;
-      ctx.fillText(`Pressure loss guide: ${efficiencyTier}`, innerX + 520, footerY + 48);
-
-      const noteLines = wrapCanvasText(ctx, efficiencyNote, innerWidth - 560);
-      let noteY = footerY + 80;
-      for (const line of noteLines.slice(0, 1)) {
-        ctx.fillText(line, innerX + 520, noteY);
-        noteY += 28;
-      }
+      const rightDetailX = useStackedDetails ? detailsContentX : detailsContentX + detailTextWidth + detailsGap;
+      let rightDetailY = useStackedDetails ? detailsContentY + leftDetailHeight + stackedDetailGap : detailsContentY;
 
       ctx.fillStyle = "#475569";
       ctx.font = `600 22px ${EXPORT_CARD.fontFamily}`;
-      ctx.fillText("pressurecal.com", innerX, canvas.height - 150);
+      rightDetailY = drawCanvasTextLines(ctx, pressureGuideLines, rightDetailX, rightDetailY, detailLineHeight) + detailItemGap;
+
+      ctx.font = `500 22px ${EXPORT_CARD.fontFamily}`;
+      drawCanvasTextLines(ctx, pressureNoteLines, rightDetailX, rightDetailY, detailLineHeight);
+
+      ctx.fillStyle = "#475569";
+      ctx.font = `600 22px ${EXPORT_CARD.fontFamily}`;
+      ctx.fillText("pressurecal.com", innerX, footerY);
 
       ctx.fillStyle = "#64748B";
       ctx.font = `500 20px ${EXPORT_CARD.fontFamily}`;
-      ctx.fillText("Model your machine from pump to gun.", innerX, canvas.height - 114);
+      ctx.fillText("Model your machine from pump to gun.", innerX, footerY + 36);
 
       const blob = await canvasToBlob(canvas);
       downloadBlob(blob, "pressurecal-result.png");
