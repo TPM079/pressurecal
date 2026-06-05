@@ -78,7 +78,13 @@ export function disableAnalytics() {
 
 export function initAnalyticsIfConsented() {
   if (typeof window === "undefined") return;
-  if (!GA_ID) return;
+
+  if (!GA_ID) {
+    if (import.meta.env.DEV) {
+      console.info("[analytics skipped - missing VITE_GA_MEASUREMENT_ID]");
+    }
+    return;
+  }
 
   if (!hasAnalyticsConsent()) {
     disableAnalytics();
@@ -114,7 +120,9 @@ export function initAnalyticsIfConsented() {
 
   window.gtag("js", new Date());
 
+  // Disable automatic page_view. App.tsx sends page_view explicitly for SPA routes.
   window.gtag("config", GA_ID, {
+    send_page_view: false,
     debug_mode: import.meta.env.DEV,
   });
 
@@ -131,6 +139,30 @@ function analyticsAllowed() {
 
   initAnalyticsIfConsented();
   return typeof window !== "undefined" && typeof window.gtag === "function";
+}
+
+export function trackPageView(path: string, title = document.title) {
+  if (typeof window === "undefined") return;
+
+  if (!GA_ID) {
+    if (import.meta.env.DEV) {
+      console.info("[analytics skipped - missing VITE_GA_MEASUREMENT_ID] page_view", path);
+    }
+    return;
+  }
+
+  if (!analyticsAllowed()) {
+    if (import.meta.env.DEV) {
+      console.info("[analytics skipped - no optional cookie consent] page_view", path);
+    }
+    return;
+  }
+
+  window.gtag?.("event", "page_view", {
+    page_title: title,
+    page_location: window.location.href,
+    page_path: path,
+  });
 }
 
 export function trackEvent(

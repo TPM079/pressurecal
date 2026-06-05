@@ -31,6 +31,7 @@ import PsiBarCalculatorPage from "./pages/PsiBarCalculatorPage";
 import GpmLpmCalculatorPage from "./pages/GpmLpmCalculatorPage";
 import EquipmentLibraryPage from "./pages/EquipmentLibraryPage";
 import CookieConsentBanner from "./components/CookieConsentBanner";
+import { trackPageView } from "./lib/analytics";
 
 function PageTransition({ children }: { children: ReactNode }) {
   return (
@@ -65,192 +66,54 @@ function ScrollManager() {
   return null;
 }
 
+function AnalyticsPageTracker() {
+  const location = useLocation();
+
+  useEffect(() => {
+    const path = `${location.pathname}${location.search}`;
+    const timeoutId = window.setTimeout(() => {
+      trackPageView(path);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [location.pathname, location.search]);
+
+  return null;
+}
+
 export default function App() {
   const location = useLocation();
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <ScrollManager />
+      <AnalyticsPageTracker />
 
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
-          <Route
-            path="/"
-            element={
-              <PageTransition>
-                <HomePage />
-              </PageTransition>
-            }
-          />
-
-          <Route
-            path="/calculator"
-            element={
-              <PageTransition>
-                <FullRigCalculatorPage />
-              </PageTransition>
-            }
-          />
-
-          <Route
-            path="/admin-feedback"
-            element={
-              <PageTransition>
-                <AdminFeedbackPage />
-              </PageTransition>
-            }
-          />
-
-          <Route
-            path="/pricing"
-            element={
-              <PageTransition>
-                <PressureCalProPage />
-              </PageTransition>
-            }
-          />
-
+          <Route path="/" element={<PageTransition><HomePage /></PageTransition>} />
+          <Route path="/calculator" element={<PageTransition><FullRigCalculatorPage /></PageTransition>} />
+          <Route path="/admin-feedback" element={<PageTransition><AdminFeedbackPage /></PageTransition>} />
+          <Route path="/pricing" element={<PageTransition><PressureCalProPage /></PageTransition>} />
           <Route path="/pro" element={<Navigate to="/pricing" replace />} />
-
-          <Route
-            path="/account"
-            element={
-              <PageTransition>
-                <AccountPage />
-              </PageTransition>
-            }
-          />
-
-          <Route
-            path="/reset-password"
-            element={
-              <PageTransition>
-                <UpdatePasswordPage />
-              </PageTransition>
-            }
-          />
-
-          <Route
-            path="/saved-setups"
-            element={
-              <PageTransition>
-                <SavedSetupsPage />
-              </PageTransition>
-            }
-          />
-
-          <Route
-            path="/equipment-library"
-            element={
-              <PageTransition>
-                <EquipmentLibraryPage />
-              </PageTransition>
-            }
-          />
-
-          <Route
-            path="/saved-setups/:setupId/report"
-            element={
-              <PageTransition>
-                <SavedSetupReportPage />
-              </PageTransition>
-            }
-          />
-
-          <Route
-            path="/compare-setups"
-            element={
-              <PageTransition>
-                <CompareSetupsPage />
-              </PageTransition>
-            }
-          />
-
-          <Route
-            path="/nozzle-size-calculator"
-            element={
-              <PageTransition>
-                <NozzleCalculator />
-              </PageTransition>
-            }
-          />
-
-          <Route
-            path="/target-pressure-nozzle-calculator"
-            element={
-              <PageTransition>
-                <TargetPressureNozzleCalculatorPage />
-              </PageTransition>
-            }
-          />
-
-          <Route
-            path="/nozzle-size-chart"
-            element={
-              <PageTransition>
-                <NozzleSizeChartPage />
-              </PageTransition>
-            }
-          />
-
-          <Route
-            path="/hose-pressure-loss-calculator"
-            element={
-              <PageTransition>
-                <HosePressureLossCalculator />
-              </PageTransition>
-            }
-          />
-
-          <Route
-            path="/psi-bar-calculator"
-            element={
-              <PageTransition>
-                <PsiBarCalculatorPage />
-              </PageTransition>
-            }
-          />
-
-          <Route
-            path="/lpm-gpm-calculator"
-            element={
-              <PageTransition>
-                <GpmLpmCalculatorPage />
-              </PageTransition>
-            }
-          />
-
-          <Route
-            path="/gpm-lpm-calculator"
-            element={<Navigate to="/lpm-gpm-calculator" replace />}
-          />
-
-          <Route
-            path="/about"
-            element={
-              <PageTransition>
-                <AboutPage />
-              </PageTransition>
-            }
-          />
-
-          <Route
-            path="/privacy"
-            element={
-              <PageTransition>
-                <PrivacyPolicyPage />
-              </PageTransition>
-            }
-          />
-
-          <Route
-            path="/terms"
-            element={
-              <PageTransition>
-                <TermsOfServicePage />
-              </PageTransition>
-            }
-          />
+          <Route path="/account" element={<PageTransition><AccountPage /></PageTransition>} />
+          <Route path="/reset-password" element={<PageTransition><UpdatePasswordPage /></PageTransition>} />
+          <Route path="/saved-setups" element={<PageTransition><SavedSetupsPage /></PageTransition>} />
+          <Route path="/equipment-library" element={<PageTransition><EquipmentLibraryPage /></PageTransition>} />
+          <Route path="/saved-setups/:setupId/report" element={<PageTransition><SavedSetupReportPage /></PageTransition>} />
+          <Route path="/compare-setups" element={<PageTransition><CompareSetupsPage /></PageTransition>} />
+          <Route path="/nozzle-size-calculator" element={<PageTransition><NozzleCalculator /></PageTransition>} />
+          <Route path="/target-pressure-nozzle-calculator" element={<PageTransition><TargetPressureNozzleCalculatorPage /></PageTransition>} />
+          <Route path="/nozzle-size-chart" element={<PageTransition><NozzleSizeChartPage /></PageTransition>} />
+          <Route path="/hose-pressure-loss-calculator" element={<PageTransition><HosePressureLossCalculator /></PageTransition>} />
+          <Route path="/psi-bar-calculator" element={<PageTransition><PsiBarCalculatorPage /></PageTransition>} />
+          <Route path="/lpm-gpm-calculator" element={<PageTransition><GpmLpmCalculatorPage /></PageTransition>} />
+          <Route path="/gpm-lpm-calculator" element={<Navigate to="/lpm-gpm-calculator" replace />} />
+          <Route path="/about" element={<PageTransition><AboutPage /></PageTransition>} />
+          <Route path="/privacy" element={<PageTransition><PrivacyPolicyPage /></PageTransition>} />
+          <Route path="/terms" element={<PageTransition><TermsOfServicePage /></PageTransition>} />
         </Routes>
       </AnimatePresence>
 
