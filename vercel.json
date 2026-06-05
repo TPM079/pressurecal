@@ -13,17 +13,17 @@
     },
     {
       "source": "/go/setup-fb",
-      "destination": "/full-setup-calculator?utm_source=facebook&utm_medium=social&utm_campaign=setup_calculator&utm_content=fb_post",
+      "destination": "/calculator?utm_source=facebook&utm_medium=social&utm_campaign=setup_calculator&utm_content=fb_post",
       "permanent": false
     },
     {
       "source": "/go/setup-ig",
-      "destination": "/full-setup-calculator?utm_source=instagram&utm_medium=social&utm_campaign=setup_calculator&utm_content=ig_story",
+      "destination": "/calculator?utm_source=instagram&utm_medium=social&utm_campaign=setup_calculator&utm_content=ig_story",
       "permanent": false
     },
     {
       "source": "/go/setup-yt",
-      "destination": "/full-setup-calculator?utm_source=youtube&utm_medium=social&utm_campaign=setup_calculator&utm_content=yt_shorts",
+      "destination": "/calculator?utm_source=youtube&utm_medium=social&utm_campaign=setup_calculator&utm_content=yt_shorts",
       "permanent": false
     },
     {
