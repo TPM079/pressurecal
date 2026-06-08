@@ -37,6 +37,11 @@
       "permanent": false
     },
     {
+      "source": "/go/hose-yt",
+      "destination": "/hose-pressure-loss-calculator?utm_source=youtube&utm_medium=social&utm_campaign=hose_loss&utm_content=yt_shorts",
+      "permanent": false
+    },
+    {
       "source": "/go/nozzle-fb",
       "destination": "/nozzle-size-calculator?utm_source=facebook&utm_medium=social&utm_campaign=nozzle_size&utm_content=fb_post",
       "permanent": false
