@@ -47,6 +47,16 @@
       "permanent": false
     },
     {
+      "source": "/go/nozzle-yt",
+      "destination": "/nozzle-size-calculator?utm_source=youtube&utm_medium=social&utm_campaign=nozzle_size&utm_content=yt_shorts",
+      "permanent": false
+    },
+    {
+      "source": "/go/nozzle-ig",
+      "destination": "/nozzle-size-calculator?utm_source=youtube&utm_medium=social&utm_campaign=nozzle_size&utm_content=ig_post",
+      "permanent": false
+    },
+    {
       "source": "/go/psi-bar-yt",
       "destination": "/psi-bar-calculator?utm_source=youtube&utm_medium=social&utm_campaign=psi_bar&utm_content=yt_shorts",
       "permanent": false
