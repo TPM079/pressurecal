@@ -21,6 +21,8 @@ import type { Inputs, PressureUnit, FlowUnit, LengthUnit } from "../pressurecal"
 type EnginePowerUnit = "hp" | "kw";
 
 const KW_PER_HP = 0.745699872;
+const DEFAULT_PUMP_EFFICIENCY = 0.93;
+const DEFAULT_ENGINE_USABLE_FACTOR = 0.85;
 
 const hosePresets = [
   { label: '1/8" (3.18 mm)', valueMm: 3.18 },
@@ -121,31 +123,57 @@ function toNumberOrNull(value: string | number) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function calculateRequiredHp(pressurePsi: number, flowGpm: number, efficiency = 0.9) {
-  if (!Number.isFinite(pressurePsi) || !Number.isFinite(flowGpm) || efficiency <= 0) return 0;
-  return (pressurePsi * flowGpm) / (1714 * efficiency);
+function calculateEngineHpRequired(
+  pumpOutletPressurePsi: number,
+  pumpFlowGpm: number,
+  efficiency = DEFAULT_PUMP_EFFICIENCY
+) {
+  if (
+    !Number.isFinite(pumpOutletPressurePsi) ||
+    !Number.isFinite(pumpFlowGpm) ||
+    pumpOutletPressurePsi <= 0 ||
+    pumpFlowGpm <= 0 ||
+    efficiency <= 0
+  ) {
+    return 0;
+  }
+
+  return (pumpOutletPressurePsi * pumpFlowGpm) / (1714 * efficiency);
 }
 
-function calculateUsableEngineHp(ratedHp: number, factor = 0.85) {
+function calculateHydraulicHp(pressurePsi: number, flowGpm: number) {
+  if (
+    !Number.isFinite(pressurePsi) ||
+    !Number.isFinite(flowGpm) ||
+    pressurePsi <= 0 ||
+    flowGpm <= 0
+  ) {
+    return 0;
+  }
+
+  return (pressurePsi * flowGpm) / 1714;
+}
+
+function calculateUsableEngineHp(ratedHp: number, factor = DEFAULT_ENGINE_USABLE_FACTOR) {
   return !Number.isFinite(ratedHp) || ratedHp <= 0 ? 0 : ratedHp * factor;
 }
 
-function hpStatus(requiredHp: number, usableHp: number) {
-  if (usableHp <= 0) {
+function hpStatus(requiredEngineHp: number, usableEngineHp: number) {
+  if (usableEngineHp <= 0) {
     return {
       text: "Enter engine HP to evaluate power status.",
       cls: "bg-slate-50 text-slate-700 border-slate-200",
     };
   }
 
-  if (usableHp < requiredHp) {
+  if (usableEngineHp < requiredEngineHp) {
     return {
       text: "Engine undersized for this setup.",
       cls: "bg-red-50 text-red-800 border-red-200",
     };
   }
 
-  if (usableHp < requiredHp * 1.1) {
+  if (usableEngineHp < requiredEngineHp * 1.1) {
     return {
       text: "Operating near engine limit.",
       cls: "bg-amber-50 text-amber-900 border-amber-200",
@@ -567,10 +595,35 @@ export default function FullRigCalculatorPage() {
   const gunBar = barFromPsi(r.gunPressurePsi);
   const gunLpm = lpmFromGpm(r.gunFlowGpm);
   const lossBar = barFromPsi(r.hoseLossPsi);
-  const requiredHp = calculateRequiredHp(r.gunPressurePsi, r.gunFlowGpm, 0.9);
-  const usableEngineHp = calculateUsableEngineHp(engineHpValue, 0.85);
-  const enginePowerBadge = hpStatus(requiredHp, usableEngineHp);
   const ratedPsi = toPsi(Number(inputs.pumpPressure || 0), inputs.pumpPressureUnit);
+  const ratedBar = barFromPsi(ratedPsi);
+  const ratedGpm = toGpm(Number(inputs.pumpFlow || 0), inputs.pumpFlowUnit);
+  const ratedLpm = lpmFromGpm(ratedGpm);
+  const pumpOutletPressurePsi =
+    Number(inputs.maxPressure || 0) > 0
+      ? toPsi(Number(inputs.maxPressure || 0), inputs.maxPressureUnit)
+      : ratedPsi;
+  const pumpFlowGpm = ratedGpm;
+  const hydraulicHpRequired = calculateHydraulicHp(pumpOutletPressurePsi, pumpFlowGpm);
+  const requiredEngineHp = calculateEngineHpRequired(pumpOutletPressurePsi, pumpFlowGpm);
+  const usefulHydraulicHpAtGun = calculateHydraulicHp(r.gunPressurePsi, r.gunFlowGpm);
+  const hoseLossHydraulicHp = calculateHydraulicHp(r.hoseLossPsi, r.gunFlowGpm);
+  const bypassFlowGpm = Math.max(0, pumpFlowGpm - r.gunFlowGpm);
+  const bypassHydraulicHp = calculateHydraulicHp(pumpOutletPressurePsi, bypassFlowGpm);
+  const usableEngineHp = calculateUsableEngineHp(engineHpValue);
+  const enginePowerBadge = hpStatus(requiredEngineHp, usableEngineHp);
+  const powerDiagnosticNote = [
+    `Pump hydraulic load: ${formatEnginePowerFromHp(hydraulicHpRequired)}`,
+    `Useful hydraulic power at gun: ${formatEnginePowerFromHp(usefulHydraulicHpAtGun)}`,
+    hoseLossHydraulicHp > 0
+      ? `Hose loss hydraulic power: ${formatEnginePowerFromHp(hoseLossHydraulicHp)}`
+      : null,
+    bypassHydraulicHp > 0.05
+      ? `Bypass hydraulic power: ${formatEnginePowerFromHp(bypassHydraulicHp)}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
   const pressureVariancePct = ratedPsi > 0 ? ((r.gunPressurePsi - ratedPsi) / ratedPsi) * 100 : 0;
   const lossPctAbs = Math.abs(pressureVariancePct);
   const efficiencyTier =
@@ -587,9 +640,6 @@ export default function FullRigCalculatorPage() {
   const systemBadge = r.isPressureLimited
     ? { text: "Bypass active", cls: "bg-red-50 text-red-800 border-red-200" }
     : badge;
-  const ratedBar = barFromPsi(ratedPsi);
-  const ratedGpm = toGpm(Number(inputs.pumpFlow || 0), inputs.pumpFlowUnit);
-  const ratedLpm = lpmFromGpm(ratedGpm);
   const pqRated = ratedBar * ratedLpm;
   const pqAtGun = gunBar * gunLpm;
   const pqClassRated = pqRated >= 5600 ? "Class B" : "Class A";
@@ -1252,7 +1302,7 @@ export default function FullRigCalculatorPage() {
     {
       label: "Max pressure",
       value: `${fmt(Number(inputs.maxPressure || 0), 0)} ${inputs.maxPressureUnit.toUpperCase()}`,
-      note: "Used to flag bypass/pressure-limited behaviour when the setup would exceed the limit.",
+      note: "Used as the modelled pump outlet / unloader pressure for required power, and to flag bypass or pressure-limited behaviour.",
     },
     {
       label: "Hose",
@@ -1301,8 +1351,11 @@ export default function FullRigCalculatorPage() {
     },
     {
       label: "Required power",
-      value: formatEnginePowerFromHp(requiredHp),
-      note: usableEngineHp > 0 ? `Usable engine power guide: ${formatEnginePowerFromHp(usableEngineHp)}` : "Enter engine power to compare available power.",
+      value: formatEnginePowerFromHp(requiredEngineHp),
+      note:
+        usableEngineHp > 0
+          ? `Pump-side engine requirement. Usable engine power guide: ${formatEnginePowerFromHp(usableEngineHp)}. ${powerDiagnosticNote}`
+          : `Pump-side engine requirement. Enter engine power to compare available power. ${powerDiagnosticNote}`,
     },
     {
       label: "P × Q reference",
@@ -2089,7 +2142,7 @@ export default function FullRigCalculatorPage() {
                       </p>
                       <p>
                         Hose loss is estimated from flow, hose length, hose ID, water properties,
-                        and roughness. Required power is estimated as: HP = (PSI × US GPM) ÷ (1714 × efficiency), then also shown in kW.
+                        and roughness. Required power is estimated from pump-side outlet pressure and rated pump flow as: HP = (PSI × US GPM) ÷ (1714 × pump efficiency), then also shown in kW.
                       </p>
                       <p>
                         In PressureCal, GPM means US gallons per minute unless otherwise stated.
@@ -2137,7 +2190,7 @@ export default function FullRigCalculatorPage() {
                   <div className="mt-5 grid gap-3">
                     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                       <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Required power</div>
-                      <div className="mt-2 text-xl font-semibold text-slate-950">{formatEnginePowerFromHp(requiredHp)}</div>
+                      <div className="mt-2 text-xl font-semibold text-slate-950">{formatEnginePowerFromHp(requiredEngineHp)}</div>
                       <div className="mt-1 text-sm text-slate-600">
                         Usable engine power {usableEngineHp > 0 ? formatEnginePowerFromHp(usableEngineHp) : "—"}
                       </div>
@@ -2167,7 +2220,7 @@ export default function FullRigCalculatorPage() {
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Required power</div>
-                    <div className="mt-2 text-xl font-semibold text-slate-950">{formatEnginePowerFromHp(requiredHp)}</div>
+                    <div className="mt-2 text-xl font-semibold text-slate-950">{formatEnginePowerFromHp(requiredEngineHp)}</div>
                     <div className="mt-1 text-sm text-slate-600">
                       Usable engine power {usableEngineHp > 0 ? formatEnginePowerFromHp(usableEngineHp) : "—"}
                     </div>
