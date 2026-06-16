@@ -104,6 +104,16 @@ export function lpmFromGpm(gpm: number): number {
   return gpm * LPM_PER_GPM;
 }
 
+export function flowFromGpm(gpm: number, unit: FlowUnit): number {
+  return unit === "gpm" ? gpm : lpmFromGpm(gpm);
+}
+
+export function formatFlowFromGpm(gpm: number, unit: FlowUnit): string {
+  const decimals = unit === "gpm" ? 2 : 1;
+  const label = unit === "gpm" ? "GPM" : "LPM";
+  return `${flowFromGpm(gpm, unit).toFixed(decimals)} ${label}`;
+}
+
 export function metersFrom(value: number, unit: LengthUnit): number {
   return unit === "m" ? value : value * 0.3048;
 }
@@ -404,7 +414,7 @@ export function solvePressureCal(inputs: Inputs): SolveResult {
     if (isPressureLimited) {
       statusMessage =
         `Tip is restrictive. System is pressure-limited (unloader bypass likely). ` +
-        `Approx bypass: ${bypassPct.toFixed(0)}% (${bypassFlowGpm.toFixed(2)} GPM). ` +
+        `Approx bypass: ${bypassPct.toFixed(0)}% (${formatFlowFromGpm(bypassFlowGpm, inputs.pumpFlowUnit)}). ` +
         `Without the limit, required pressure would be ~${requiredPumpPsi.toFixed(0)} PSI.`;
     } else {
       statusMessage =
