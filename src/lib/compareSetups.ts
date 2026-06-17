@@ -9,7 +9,6 @@ import type {
   DiameterUnit,
   FlowUnit,
   Inputs,
-  HoseSetupMode,
   LengthUnit,
   PressureUnit,
 } from "../pressurecal";
@@ -46,11 +45,11 @@ const INPUT_DEFAULTS: Inputs = {
   pumpFlowUnit: "lpm",
   maxPressure: 4000,
   maxPressureUnit: "psi",
+  hoseSetupMode: "single",
   hoseLength: 15,
   hoseLengthUnit: "m",
   hoseId: 9.53,
   hoseIdUnit: "mm",
-  hoseSetupMode: "single",
   mainHoseLength: 50,
   mainHoseId: 9.53,
   leaderHoseLength: 20,
@@ -131,17 +130,13 @@ function toNullableNumber(value: number | string | null | undefined) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function getHoseSetupMode(inputs: Inputs): HoseSetupMode {
-  return inputs.hoseSetupMode === "mainLeader" ? "mainLeader" : "single";
-}
-
 function buildSyntheticSavedSetup(inputs: Inputs, name: string, notes?: string | null): SavedSetup {
   const pumpPressure = toNullableNumber(inputs.pumpPressure);
   const pumpFlow = toNullableNumber(inputs.pumpFlow);
   const maxPressure = toNullableNumber(inputs.maxPressure);
   const hoseLength = toNullableNumber(inputs.hoseLength);
   const hoseId = toNullableNumber(inputs.hoseId);
-  const hoseSetupMode = getHoseSetupMode(inputs);
+  const hoseSetupMode = inputs.hoseSetupMode === "mainLeader" ? "mainLeader" : "single";
   const mainHoseLength = toNullableNumber(inputs.mainHoseLength);
   const mainHoseId = toNullableNumber(inputs.mainHoseId);
   const leaderHoseLength = toNullableNumber(inputs.leaderHoseLength);
@@ -157,8 +152,18 @@ function buildSyntheticSavedSetup(inputs: Inputs, name: string, notes?: string |
 
     machinePsi: pumpPressure === null ? null : toPsi(pumpPressure, inputs.pumpPressureUnit),
     machineLpm: pumpFlow === null ? null : toLpm(pumpFlow, inputs.pumpFlowUnit),
-    hoseLengthM: hoseLength === null ? null : toMeters(hoseLength, inputs.hoseLengthUnit),
-    hoseIdMm: hoseId === null ? null : toMillimetres(hoseId, inputs.hoseIdUnit),
+    hoseLengthM:
+      hoseSetupMode === "mainLeader"
+        ? null
+        : hoseLength === null
+          ? null
+          : toMeters(hoseLength, inputs.hoseLengthUnit),
+    hoseIdMm:
+      hoseSetupMode === "mainLeader"
+        ? null
+        : hoseId === null
+          ? null
+          : toMillimetres(hoseId, inputs.hoseIdUnit),
     nozzleSize: nozzleSizeText,
 
     pumpPressure,

@@ -13,6 +13,7 @@ import {
 } from "../hooks/useSavedSetups";
 import { buildFullRigSearchParams } from "../lib/rigUrlState";
 import { savedSetupToInputs } from "../lib/savedSetupToInputs";
+import { getSavedSetupHoseDisplay } from "../lib/savedSetupHoseDisplay";
 import { trackEvent } from "../lib/analytics";
 import { supabase } from "../lib/supabase-browser";
 
@@ -933,7 +934,10 @@ export default function SavedSetupsPage() {
                   </div>
                 ) : (
                   <div className="mt-8 space-y-4">
-                    {setups.map((setup) => (
+                    {setups.map((setup) => {
+                      const hoseDisplay = getSavedSetupHoseDisplay(setup);
+
+                      return (
                       <article key={setup.id} className="rounded-2xl border border-slate-200 p-5">
                         <div className="flex flex-wrap items-start justify-between gap-3">
                           <div>
@@ -1030,8 +1034,18 @@ export default function SavedSetupsPage() {
                               Hose
                             </dt>
                             <dd className="mt-1">
-                              {setup.hoseLength ?? "—"} {setup.hoseLengthUnit} · {setup.hoseId ?? "—"}{" "}
-                              {setup.hoseIdUnit}
+                              {hoseDisplay.isSplit ? (
+                                <div className="space-y-1">
+                                  <p className="font-semibold text-slate-900">{hoseDisplay.value}</p>
+                                  {hoseDisplay.detailLines.map((line) => (
+                                    <p key={line} className="text-xs leading-5 text-slate-600">
+                                      {line}
+                                    </p>
+                                  ))}
+                                </div>
+                              ) : (
+                                hoseDisplay.value
+                              )}
                             </dd>
                           </div>
                           <div className="rounded-2xl bg-slate-50 px-4 py-3">
@@ -1057,7 +1071,8 @@ export default function SavedSetupsPage() {
                           </div>
                         </dl>
                       </article>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>

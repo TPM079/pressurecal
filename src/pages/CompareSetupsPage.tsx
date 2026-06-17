@@ -15,6 +15,7 @@ import {
   parseRigSearchParams,
 } from "../lib/rigUrlState";
 import { savedSetupToInputs } from "../lib/savedSetupToInputs";
+import { getSavedSetupHoseDisplay } from "../lib/savedSetupHoseDisplay";
 import { supabase } from "../lib/supabase-browser";
 import type { Inputs } from "../pressurecal";
 
@@ -146,10 +147,15 @@ function parseLiveInputsFromSearchParams(
     "pumpFlowUnit",
     "maxPressure",
     "maxPressureUnit",
+    "hoseSetupMode",
     "hoseLength",
     "hoseLengthUnit",
     "hoseId",
     "hoseIdUnit",
+    "mainHoseLength",
+    "mainHoseId",
+    "leaderHoseLength",
+    "leaderHoseId",
     "engineHp",
     "sprayMode",
     "nozzleCount",
@@ -397,42 +403,11 @@ export default function CompareSetupsPage() {
             ),
           },
           {
-            label: "Hose length",
-            aValue: `${comparedA.setup.hoseLengthM ?? "—"} m`,
-            bValue: `${comparedB.setup.hoseLengthM ?? "—"} m`,
-            aClass: valueClass(
-              comparedA,
-              comparedB,
-              (item) => item.setup.hoseLengthM ?? 0,
-              "lower",
-              "a"
-            ),
-            bClass: valueClass(
-              comparedA,
-              comparedB,
-              (item) => item.setup.hoseLengthM ?? 0,
-              "lower",
-              "b"
-            ),
-          },
-          {
-            label: "Hose ID",
-            aValue: `${comparedA.setup.hoseIdMm ?? "—"} mm`,
-            bValue: `${comparedB.setup.hoseIdMm ?? "—"} mm`,
-            aClass: valueClass(
-              comparedA,
-              comparedB,
-              (item) => item.setup.hoseIdMm ?? 0,
-              "higher",
-              "a"
-            ),
-            bClass: valueClass(
-              comparedA,
-              comparedB,
-              (item) => item.setup.hoseIdMm ?? 0,
-              "higher",
-              "b"
-            ),
+            label: "Hose",
+            aValue: getSavedSetupHoseDisplay(comparedA.setup).comparisonValue,
+            bValue: getSavedSetupHoseDisplay(comparedB.setup).comparisonValue,
+            aClass: "text-slate-900",
+            bClass: "text-slate-900",
           },
           {
             label: "Nozzle / tip code",
@@ -887,7 +862,10 @@ export default function CompareSetupsPage() {
                 </section>
 
                 <section className="grid gap-6 lg:grid-cols-2">
-                  {[comparedA, comparedB].map((item, index) => (
+                  {[comparedA, comparedB].map((item, index) => {
+                    const hoseDisplay = getSavedSetupHoseDisplay(item.setup);
+
+                    return (
                     <article
                       key={`${item.setup.id}-${index}`}
                       className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8"
@@ -942,7 +920,18 @@ export default function CompareSetupsPage() {
                             Hose
                           </dt>
                           <dd className="mt-1">
-                            {item.setup.hoseLengthM ?? "—"} m · {item.setup.hoseIdMm ?? "—"} mm
+                            {hoseDisplay.isSplit ? (
+                              <div className="space-y-1">
+                                <p className="font-semibold text-slate-900">{hoseDisplay.value}</p>
+                                {hoseDisplay.detailLines.map((line) => (
+                                  <p key={line} className="text-xs leading-5 text-slate-600">
+                                    {line}
+                                  </p>
+                                ))}
+                              </div>
+                            ) : (
+                              hoseDisplay.value
+                            )}
                           </dd>
                         </div>
                         <div className="rounded-2xl bg-slate-50 px-4 py-3">
@@ -1000,7 +989,8 @@ export default function CompareSetupsPage() {
                         ) : null}
                       </div>
                     </article>
-                  ))}
+                    );
+                  })}
                 </section>
 
                 <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">

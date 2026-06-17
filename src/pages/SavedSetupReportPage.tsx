@@ -11,6 +11,7 @@ import {
 } from "../hooks/useSavedSetups";
 import { buildFullRigSearchParams } from "../lib/rigUrlState";
 import { savedSetupToInputs } from "../lib/savedSetupToInputs";
+import { getSavedSetupHoseDisplay } from "../lib/savedSetupHoseDisplay";
 import { supabase } from "../lib/supabase-browser";
 
 function formatNumber(value: number | null | undefined, decimals = 0) {
@@ -239,6 +240,7 @@ export default function SavedSetupReportPage() {
   const reportOperatorNotesWereTrimmed = Boolean(
     setup?.notes && setup.notes.trim().length > REPORT_OPERATOR_NOTES_MAX_CHARS
   );
+  const hoseDisplay = setup ? getSavedSetupHoseDisplay(setup) : null;
 
   async function copyReportLink() {
     const url = window.location.href;
@@ -789,14 +791,24 @@ export default function SavedSetupReportPage() {
                       value={`${formatNumber(setup.maxPressure)} ${setup.maxPressureUnit.toUpperCase()}`}
                       detail="Unloader / rated max pressure setting"
                     />
-                    <ReportMetric
-                      label="Hose length"
-                      value={`${formatNumber(setup.hoseLength, 1)} ${setup.hoseLengthUnit}`}
-                    />
-                    <ReportMetric
-                      label="Hose ID"
-                      value={`${formatNumber(setup.hoseId, 2)} ${setup.hoseIdUnit}`}
-                    />
+                    {hoseDisplay?.isSplit ? (
+                      <ReportMetric
+                        label="Hose"
+                        value={hoseDisplay.value}
+                        detail={hoseDisplay.detailLines.join(" · ")}
+                      />
+                    ) : (
+                      <>
+                        <ReportMetric
+                          label="Hose length"
+                          value={`${formatNumber(setup.hoseLength, 1)} ${setup.hoseLengthUnit}`}
+                        />
+                        <ReportMetric
+                          label="Hose ID"
+                          value={`${formatNumber(setup.hoseId, 2)} ${setup.hoseIdUnit}`}
+                        />
+                      </>
+                    )}
                     <ReportMetric
                       label="Engine HP"
                       value={setup.engineHp === null ? "Not provided" : `${formatNumber(setup.engineHp, 1)} HP`}
