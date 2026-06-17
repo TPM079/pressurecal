@@ -697,7 +697,14 @@ export default function FullRigCalculatorPage() {
   const totalHoseLengthDisplay = fromMeters(r.totalHoseLengthM, inputs.hoseLengthUnit);
   const mainHoseLossBar = barFromPsi(r.mainHoseLossPsi);
   const leaderHoseLossBar = barFromPsi(r.leaderHoseLossPsi);
-  const hoseLossLabel = isMainLeaderHose ? "Combined hose pressure loss" : "Hose pressure loss";
+  const hoseLossLabel = "Hose pressure loss";
+  const mainHoseLengthDisplay = Number(
+    inputs.mainHoseLength !== undefined && inputs.mainHoseLength !== ""
+      ? inputs.mainHoseLength
+      : inputs.hoseLength || 0
+  );
+  const leaderHoseLengthDisplay = Number(inputs.leaderHoseLength || 0);
+  const splitHoseTotalLengthDisplay = mainHoseLengthDisplay + leaderHoseLengthDisplay;
   const hoseSetupDisplay = buildHoseSetupSummaryText(inputs);
 
   const liveSetupItems = [
@@ -1889,6 +1896,9 @@ export default function FullRigCalculatorPage() {
                     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                       <p className="text-xs uppercase tracking-[0.14em] text-slate-500">{hoseLossLabel}</p>
                       <p className="mt-2 text-2xl font-semibold text-slate-950">{fmt(r.hoseLossPsi, 0)} PSI</p>
+                      {isMainLeaderHose ? (
+                        <p className="mt-1 text-xs font-medium text-slate-500">Combined from main + leader hose</p>
+                      ) : null}
                       <p className="mt-1 text-sm text-slate-600">{fmt(lossBar, 1)} bar</p>
                     </div>
                   </div>
@@ -2081,7 +2091,7 @@ export default function FullRigCalculatorPage() {
                     <option value="mainLeader">Main + Leader Hose</option>
                   </select>
                   <p className="mt-2 text-xs leading-5 text-slate-500">
-                    Add a second hose section if your setup uses a main hose plus a leader hose, whip hose, reel hose or extension hose.
+                    Use Main + Leader Hose when your setup has a main hose plus a leader hose, whip hose, reel hose or extension hose.
                   </p>
                 </div>
 
@@ -2214,6 +2224,19 @@ export default function FullRigCalculatorPage() {
                         </select>
                       </div>
                     </div>
+
+                    <div className="mt-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+                      <p>
+                        <span className="font-semibold text-slate-900">Total hose length:</span>{" "}
+                        {fmt(splitHoseTotalLengthDisplay, 1)} {inputs.hoseLengthUnit}
+                      </p>
+                      <p className="mt-1">
+                        <span className="font-semibold text-slate-900">Main hose:</span>{" "}
+                        {fmt(mainHoseLengthDisplay, 1)} {inputs.hoseLengthUnit} ·{" "}
+                        <span className="font-semibold text-slate-900">Leader hose:</span>{" "}
+                        {fmt(leaderHoseLengthDisplay, 1)} {inputs.hoseLengthUnit}
+                      </p>
+                    </div>
                   </div>
                 )}
 
@@ -2311,6 +2334,9 @@ export default function FullRigCalculatorPage() {
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <div className="text-xs uppercase tracking-[0.14em] text-slate-500">{hoseLossLabel}</div>
                     <div className="mt-2 text-2xl font-semibold text-slate-950">{fmt(r.hoseLossPsi, 0)} PSI</div>
+                    {isMainLeaderHose ? (
+                      <div className="mt-1 text-xs font-medium text-slate-500">Combined from main + leader hose</div>
+                    ) : null}
                     <div className="mt-1 text-sm text-slate-600">{fmt(lossBar, 1)} bar · {efficiencyTier}</div>
                   </div>
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">

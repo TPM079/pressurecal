@@ -41,6 +41,8 @@ function asSprayMode(value: string | null): Inputs["sprayMode"] | undefined {
 
 export function buildRigSearchParams(inputs: PartialInputs): URLSearchParams {
   const params = new URLSearchParams();
+  const hoseSetupMode: HoseSetupMode =
+    inputs.hoseSetupMode === "mainLeader" ? "mainLeader" : "single";
 
   if (inputs.pumpPressure !== undefined && inputs.pumpPressure !== "") {
     params.set("pumpPressure", String(inputs.pumpPressure));
@@ -63,38 +65,40 @@ export function buildRigSearchParams(inputs: PartialInputs): URLSearchParams {
     params.set("maxPressureUnit", inputs.maxPressureUnit);
   }
 
-  if (inputs.hoseLength !== undefined && inputs.hoseLength !== "") {
-    params.set("hoseLength", String(inputs.hoseLength));
-  }
+  params.set("hoseSetupMode", hoseSetupMode);
+
   if (inputs.hoseLengthUnit) {
     params.set("hoseLengthUnit", inputs.hoseLengthUnit);
   }
 
-  if (inputs.hoseId !== undefined && inputs.hoseId !== "") {
-    params.set("hoseId", String(inputs.hoseId));
-  }
   if (inputs.hoseIdUnit) {
     params.set("hoseIdUnit", inputs.hoseIdUnit);
   }
 
-  if (inputs.hoseSetupMode) {
-    params.set("hoseSetupMode", inputs.hoseSetupMode);
-  }
+  if (hoseSetupMode === "mainLeader") {
+    if (inputs.mainHoseLength !== undefined && inputs.mainHoseLength !== "") {
+      params.set("mainHoseLength", String(inputs.mainHoseLength));
+    }
 
-  if (inputs.mainHoseLength !== undefined && inputs.mainHoseLength !== "") {
-    params.set("mainHoseLength", String(inputs.mainHoseLength));
-  }
+    if (inputs.mainHoseId !== undefined && inputs.mainHoseId !== "") {
+      params.set("mainHoseId", String(inputs.mainHoseId));
+    }
 
-  if (inputs.mainHoseId !== undefined && inputs.mainHoseId !== "") {
-    params.set("mainHoseId", String(inputs.mainHoseId));
-  }
+    if (inputs.leaderHoseLength !== undefined && inputs.leaderHoseLength !== "") {
+      params.set("leaderHoseLength", String(inputs.leaderHoseLength));
+    }
 
-  if (inputs.leaderHoseLength !== undefined && inputs.leaderHoseLength !== "") {
-    params.set("leaderHoseLength", String(inputs.leaderHoseLength));
-  }
+    if (inputs.leaderHoseId !== undefined && inputs.leaderHoseId !== "") {
+      params.set("leaderHoseId", String(inputs.leaderHoseId));
+    }
+  } else {
+    if (inputs.hoseLength !== undefined && inputs.hoseLength !== "") {
+      params.set("hoseLength", String(inputs.hoseLength));
+    }
 
-  if (inputs.leaderHoseId !== undefined && inputs.leaderHoseId !== "") {
-    params.set("leaderHoseId", String(inputs.leaderHoseId));
+    if (inputs.hoseId !== undefined && inputs.hoseId !== "") {
+      params.set("hoseId", String(inputs.hoseId));
+    }
   }
 
   if (inputs.engineHp !== undefined && inputs.engineHp !== "") {
@@ -184,20 +188,22 @@ export function parseRigSearchParams(search: string): PartialInputs {
   const maxPressureUnit = asPressureUnit(params.get("maxPressureUnit"));
   if (maxPressureUnit) parsed.maxPressureUnit = maxPressureUnit;
 
-  const hoseLength = asNumber(params.get("hoseLength"));
-  if (hoseLength !== undefined) parsed.hoseLength = hoseLength;
+  const hoseSetupMode = asHoseSetupMode(params.get("hoseSetupMode"));
+  if (hoseSetupMode) parsed.hoseSetupMode = hoseSetupMode;
 
   const hoseLengthUnit = asLengthUnit(params.get("hoseLengthUnit"));
   if (hoseLengthUnit) parsed.hoseLengthUnit = hoseLengthUnit;
 
-  const hoseId = asNumber(params.get("hoseId"));
-  if (hoseId !== undefined) parsed.hoseId = hoseId;
-
   const hoseIdUnit = asDiameterUnit(params.get("hoseIdUnit"));
   if (hoseIdUnit) parsed.hoseIdUnit = hoseIdUnit;
 
-  const hoseSetupMode = asHoseSetupMode(params.get("hoseSetupMode"));
-  if (hoseSetupMode) parsed.hoseSetupMode = hoseSetupMode;
+  if (hoseSetupMode !== "mainLeader") {
+    const hoseLength = asNumber(params.get("hoseLength"));
+    if (hoseLength !== undefined) parsed.hoseLength = Math.max(0, hoseLength);
+
+    const hoseId = asNumber(params.get("hoseId"));
+    if (hoseId !== undefined) parsed.hoseId = hoseId;
+  }
 
   const mainHoseLength = asNumber(params.get("mainHoseLength"));
   if (mainHoseLength !== undefined) parsed.mainHoseLength = Math.max(0, mainHoseLength);
