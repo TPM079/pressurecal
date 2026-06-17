@@ -2148,7 +2148,7 @@ export default function FullRigCalculatorPage() {
                       <div>
                         <p className="text-sm font-semibold text-slate-900">Main hose</p>
                         <label className="mt-3 block text-sm font-semibold text-slate-800">Length</label>
-                        <div className="mt-2 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+                        <div className="mt-2 grid grid-cols-[minmax(0,1fr)_5rem] gap-3">
                           <input
                             type="number"
                             inputMode="decimal"
@@ -2163,7 +2163,7 @@ export default function FullRigCalculatorPage() {
                           <select
                             value={inputs.hoseLengthUnit}
                             onChange={(event) => updateHoseLengthUnit(event.target.value as LengthUnit)}
-                            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950 sm:w-auto"
+                            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
                           >
                             <option value="m">m</option>
                             <option value="ft">ft</option>
@@ -2190,7 +2190,7 @@ export default function FullRigCalculatorPage() {
                       <div>
                         <p className="text-sm font-semibold text-slate-900">Leader hose / whip hose</p>
                         <label className="mt-3 block text-sm font-semibold text-slate-800">Length</label>
-                        <div className="mt-2 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+                        <div className="mt-2 grid grid-cols-[minmax(0,1fr)_5rem] gap-3">
                           <input
                             type="number"
                             inputMode="decimal"
@@ -2205,7 +2205,7 @@ export default function FullRigCalculatorPage() {
                           <select
                             value={inputs.hoseLengthUnit}
                             onChange={(event) => updateHoseLengthUnit(event.target.value as LengthUnit)}
-                            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950 sm:w-auto"
+                            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
                           >
                             <option value="m">m</option>
                             <option value="ft">ft</option>
