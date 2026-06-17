@@ -1491,9 +1491,9 @@ export default function FullRigCalculatorPage() {
         <link rel="canonical" href="https://www.pressurecal.com/calculator" />
       </Helmet>
 
-      <section className="-mx-4 bg-slate-100 px-4 pb-8 pt-12 sm:pb-10">
+      <section className="-mx-4 bg-slate-100 px-4 pb-8 pt-6 sm:pb-10 sm:pt-12">
         <div className="mx-auto max-w-6xl">
-          <div className="mb-8 max-w-3xl">
+          <div className="mb-5 max-w-3xl sm:mb-8">
             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
               Full setup calculator
             </div>
@@ -2099,7 +2099,7 @@ export default function FullRigCalculatorPage() {
                   <>
                     <div>
                       <label className="block text-sm font-semibold text-slate-800">Hose length</label>
-                      <div className="mt-2 flex gap-3">
+                      <div className="mt-2 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
                         <input
                           type="number"
                           inputMode="decimal"
@@ -2114,7 +2114,7 @@ export default function FullRigCalculatorPage() {
                         <select
                           value={inputs.hoseLengthUnit}
                           onChange={(event) => updateHoseLengthUnit(event.target.value as LengthUnit)}
-                          className="rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                          className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950 sm:w-auto"
                         >
                           <option value="m">m</option>
                           <option value="ft">ft</option>
@@ -2144,11 +2144,11 @@ export default function FullRigCalculatorPage() {
                   </>
                 ) : (
                   <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="grid gap-5 md:grid-cols-2">
                       <div>
                         <p className="text-sm font-semibold text-slate-900">Main hose</p>
                         <label className="mt-3 block text-sm font-semibold text-slate-800">Length</label>
-                        <div className="mt-2 flex gap-3">
+                        <div className="mt-2 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
                           <input
                             type="number"
                             inputMode="decimal"
@@ -2163,7 +2163,7 @@ export default function FullRigCalculatorPage() {
                           <select
                             value={inputs.hoseLengthUnit}
                             onChange={(event) => updateHoseLengthUnit(event.target.value as LengthUnit)}
-                            className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950 sm:w-auto"
                           >
                             <option value="m">m</option>
                             <option value="ft">ft</option>
@@ -2190,7 +2190,7 @@ export default function FullRigCalculatorPage() {
                       <div>
                         <p className="text-sm font-semibold text-slate-900">Leader hose / whip hose</p>
                         <label className="mt-3 block text-sm font-semibold text-slate-800">Length</label>
-                        <div className="mt-2 flex gap-3">
+                        <div className="mt-2 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
                           <input
                             type="number"
                             inputMode="decimal"
@@ -2202,7 +2202,7 @@ export default function FullRigCalculatorPage() {
                             }
                             className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
                           />
-                          <span className="inline-flex min-w-16 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600">
+                          <span className="inline-flex w-full min-w-16 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 sm:w-auto">
                             {inputs.hoseLengthUnit}
                           </span>
                         </div>
@@ -2230,11 +2230,16 @@ export default function FullRigCalculatorPage() {
                         <span className="font-semibold text-slate-900">Total hose length:</span>{" "}
                         {fmt(splitHoseTotalLengthDisplay, 1)} {inputs.hoseLengthUnit}
                       </p>
-                      <p className="mt-1">
-                        <span className="font-semibold text-slate-900">Main hose:</span>{" "}
-                        {fmt(mainHoseLengthDisplay, 1)} {inputs.hoseLengthUnit} ·{" "}
-                        <span className="font-semibold text-slate-900">Leader hose:</span>{" "}
-                        {fmt(leaderHoseLengthDisplay, 1)} {inputs.hoseLengthUnit}
+                      <p className="mt-1 flex flex-col gap-1 sm:block">
+                        <span>
+                          <span className="font-semibold text-slate-900">Main hose:</span>{" "}
+                          {fmt(mainHoseLengthDisplay, 1)} {inputs.hoseLengthUnit}
+                        </span>
+                        <span className="hidden sm:inline"> · </span>
+                        <span>
+                          <span className="font-semibold text-slate-900">Leader hose:</span>{" "}
+                          {fmt(leaderHoseLengthDisplay, 1)} {inputs.hoseLengthUnit}
+                        </span>
                       </p>
                     </div>
                   </div>
@@ -2320,7 +2325,7 @@ export default function FullRigCalculatorPage() {
                   See nozzle match, hose loss, and real at-gun performance in one place.
                 </p>
 
-                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <div className="mt-5 grid gap-3 md:grid-cols-2">
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <div className="text-xs uppercase tracking-[0.14em] text-slate-500">At-gun pressure</div>
                     <div className="mt-2 text-2xl font-semibold text-slate-950">{fmt(r.gunPressurePsi, 0)} PSI</div>
@@ -2355,7 +2360,7 @@ export default function FullRigCalculatorPage() {
                       Hose loss breakdown
                     </summary>
 
-                    <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                    <div className="mt-4 grid gap-3 md:grid-cols-3">
                       <div className="rounded-xl border border-slate-200 bg-white p-3">
                         <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Total hose length</div>
                         <div className="mt-2 text-lg font-semibold text-slate-950">
@@ -2479,7 +2484,7 @@ export default function FullRigCalculatorPage() {
               <div className="hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:block">
                 <h2 className="text-2xl font-semibold text-slate-900">System details</h2>
 
-                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <div className="mt-5 grid gap-3 md:grid-cols-2">
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Required power</div>
                     <div className="mt-2 text-xl font-semibold text-slate-950">{formatEnginePowerFromHp(requiredEngineHp)}</div>
