@@ -34,6 +34,8 @@ const companyLinks = [
   { to: "/terms", label: "Terms" },
 ];
 
+const OPEN_FEEDBACK_EVENT = "pressurecal:open-feedback";
+
 function navLinkClass(isActive: boolean) {
   return [
     "text-sm font-medium transition",
@@ -74,6 +76,11 @@ export default function PressureCalLayout({
     } finally {
       setSigningOut(false);
     }
+  }
+
+  function handleOpenFeedback() {
+    setMobileMenuOpen(false);
+    window.dispatchEvent(new Event(OPEN_FEEDBACK_EVENT));
   }
 
   return (
@@ -244,6 +251,14 @@ export default function PressureCalLayout({
                   About
                 </Link>
 
+                <button
+                  type="button"
+                  onClick={handleOpenFeedback}
+                  className="rounded-xl border border-slate-200 px-4 py-3 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
+                >
+                  Feedback
+                </button>
+
                 <Link
                   to="/account"
                   className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
@@ -310,6 +325,14 @@ export default function PressureCalLayout({
                       {link.label}
                     </Link>
                   ))}
+
+                  <button
+                    type="button"
+                    onClick={handleOpenFeedback}
+                    className="text-left transition hover:text-slate-700"
+                  >
+                    Feedback
+                  </button>
 
                   <button
                     type="button"
