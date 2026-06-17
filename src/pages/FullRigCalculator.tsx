@@ -2202,9 +2202,14 @@ export default function FullRigCalculatorPage() {
                             }
                             className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
                           />
-                          <span className="inline-flex w-full min-w-16 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 sm:w-auto">
-                            {inputs.hoseLengthUnit}
-                          </span>
+                          <select
+                            value={inputs.hoseLengthUnit}
+                            onChange={(event) => updateHoseLengthUnit(event.target.value as LengthUnit)}
+                            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950 sm:w-auto"
+                          >
+                            <option value="m">m</option>
+                            <option value="ft">ft</option>
+                          </select>
                         </div>
 
                         <label className="mt-3 block text-sm font-semibold text-slate-800">Internal diameter</label>
