@@ -16,7 +16,7 @@ import {
 } from "../lib/shareLinks";
 import { trackEvent } from "../lib/analytics";
 import { solvePressureCal, barFromPsi, lpmFromGpm, roundTipCodeToFive } from "../pressurecal";
-import type { Inputs, PressureUnit, FlowUnit, LengthUnit } from "../pressurecal";
+import type { Inputs, PressureUnit, FlowUnit, LengthUnit, HoseSetupMode } from "../pressurecal";
 
 type EnginePowerUnit = "hp" | "kw";
 
@@ -42,10 +42,15 @@ const defaultInputs: Inputs = {
   pumpFlowUnit: "lpm",
   maxPressure: 4000,
   maxPressureUnit: "psi",
+  hoseSetupMode: "single",
   hoseLength: 15,
   hoseLengthUnit: "m",
   hoseId: 9.53,
   hoseIdUnit: "mm",
+  mainHoseLength: 50,
+  mainHoseId: 9.53,
+  leaderHoseLength: 20,
+  leaderHoseId: 6.35,
   engineHp: "",
   sprayMode: "wand",
   nozzleCount: 1,
@@ -115,12 +120,42 @@ function selectAllOnFocus(e: FocusEvent<HTMLInputElement>) {
   e.target.select();
 }
 
-function toNumberOrNull(value: string | number) {
+function toNumberOrNull(value: string | number | undefined) {
   if (value === "" || value === null || value === undefined) {
     return null;
   }
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function getHoseSetupMode(inputs: Inputs): HoseSetupMode {
+  return inputs.hoseSetupMode === "mainLeader" ? "mainLeader" : "single";
+}
+
+function formatHoseId(value: number | "" | undefined, unit: Inputs["hoseIdUnit"]) {
+  return `${fmt(Number(value || 0), unit === "in" ? 2 : 1)} ${unit}`;
+}
+
+function buildHoseSetupSummaryParts(inputs: Inputs) {
+  if (getHoseSetupMode(inputs) === "mainLeader") {
+    return [
+      `Main hose ${fmt(Number(inputs.mainHoseLength || 0), 0)} ${inputs.hoseLengthUnit} / ${formatHoseId(inputs.mainHoseId, inputs.hoseIdUnit)}`,
+      `Leader hose ${fmt(Number(inputs.leaderHoseLength || 0), 0)} ${inputs.hoseLengthUnit} / ${formatHoseId(inputs.leaderHoseId, inputs.hoseIdUnit)}`,
+    ];
+  }
+
+  return [
+    `${fmt(Number(inputs.hoseLength || 0), 0)} ${inputs.hoseLengthUnit}`,
+    formatHoseId(inputs.hoseId, inputs.hoseIdUnit),
+  ];
+}
+
+function buildHoseSetupSummaryText(inputs: Inputs) {
+  if (getHoseSetupMode(inputs) === "mainLeader") {
+    return buildHoseSetupSummaryParts(inputs).join(" · ");
+  }
+
+  return `Single hose · ${buildHoseSetupSummaryParts(inputs).join(" · ")}`;
 }
 
 function calculateEngineHpRequired(
@@ -247,8 +282,7 @@ function buildShareSummaryText(args: {
   const setupLine = [
     `${fmt(Number(inputs.pumpFlow || 0), inputs.pumpFlowUnit === "gpm" ? 2 : 1)} ${inputs.pumpFlowUnit.toUpperCase()}`,
     `${fmt(Number(inputs.pumpPressure || 0), 0)} ${inputs.pumpPressureUnit.toUpperCase()}`,
-    `${fmt(Number(inputs.hoseLength || 0), 0)} ${inputs.hoseLengthUnit}`,
-    `${fmt(Number(inputs.hoseId || 0), inputs.hoseIdUnit === "in" ? 2 : 1)} ${inputs.hoseIdUnit}`,
+    ...buildHoseSetupSummaryParts(inputs),
     inputs.sprayMode === "surfaceCleaner"
       ? `Nozzle ${inputs.nozzleSizeText || "—"} × ${inputs.nozzleCount}`
       : `Nozzle ${inputs.nozzleSizeText || "—"}`,
@@ -261,7 +295,7 @@ function buildShareSummaryText(args: {
     `Setup: ${setupLine}`,
     `At-gun pressure: ${fmt(gunPressurePsi, 0)} PSI (${fmt(gunPressureBar, 1)} bar)`,
     `Flow: ${fmt(gunFlowLpm, 1)} L/min (${fmt(gunFlowGpm, 2)} GPM)`,
-    `Hose loss: ${fmt(hoseLossPsi, 0)} PSI (${fmt(hoseLossBar, 1)} bar)`,
+    `${getHoseSetupMode(inputs) === "mainLeader" ? "Combined hose pressure loss" : "Hose pressure loss"}: ${fmt(hoseLossPsi, 0)} PSI (${fmt(hoseLossBar, 1)} bar)`,
     `Nozzle status: ${nozzleStatusText}`,
     `Selected nozzle: ${selectedTipCode}`,
     `Note: ${nozzleStatusMessage}`,
@@ -294,8 +328,7 @@ function buildExportSetupLine(inputs: Inputs) {
   return [
     `${fmt(Number(inputs.pumpFlow || 0), inputs.pumpFlowUnit === "gpm" ? 2 : 1)} ${inputs.pumpFlowUnit.toUpperCase()}`,
     `${fmt(Number(inputs.pumpPressure || 0), 0)} ${inputs.pumpPressureUnit.toUpperCase()}`,
-    `${fmt(Number(inputs.hoseLength || 0), 0)} ${inputs.hoseLengthUnit}`,
-    `${fmt(Number(inputs.hoseId || 0), inputs.hoseIdUnit === "in" ? 2 : 1)} ${inputs.hoseIdUnit}`,
+    ...buildHoseSetupSummaryParts(inputs),
     nozzlePart,
     enginePart,
   ].join(" · ");
@@ -588,6 +621,11 @@ export default function FullRigCalculatorPage() {
     maxPressure: Number(inputs.maxPressure || 0),
     hoseLength: Number(inputs.hoseLength || 0),
     hoseId: Number(inputs.hoseId || 0),
+    hoseSetupMode: getHoseSetupMode(inputs),
+    mainHoseLength: Number(inputs.mainHoseLength || 0),
+    mainHoseId: Number(inputs.mainHoseId || 0),
+    leaderHoseLength: Number(inputs.leaderHoseLength || 0),
+    leaderHoseId: Number(inputs.leaderHoseId || 0),
     engineHp: engineHpValue,
   };
 
@@ -654,6 +692,14 @@ export default function FullRigCalculatorPage() {
         ? inputs.engineHp
         : roundForUnit(hpToKw(engineHpValue), 2);
 
+  const hoseSetupMode = getHoseSetupMode(inputs);
+  const isMainLeaderHose = hoseSetupMode === "mainLeader";
+  const totalHoseLengthDisplay = fromMeters(r.totalHoseLengthM, inputs.hoseLengthUnit);
+  const mainHoseLossBar = barFromPsi(r.mainHoseLossPsi);
+  const leaderHoseLossBar = barFromPsi(r.leaderHoseLossPsi);
+  const hoseLossLabel = isMainLeaderHose ? "Combined hose pressure loss" : "Hose pressure loss";
+  const hoseSetupDisplay = buildHoseSetupSummaryText(inputs);
+
   const liveSetupItems = [
     {
       label: "Pressure",
@@ -664,12 +710,12 @@ export default function FullRigCalculatorPage() {
       value: `${fmt(ratedLpm, 1)} LPM (${fmt(ratedGpm, 2)} GPM)`,
     },
     {
-      label: "Hose length",
-      value: `${fmt(Number(inputs.hoseLength || 0), 0)} ${inputs.hoseLengthUnit}`,
+      label: isMainLeaderHose ? "Total hose length" : "Hose length",
+      value: `${fmt(isMainLeaderHose ? totalHoseLengthDisplay : Number(inputs.hoseLength || 0), 1)} ${inputs.hoseLengthUnit}`,
     },
     {
-      label: "Hose ID",
-      value: `${fmt(Number(inputs.hoseId || 0), inputs.hoseIdUnit === "in" ? 2 : 1)} ${inputs.hoseIdUnit}`,
+      label: "Hose setup",
+      value: hoseSetupDisplay,
     },
     {
       label: "Nozzle",
@@ -724,6 +770,11 @@ export default function FullRigCalculatorPage() {
         inputs.hoseLengthUnit,
         inputs.hoseId,
         inputs.hoseIdUnit,
+        inputs.hoseSetupMode,
+        inputs.mainHoseLength,
+        inputs.mainHoseId,
+        inputs.leaderHoseLength,
+        inputs.leaderHoseId,
         inputs.sprayMode,
         inputs.nozzleCount,
         inputs.nozzleSizeText,
@@ -744,6 +795,11 @@ export default function FullRigCalculatorPage() {
       inputs.hoseLengthUnit,
       inputs.hoseId,
       inputs.hoseIdUnit,
+      inputs.hoseSetupMode,
+      inputs.mainHoseLength,
+      inputs.mainHoseId,
+      inputs.leaderHoseLength,
+      inputs.leaderHoseId,
       inputs.sprayMode,
       inputs.nozzleCount,
       inputs.nozzleSizeText,
@@ -798,7 +854,7 @@ export default function FullRigCalculatorPage() {
     },
     {
       label: "Hose",
-      value: `${inputs.hoseLength || "—"} ${inputs.hoseLengthUnit} · ${inputs.hoseId || "—"} ${inputs.hoseIdUnit}`,
+      value: hoseSetupDisplay,
     },
     {
       label: "Spray mode",
@@ -1137,7 +1193,7 @@ export default function FullRigCalculatorPage() {
         y: metricY,
         width: metricWidth,
         height: metricHeight,
-        label: "Hose loss",
+        label: hoseLossLabel,
         value: `${fmt(r.hoseLossPsi, 0)} PSI`,
         secondary: `${fmt(lossBar, 1)} bar`,
       });
@@ -1237,6 +1293,11 @@ export default function FullRigCalculatorPage() {
         hoseLengthUnit: inputs.hoseLengthUnit,
         hoseId: toNumberOrNull(inputs.hoseId),
         hoseIdUnit: inputs.hoseIdUnit,
+        hoseSetupMode,
+        mainHoseLength: toNumberOrNull(inputs.mainHoseLength),
+        mainHoseId: toNumberOrNull(inputs.mainHoseId),
+        leaderHoseLength: toNumberOrNull(inputs.leaderHoseLength),
+        leaderHoseId: toNumberOrNull(inputs.leaderHoseId),
         engineHp: toNumberOrNull(inputs.engineHp),
         sprayMode: inputs.sprayMode,
         nozzleCount: Math.max(inputs.sprayMode === "surfaceCleaner" ? 2 : 1, Number(inputs.nozzleCount || 1)),
@@ -1266,6 +1327,49 @@ export default function FullRigCalculatorPage() {
 
   function updateInput<K extends keyof Inputs>(key: K, value: Inputs[K]) {
     setInputs((current) => ({ ...current, [key]: value }));
+  }
+
+  function updateHoseSetupMode(nextMode: HoseSetupMode) {
+    setInputs((current) => {
+      if (nextMode === "mainLeader" && current.hoseSetupMode !== "mainLeader") {
+        return {
+          ...current,
+          hoseSetupMode: nextMode,
+          mainHoseLength:
+            current.mainHoseLength !== undefined && current.mainHoseLength !== ""
+              ? current.mainHoseLength
+              : current.hoseLength,
+          mainHoseId:
+            current.mainHoseId !== undefined && current.mainHoseId !== ""
+              ? current.mainHoseId
+              : current.hoseId,
+          leaderHoseLength:
+            current.leaderHoseLength !== undefined ? current.leaderHoseLength : 0,
+          leaderHoseId:
+            current.leaderHoseId !== undefined && current.leaderHoseId !== ""
+              ? current.leaderHoseId
+              : current.hoseId,
+        };
+      }
+
+      return { ...current, hoseSetupMode: nextMode };
+    });
+  }
+
+  function updateHoseLengthUnit(nextUnit: LengthUnit) {
+    setInputs((current) => {
+      const currentSingleMeters = toMeters(Number(current.hoseLength || 0), current.hoseLengthUnit);
+      const currentMainMeters = toMeters(Number(current.mainHoseLength || 0), current.hoseLengthUnit);
+      const currentLeaderMeters = toMeters(Number(current.leaderHoseLength || 0), current.hoseLengthUnit);
+
+      return {
+        ...current,
+        hoseLengthUnit: nextUnit,
+        hoseLength: roundForUnit(fromMeters(currentSingleMeters, nextUnit), 1),
+        mainHoseLength: roundForUnit(fromMeters(currentMainMeters, nextUnit), 1),
+        leaderHoseLength: roundForUnit(fromMeters(currentLeaderMeters, nextUnit), 1),
+      };
+    });
   }
 
   function updateEnginePowerFromDisplay(value: string) {
@@ -1306,7 +1410,10 @@ export default function FullRigCalculatorPage() {
     },
     {
       label: "Hose",
-      value: `${fmt(Number(inputs.hoseLength || 0), 1)} ${inputs.hoseLengthUnit} · ${fmt(Number(inputs.hoseId || 0), inputs.hoseIdUnit === "in" ? 2 : 1)} ${inputs.hoseIdUnit} ID`,
+      value: isMainLeaderHose
+        ? `Main + Leader Hose · ${fmt(totalHoseLengthDisplay, 1)} ${inputs.hoseLengthUnit} total`
+        : `${fmt(Number(inputs.hoseLength || 0), 1)} ${inputs.hoseLengthUnit} · ${formatHoseId(inputs.hoseId, inputs.hoseIdUnit)} ID`,
+      note: isMainLeaderHose ? hoseSetupDisplay : undefined,
     },
     {
       label: "Spray mode",
@@ -1340,9 +1447,11 @@ export default function FullRigCalculatorPage() {
       value: `${fmt(gunLpm, 1)} LPM (${fmt(r.gunFlowGpm, 2)} US GPM)`,
     },
     {
-      label: "Hose loss",
+      label: hoseLossLabel,
       value: `${fmt(r.hoseLossPsi, 0)} PSI (${fmt(lossBar, 1)} bar)`,
-      note: efficiencyTier,
+      note: isMainLeaderHose
+        ? `Main ${fmt(r.mainHoseLossPsi, 0)} PSI + leader ${fmt(r.leaderHoseLossPsi, 0)} PSI · ${efficiencyTier}`
+        : efficiencyTier,
     },
     {
       label: "Nozzle match",
@@ -1778,7 +1887,7 @@ export default function FullRigCalculatorPage() {
                       <p className="mt-1 text-sm text-slate-600">{fmt(r.gunFlowGpm, 2)} GPM</p>
                     </div>
                     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                      <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Hose loss</p>
+                      <p className="text-xs uppercase tracking-[0.14em] text-slate-500">{hoseLossLabel}</p>
                       <p className="mt-2 text-2xl font-semibold text-slate-950">{fmt(r.hoseLossPsi, 0)} PSI</p>
                       <p className="mt-1 text-sm text-slate-600">{fmt(lossBar, 1)} bar</p>
                     </div>
@@ -1961,54 +2070,152 @@ export default function FullRigCalculatorPage() {
                   </p>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-slate-800">Hose length</label>
-                  <div className="mt-2 flex gap-3">
-                    <input
-                      type="number"
-                      inputMode="decimal"
-                      value={inputs.hoseLength}
-                      onFocus={selectAllOnFocus}
-                      onChange={(event) =>
-                        updateInput("hoseLength", (event.target.value === "" ? "" : Number(event.target.value)) as Inputs["hoseLength"])
-                      }
-                      className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
-                    />
-                    <select
-                      value={inputs.hoseLengthUnit}
-                      onChange={(event) => {
-                        const nextUnit = event.target.value as LengthUnit;
-                        const currentMeters = toMeters(Number(inputs.hoseLength || 0), inputs.hoseLengthUnit);
-                        updateInput("hoseLengthUnit", nextUnit);
-                        updateInput("hoseLength", roundForUnit(fromMeters(currentMeters, nextUnit), 1));
-                      }}
-                      className="rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
-                    >
-                      <option value="m">m</option>
-                      <option value="ft">ft</option>
-                    </select>
-                  </div>
+                <div className="lg:col-span-2">
+                  <label className="block text-sm font-semibold text-slate-800">Hose setup</label>
+                  <select
+                    value={hoseSetupMode}
+                    onChange={(event) => updateHoseSetupMode(event.target.value as HoseSetupMode)}
+                    className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                  >
+                    <option value="single">Single hose</option>
+                    <option value="mainLeader">Main + Leader Hose</option>
+                  </select>
+                  <p className="mt-2 text-xs leading-5 text-slate-500">
+                    Add a second hose section if your setup uses a main hose plus a leader hose, whip hose, reel hose or extension hose.
+                  </p>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-slate-800">Hose ID</label>
-                  <div className="mt-2 flex gap-3">
-                    <select
-                      value={String(inputs.hoseId)}
-                      onChange={(event) => {
-                        updateInput("hoseId", Number(event.target.value) as Inputs["hoseId"]);
-                        updateInput("hoseIdUnit", "mm");
-                      }}
-                      className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
-                    >
-                      {hosePresets.map((preset) => (
-                        <option key={preset.label} value={preset.valueMm}>
-                          {preset.label}
-                        </option>
-                      ))}
-                    </select>
+                {!isMainLeaderHose ? (
+                  <>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-800">Hose length</label>
+                      <div className="mt-2 flex gap-3">
+                        <input
+                          type="number"
+                          inputMode="decimal"
+                          min={0}
+                          value={inputs.hoseLength}
+                          onFocus={selectAllOnFocus}
+                          onChange={(event) =>
+                            updateInput("hoseLength", (event.target.value === "" ? "" : Number(event.target.value)) as Inputs["hoseLength"])
+                          }
+                          className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                        />
+                        <select
+                          value={inputs.hoseLengthUnit}
+                          onChange={(event) => updateHoseLengthUnit(event.target.value as LengthUnit)}
+                          className="rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                        >
+                          <option value="m">m</option>
+                          <option value="ft">ft</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-800">Hose ID</label>
+                      <div className="mt-2 flex gap-3">
+                        <select
+                          value={String(inputs.hoseId)}
+                          onChange={(event) => {
+                            updateInput("hoseId", Number(event.target.value) as Inputs["hoseId"]);
+                            updateInput("hoseIdUnit", "mm");
+                          }}
+                          className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                        >
+                          {hosePresets.map((preset) => (
+                            <option key={preset.label} value={preset.valueMm}>
+                              {preset.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">Main hose</p>
+                        <label className="mt-3 block text-sm font-semibold text-slate-800">Length</label>
+                        <div className="mt-2 flex gap-3">
+                          <input
+                            type="number"
+                            inputMode="decimal"
+                            min={0}
+                            value={inputs.mainHoseLength ?? ""}
+                            onFocus={selectAllOnFocus}
+                            onChange={(event) =>
+                              updateInput("mainHoseLength", (event.target.value === "" ? "" : Number(event.target.value)) as Inputs["mainHoseLength"])
+                            }
+                            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                          />
+                          <select
+                            value={inputs.hoseLengthUnit}
+                            onChange={(event) => updateHoseLengthUnit(event.target.value as LengthUnit)}
+                            className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                          >
+                            <option value="m">m</option>
+                            <option value="ft">ft</option>
+                          </select>
+                        </div>
+
+                        <label className="mt-3 block text-sm font-semibold text-slate-800">Internal diameter</label>
+                        <select
+                          value={String(inputs.mainHoseId ?? inputs.hoseId)}
+                          onChange={(event) => {
+                            updateInput("mainHoseId", Number(event.target.value) as Inputs["mainHoseId"]);
+                            updateInput("hoseIdUnit", "mm");
+                          }}
+                          className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                        >
+                          {hosePresets.map((preset) => (
+                            <option key={preset.label} value={preset.valueMm}>
+                              {preset.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">Leader hose / whip hose</p>
+                        <label className="mt-3 block text-sm font-semibold text-slate-800">Length</label>
+                        <div className="mt-2 flex gap-3">
+                          <input
+                            type="number"
+                            inputMode="decimal"
+                            min={0}
+                            value={inputs.leaderHoseLength ?? ""}
+                            onFocus={selectAllOnFocus}
+                            onChange={(event) =>
+                              updateInput("leaderHoseLength", (event.target.value === "" ? "" : Number(event.target.value)) as Inputs["leaderHoseLength"])
+                            }
+                            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                          />
+                          <span className="inline-flex min-w-16 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600">
+                            {inputs.hoseLengthUnit}
+                          </span>
+                        </div>
+
+                        <label className="mt-3 block text-sm font-semibold text-slate-800">Internal diameter</label>
+                        <select
+                          value={String(inputs.leaderHoseId ?? inputs.hoseId)}
+                          onChange={(event) => {
+                            updateInput("leaderHoseId", Number(event.target.value) as Inputs["leaderHoseId"]);
+                            updateInput("hoseIdUnit", "mm");
+                          }}
+                          className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                        >
+                          {hosePresets.map((preset) => (
+                            <option key={preset.label} value={preset.valueMm}>
+                              {preset.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-semibold text-slate-800">Spray mode</label>
@@ -2102,7 +2309,7 @@ export default function FullRigCalculatorPage() {
                     <div className="mt-1 text-sm text-slate-600">{fmt(r.gunFlowGpm, 2)} GPM</div>
                   </div>
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Hose loss</div>
+                    <div className="text-xs uppercase tracking-[0.14em] text-slate-500">{hoseLossLabel}</div>
                     <div className="mt-2 text-2xl font-semibold text-slate-950">{fmt(r.hoseLossPsi, 0)} PSI</div>
                     <div className="mt-1 text-sm text-slate-600">{fmt(lossBar, 1)} bar · {efficiencyTier}</div>
                   </div>
@@ -2115,6 +2322,35 @@ export default function FullRigCalculatorPage() {
                     </p>
                   </div>
                 </div>
+
+                {isMainLeaderHose ? (
+                  <details className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <summary className="cursor-pointer text-sm font-semibold text-slate-900">
+                      Hose loss breakdown
+                    </summary>
+
+                    <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                      <div className="rounded-xl border border-slate-200 bg-white p-3">
+                        <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Total hose length</div>
+                        <div className="mt-2 text-lg font-semibold text-slate-950">
+                          {fmt(totalHoseLengthDisplay, 1)} {inputs.hoseLengthUnit}
+                        </div>
+                      </div>
+
+                      <div className="rounded-xl border border-slate-200 bg-white p-3">
+                        <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Main hose pressure loss</div>
+                        <div className="mt-2 text-lg font-semibold text-slate-950">{fmt(r.mainHoseLossPsi, 0)} PSI</div>
+                        <div className="mt-1 text-sm text-slate-600">{fmt(mainHoseLossBar, 1)} bar</div>
+                      </div>
+
+                      <div className="rounded-xl border border-slate-200 bg-white p-3">
+                        <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Leader hose pressure loss</div>
+                        <div className="mt-2 text-lg font-semibold text-slate-950">{fmt(r.leaderHoseLossPsi, 0)} PSI</div>
+                        <div className="mt-1 text-sm text-slate-600">{fmt(leaderHoseLossBar, 1)} bar</div>
+                      </div>
+                    </div>
+                  </details>
+                ) : null}
 
                 <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <p className="text-sm font-semibold text-slate-900">Pressure loss guide</p>

@@ -16,6 +16,7 @@ export type LengthUnit = "m" | "ft";
 export type DiameterUnit = "mm" | "in";
 export type NozzleInputMode = "tipSize" | "orificeMm";
 export type ANZSClass = "Class A" | "Class B";
+export type HoseSetupMode = "single" | "mainLeader";
 
 export interface Inputs {
   pumpPressure: number | "";
@@ -27,10 +28,18 @@ export interface Inputs {
   maxPressure: number | "";
   maxPressureUnit: PressureUnit;
 
+  hoseSetupMode?: HoseSetupMode;
+
   hoseLength: number | "";
   hoseLengthUnit: LengthUnit;
   hoseId: number | "";
   hoseIdUnit: DiameterUnit;
+
+  mainHoseLength?: number | "";
+  mainHoseId?: number | "";
+  leaderHoseLength?: number | "";
+  leaderHoseId?: number | "";
+
   engineHp: number | "";
 
   sprayMode: "wand" | "surfaceCleaner";
@@ -58,6 +67,10 @@ export interface SolveResult {
   /** Hose */
   hoseLossPsi: number;
   hoseLossPct: number;
+  hoseSetupMode: HoseSetupMode;
+  totalHoseLengthM: number;
+  mainHoseLossPsi: number;
+  leaderHoseLossPsi: number;
 
   /** Bypass (unloader) */
   isPressureLimited: boolean;
@@ -224,6 +237,8 @@ export function hoseLossPsi(
   rho: number,
   roughnessMm: number
 ): number {
+  if (!(flowGpm > 0) || !(lengthM > 0) || !(idMm > 0)) return 0;
+
   const mu = 0.001; // Pa*s (approx water at ~20°C)
   const Q = gpmToM3s(clampPos(flowGpm));
   const D = Math.max(clampPos(idMm), 1e-9) / 1000;
@@ -243,6 +258,92 @@ export function hoseLossPsi(
 
   const dP = f * (clampPos(lengthM) / D) * (Math.max(rho, 1e-9) * v * v / 2);
   return paToPsi(dP);
+}
+
+
+type HoseLossSection = {
+  key: "single" | "main" | "leader";
+  lengthM: number;
+  idMm: number;
+};
+
+type HoseLossBreakdown = {
+  totalLossPsi: number;
+  mainHoseLossPsi: number;
+  leaderHoseLossPsi: number;
+};
+
+function buildHoseSections(inputs: Inputs): HoseLossSection[] {
+  const mode: HoseSetupMode = inputs.hoseSetupMode === "mainLeader" ? "mainLeader" : "single";
+
+  if (mode === "mainLeader") {
+    const mainLengthRaw =
+      inputs.mainHoseLength !== undefined && inputs.mainHoseLength !== ""
+        ? inputs.mainHoseLength
+        : inputs.hoseLength;
+    const mainIdRaw =
+      inputs.mainHoseId !== undefined && inputs.mainHoseId !== ""
+        ? inputs.mainHoseId
+        : inputs.hoseId;
+
+    return [
+      {
+        key: "main",
+        lengthM: metersFrom(Number(mainLengthRaw || 0), inputs.hoseLengthUnit),
+        idMm: mmFrom(Number(mainIdRaw || 0), inputs.hoseIdUnit),
+      },
+      {
+        key: "leader",
+        lengthM: metersFrom(Number(inputs.leaderHoseLength || 0), inputs.hoseLengthUnit),
+        idMm: mmFrom(Number(inputs.leaderHoseId || 0), inputs.hoseIdUnit),
+      },
+    ];
+  }
+
+  return [
+    {
+      key: "single",
+      lengthM: metersFrom(Number(inputs.hoseLength || 0), inputs.hoseLengthUnit),
+      idMm: mmFrom(Number(inputs.hoseId || 0), inputs.hoseIdUnit),
+    },
+  ];
+}
+
+function hoseLossBreakdownPsi(
+  flowGpm: number,
+  sections: HoseLossSection[],
+  rho: number,
+  roughnessMm: number
+): HoseLossBreakdown {
+  let totalLossPsi = 0;
+  let mainHoseLossPsi = 0;
+  let leaderHoseLossPsi = 0;
+
+  for (const section of sections) {
+    const sectionLossPsi = hoseLossPsi(
+      flowGpm,
+      section.lengthM,
+      section.idMm,
+      rho,
+      roughnessMm
+    );
+
+    totalLossPsi += sectionLossPsi;
+
+    if (section.key === "main") {
+      mainHoseLossPsi = sectionLossPsi;
+    }
+
+    if (section.key === "leader") {
+      leaderHoseLossPsi = sectionLossPsi;
+    }
+  }
+
+  return {
+    totalLossPsi,
+    mainHoseLossPsi,
+    leaderHoseLossPsi,
+  };
 }
 
 function anzsClassFromPQ(pq: number): ANZSClass {
@@ -265,8 +366,9 @@ export function solvePressureCal(inputs: Inputs): SolveResult {
   const maxPumpPsi = psiFrom(Number(inputs.maxPressure || 0), inputs.maxPressureUnit);
 
   // Hose
-  const Lm = metersFrom(Number(inputs.hoseLength || 0), inputs.hoseLengthUnit);
-  const idMm = mmFrom(Number(inputs.hoseId || 0), inputs.hoseIdUnit);
+  const hoseSetupMode: HoseSetupMode = inputs.hoseSetupMode === "mainLeader" ? "mainLeader" : "single";
+  const hoseSections = buildHoseSections(inputs);
+  const totalHoseLengthM = hoseSections.reduce((total, section) => total + clampPos(section.lengthM), 0);
 
   // Calibrated nozzle (tip) that matches rated pump point
   const nozzleCount =
@@ -327,15 +429,14 @@ export function solvePressureCal(inputs: Inputs): SolveResult {
 
   // This is the pressure the pump would need to maintain full rated flow
   // through the selected nozzle and hose.
-  const requiredPumpPsi =
-    requiredGunPsi +
-    hoseLossPsi(
-      pumpGpmRated,
-      Lm,
-      idMm,
-      inputs.waterDensity,
-      inputs.hoseRoughnessMm
-    );
+  const requiredHoseLossBreakdown = hoseLossBreakdownPsi(
+    pumpGpmRated,
+    hoseSections,
+    inputs.waterDensity,
+    inputs.hoseRoughnessMm
+  );
+
+  const requiredPumpPsi = requiredGunPsi + requiredHoseLossBreakdown.totalLossPsi;
 
   // Unloader clamp
   const isPressureLimited = requiredPumpPsi > maxPumpPsi;
@@ -347,14 +448,14 @@ export function solvePressureCal(inputs: Inputs): SolveResult {
   let gunPressurePsi = 0;
 
   for (let i = 0; i < 20; i++) {
-    lossPsi = hoseLossPsi(
+    const iterationHoseLossBreakdown = hoseLossBreakdownPsi(
       gunFlowGpm,
-      Lm,
-      idMm,
+      hoseSections,
       inputs.waterDensity,
       inputs.hoseRoughnessMm
     );
 
+    lossPsi = iterationHoseLossBreakdown.totalLossPsi;
     gunPressurePsi = Math.max(pumpPsi - lossPsi, 0);
 
     let nextGunFlowGpm = 0;
@@ -379,14 +480,14 @@ export function solvePressureCal(inputs: Inputs): SolveResult {
   }
 
   // Final recompute using converged flow
-  lossPsi = hoseLossPsi(
+  const finalHoseLossBreakdown = hoseLossBreakdownPsi(
     gunFlowGpm,
-    Lm,
-    idMm,
+    hoseSections,
     inputs.waterDensity,
     inputs.hoseRoughnessMm
   );
 
+  lossPsi = finalHoseLossBreakdown.totalLossPsi;
   gunPressurePsi = Math.max(pumpPsi - lossPsi, 0);
 
   // --- Indicative at-gun AS/NZS energy (education) ---
@@ -437,6 +538,10 @@ export function solvePressureCal(inputs: Inputs): SolveResult {
 
     hoseLossPsi: clampPos(lossPsi),
     hoseLossPct: clampPos(lossPct),
+    hoseSetupMode,
+    totalHoseLengthM: clampPos(totalHoseLengthM),
+    mainHoseLossPsi: clampPos(finalHoseLossBreakdown.mainHoseLossPsi),
+    leaderHoseLossPsi: clampPos(finalHoseLossBreakdown.leaderHoseLossPsi),
 
     bypassFlowGpm: clampPos(bypassFlowGpm),
     bypassPct: clampPos(bypassPct),

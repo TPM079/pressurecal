@@ -1,17 +1,22 @@
 import type { Inputs } from "../pressurecal";
 import type { SavedSetup } from "../hooks/useSavedSetups";
 
-const DEFAULT_COMPARE_INPUTS: Inputs = {
+const INPUT_DEFAULTS: Inputs = {
   pumpPressure: 4000,
   pumpPressureUnit: "psi",
   pumpFlow: 15,
   pumpFlowUnit: "lpm",
   maxPressure: 4000,
   maxPressureUnit: "psi",
+  hoseSetupMode: "single",
   hoseLength: 15,
   hoseLengthUnit: "m",
   hoseId: 9.53,
   hoseIdUnit: "mm",
+  mainHoseLength: 50,
+  mainHoseId: 9.53,
+  leaderHoseLength: 20,
+  leaderHoseId: 6.35,
   engineHp: "",
   sprayMode: "wand",
   nozzleCount: 1,
@@ -24,25 +29,35 @@ const DEFAULT_COMPARE_INPUTS: Inputs = {
 };
 
 export function savedSetupToInputs(setup: SavedSetup): Inputs {
+  const sprayMode = setup.sprayMode ?? INPUT_DEFAULTS.sprayMode;
+
   return {
-    pumpPressure: setup.pumpPressure ?? DEFAULT_COMPARE_INPUTS.pumpPressure,
-    pumpPressureUnit: setup.pumpPressureUnit ?? DEFAULT_COMPARE_INPUTS.pumpPressureUnit,
-    pumpFlow: setup.pumpFlow ?? DEFAULT_COMPARE_INPUTS.pumpFlow,
-    pumpFlowUnit: setup.pumpFlowUnit ?? DEFAULT_COMPARE_INPUTS.pumpFlowUnit,
-    maxPressure: setup.maxPressure ?? DEFAULT_COMPARE_INPUTS.maxPressure,
-    maxPressureUnit: setup.maxPressureUnit ?? DEFAULT_COMPARE_INPUTS.maxPressureUnit,
-    hoseLength: setup.hoseLength ?? DEFAULT_COMPARE_INPUTS.hoseLength,
-    hoseLengthUnit: setup.hoseLengthUnit ?? DEFAULT_COMPARE_INPUTS.hoseLengthUnit,
-    hoseId: setup.hoseId ?? DEFAULT_COMPARE_INPUTS.hoseId,
-    hoseIdUnit: setup.hoseIdUnit ?? DEFAULT_COMPARE_INPUTS.hoseIdUnit,
-    engineHp: setup.engineHp ?? "",
-    sprayMode: setup.sprayMode ?? DEFAULT_COMPARE_INPUTS.sprayMode,
-    nozzleCount: setup.nozzleCount ?? DEFAULT_COMPARE_INPUTS.nozzleCount,
+    pumpPressure: setup.pumpPressure ?? INPUT_DEFAULTS.pumpPressure,
+    pumpPressureUnit: setup.pumpPressureUnit ?? INPUT_DEFAULTS.pumpPressureUnit,
+    pumpFlow: setup.pumpFlow ?? INPUT_DEFAULTS.pumpFlow,
+    pumpFlowUnit: setup.pumpFlowUnit ?? INPUT_DEFAULTS.pumpFlowUnit,
+    maxPressure: setup.maxPressure ?? INPUT_DEFAULTS.maxPressure,
+    maxPressureUnit: setup.maxPressureUnit ?? INPUT_DEFAULTS.maxPressureUnit,
+    hoseSetupMode: setup.hoseSetupMode === "mainLeader" ? "mainLeader" : "single",
+    hoseLength: setup.hoseLength ?? INPUT_DEFAULTS.hoseLength,
+    hoseLengthUnit: setup.hoseLengthUnit ?? INPUT_DEFAULTS.hoseLengthUnit,
+    hoseId: setup.hoseId ?? INPUT_DEFAULTS.hoseId,
+    hoseIdUnit: setup.hoseIdUnit ?? INPUT_DEFAULTS.hoseIdUnit,
+    mainHoseLength: setup.mainHoseLength ?? setup.hoseLength ?? INPUT_DEFAULTS.mainHoseLength,
+    mainHoseId: setup.mainHoseId ?? setup.hoseId ?? INPUT_DEFAULTS.mainHoseId,
+    leaderHoseLength: setup.leaderHoseLength ?? INPUT_DEFAULTS.leaderHoseLength,
+    leaderHoseId: setup.leaderHoseId ?? INPUT_DEFAULTS.leaderHoseId,
+    engineHp: setup.engineHp ?? INPUT_DEFAULTS.engineHp,
+    sprayMode,
+    nozzleCount: Math.max(
+      sprayMode === "surfaceCleaner" ? 2 : 1,
+      setup.nozzleCount ?? INPUT_DEFAULTS.nozzleCount
+    ),
     nozzleMode: "tipSize",
-    nozzleSizeText: setup.nozzleSizeText ?? DEFAULT_COMPARE_INPUTS.nozzleSizeText,
-    orificeMm: setup.orificeMm ?? DEFAULT_COMPARE_INPUTS.orificeMm,
-    dischargeCoeffCd: setup.dischargeCoeffCd ?? DEFAULT_COMPARE_INPUTS.dischargeCoeffCd,
-    waterDensity: setup.waterDensity ?? DEFAULT_COMPARE_INPUTS.waterDensity,
-    hoseRoughnessMm: setup.hoseRoughnessMm ?? DEFAULT_COMPARE_INPUTS.hoseRoughnessMm,
+    nozzleSizeText: setup.nozzleSizeText ?? INPUT_DEFAULTS.nozzleSizeText,
+    orificeMm: setup.orificeMm ?? INPUT_DEFAULTS.orificeMm,
+    dischargeCoeffCd: setup.dischargeCoeffCd ?? INPUT_DEFAULTS.dischargeCoeffCd,
+    waterDensity: setup.waterDensity ?? INPUT_DEFAULTS.waterDensity,
+    hoseRoughnessMm: setup.hoseRoughnessMm ?? INPUT_DEFAULTS.hoseRoughnessMm,
   };
 }

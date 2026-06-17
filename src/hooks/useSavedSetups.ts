@@ -11,6 +11,7 @@ import type {
   DiameterUnit,
   FlowUnit,
   Inputs,
+  HoseSetupMode,
   LengthUnit,
   PressureUnit,
 } from "../pressurecal";
@@ -31,6 +32,12 @@ export type SavedSetupCalculatedResult = {
   atGunPressureBar: number;
   hoseLossPsi: number;
   hoseLossBar: number;
+  hoseSetupMode: HoseSetupMode;
+  totalHoseLengthM: number;
+  mainHoseLossPsi: number;
+  mainHoseLossBar: number;
+  leaderHoseLossPsi: number;
+  leaderHoseLossBar: number;
   hoseLossPercent: number;
   operatingFlowLpm: number;
   operatingFlowGpm: number;
@@ -77,6 +84,11 @@ export type SavedSetup = {
   hoseLengthUnit: LengthUnit;
   hoseId: number | null;
   hoseIdUnit: DiameterUnit;
+  hoseSetupMode?: HoseSetupMode;
+  mainHoseLength?: number | null;
+  mainHoseId?: number | null;
+  leaderHoseLength?: number | null;
+  leaderHoseId?: number | null;
   engineHp: number | null;
   sprayMode: "wand" | "surfaceCleaner";
   nozzleCount: number;
@@ -113,6 +125,11 @@ type SaveSetupInput = {
   hoseLengthUnit?: LengthUnit;
   hoseId?: number | null;
   hoseIdUnit?: DiameterUnit;
+  hoseSetupMode?: HoseSetupMode;
+  mainHoseLength?: number | null;
+  mainHoseId?: number | null;
+  leaderHoseLength?: number | null;
+  leaderHoseId?: number | null;
   engineHp?: number | null;
   sprayMode?: "wand" | "surfaceCleaner";
   nozzleCount?: number;
@@ -142,6 +159,11 @@ const DEFAULT_SNAPSHOT = {
   hoseLengthUnit: "m" as LengthUnit,
   hoseId: 9.53,
   hoseIdUnit: "mm" as DiameterUnit,
+  hoseSetupMode: "single" as HoseSetupMode,
+  mainHoseLength: 50,
+  mainHoseId: 9.53,
+  leaderHoseLength: 20,
+  leaderHoseId: 6.35,
   engineHp: null as number | null,
   sprayMode: "wand" as const,
   nozzleCount: 1,
@@ -164,6 +186,11 @@ const INPUT_DEFAULTS: Inputs = {
   hoseLengthUnit: "m",
   hoseId: 9.53,
   hoseIdUnit: "mm",
+  hoseSetupMode: "single",
+  mainHoseLength: 50,
+  mainHoseId: 9.53,
+  leaderHoseLength: 20,
+  leaderHoseId: 6.35,
   engineHp: "",
   sprayMode: "wand",
   nozzleCount: 1,
@@ -226,6 +253,10 @@ function toLengthUnit(value: unknown, fallback: LengthUnit): LengthUnit {
 
 function toDiameterUnit(value: unknown, fallback: DiameterUnit): DiameterUnit {
   return value === "mm" || value === "in" ? value : fallback;
+}
+
+function toHoseSetupMode(value: unknown, fallback: HoseSetupMode): HoseSetupMode {
+  return value === "mainLeader" ? "mainLeader" : fallback;
 }
 
 function toSprayMode(
@@ -504,6 +535,11 @@ export function buildCalculatedResultFromInputs(
     maxPressure: Number(inputs.maxPressure || 0),
     hoseLength: Number(inputs.hoseLength || 0),
     hoseId: Number(inputs.hoseId || 0),
+    hoseSetupMode: inputs.hoseSetupMode === "mainLeader" ? "mainLeader" : "single",
+    mainHoseLength: Number(inputs.mainHoseLength || 0),
+    mainHoseId: Number(inputs.mainHoseId || 0),
+    leaderHoseLength: Number(inputs.leaderHoseLength || 0),
+    leaderHoseId: Number(inputs.leaderHoseId || 0),
     engineHp: inputs.engineHp === "" ? "" : Number(inputs.engineHp || 0),
     nozzleCount: Math.max(
       inputs.sprayMode === "surfaceCleaner" ? 2 : 1,
@@ -558,6 +594,12 @@ export function buildCalculatedResultFromInputs(
     atGunPressureBar: roundNumber(atGunPressureBar, 1),
     hoseLossPsi: roundNumber(result.hoseLossPsi, 0),
     hoseLossBar: roundNumber(hoseLossBar, 1),
+    hoseSetupMode: result.hoseSetupMode,
+    totalHoseLengthM: roundNumber(result.totalHoseLengthM, 2),
+    mainHoseLossPsi: roundNumber(result.mainHoseLossPsi, 0),
+    mainHoseLossBar: roundNumber(barFromPsi(result.mainHoseLossPsi), 1),
+    leaderHoseLossPsi: roundNumber(result.leaderHoseLossPsi, 0),
+    leaderHoseLossBar: roundNumber(barFromPsi(result.leaderHoseLossPsi), 1),
     hoseLossPercent,
     operatingFlowLpm: roundNumber(operatingFlowLpm, 1),
     operatingFlowGpm: roundNumber(result.gunFlowGpm, 2),
@@ -640,6 +682,12 @@ function normalizeCalculatedResult(raw: unknown): SavedSetupCalculatedResult | n
     atGunPressureBar: roundNumber(toRequiredNumber(item.atGunPressureBar, barFromPsi(atGunPressurePsi)), 1),
     hoseLossPsi: roundNumber(hoseLossPsi, 0),
     hoseLossBar: roundNumber(toRequiredNumber(item.hoseLossBar, barFromPsi(hoseLossPsi)), 1),
+    hoseSetupMode: toHoseSetupMode(item.hoseSetupMode, "single"),
+    totalHoseLengthM: roundNumber(toRequiredNumber(item.totalHoseLengthM, 0), 2),
+    mainHoseLossPsi: roundNumber(toRequiredNumber(item.mainHoseLossPsi, 0), 0),
+    mainHoseLossBar: roundNumber(toRequiredNumber(item.mainHoseLossBar, barFromPsi(toRequiredNumber(item.mainHoseLossPsi, 0))), 1),
+    leaderHoseLossPsi: roundNumber(toRequiredNumber(item.leaderHoseLossPsi, 0), 0),
+    leaderHoseLossBar: roundNumber(toRequiredNumber(item.leaderHoseLossBar, barFromPsi(toRequiredNumber(item.leaderHoseLossPsi, 0))), 1),
     hoseLossPercent,
     operatingFlowLpm: roundNumber(operatingFlowLpm, 1),
     operatingFlowGpm: roundNumber(toRequiredNumber(item.operatingFlowGpm, 0), 2),
@@ -732,6 +780,11 @@ function normalizeSavedSetup(raw: unknown, userId: string): SavedSetup | null {
   const hoseLengthUnit = toLengthUnit(item.hoseLengthUnit, DEFAULT_SNAPSHOT.hoseLengthUnit);
   const hoseId = toNullableNumber(item.hoseId, hoseIdMm ?? DEFAULT_SNAPSHOT.hoseId);
   const hoseIdUnit = toDiameterUnit(item.hoseIdUnit, DEFAULT_SNAPSHOT.hoseIdUnit);
+  const hoseSetupMode = toHoseSetupMode(item.hoseSetupMode, DEFAULT_SNAPSHOT.hoseSetupMode);
+  const mainHoseLength = toNullableNumber(item.mainHoseLength, hoseLength ?? DEFAULT_SNAPSHOT.mainHoseLength);
+  const mainHoseId = toNullableNumber(item.mainHoseId, hoseId ?? DEFAULT_SNAPSHOT.mainHoseId);
+  const leaderHoseLength = toNullableNumber(item.leaderHoseLength, DEFAULT_SNAPSHOT.leaderHoseLength);
+  const leaderHoseId = toNullableNumber(item.leaderHoseId, DEFAULT_SNAPSHOT.leaderHoseId);
   const engineHp = toNullableNumber(item.engineHp, DEFAULT_SNAPSHOT.engineHp);
   const sprayMode = toSprayMode(item.sprayMode, DEFAULT_SNAPSHOT.sprayMode);
   const nozzleCount = Math.max(
@@ -769,6 +822,11 @@ function normalizeSavedSetup(raw: unknown, userId: string): SavedSetup | null {
     hoseLengthUnit,
     hoseId,
     hoseIdUnit,
+    hoseSetupMode,
+    mainHoseLength,
+    mainHoseId,
+    leaderHoseLength,
+    leaderHoseId,
     engineHp,
     sprayMode,
     nozzleCount,
@@ -810,6 +868,11 @@ export function inputsFromSavedSetup(setup: SavedSetup): Inputs {
     hoseLengthUnit: setup.hoseLengthUnit,
     hoseId: setup.hoseId ?? INPUT_DEFAULTS.hoseId,
     hoseIdUnit: setup.hoseIdUnit,
+    hoseSetupMode: setup.hoseSetupMode === "mainLeader" ? "mainLeader" : "single",
+    mainHoseLength: setup.mainHoseLength ?? INPUT_DEFAULTS.mainHoseLength,
+    mainHoseId: setup.mainHoseId ?? INPUT_DEFAULTS.mainHoseId,
+    leaderHoseLength: setup.leaderHoseLength ?? INPUT_DEFAULTS.leaderHoseLength,
+    leaderHoseId: setup.leaderHoseId ?? INPUT_DEFAULTS.leaderHoseId,
     engineHp: setup.engineHp ?? INPUT_DEFAULTS.engineHp,
     sprayMode: setup.sprayMode,
     nozzleCount: setup.nozzleCount,
@@ -914,6 +977,16 @@ function buildSavedSetupFromInput(args: {
     hoseId: input.hoseId ?? existing?.hoseId ?? DEFAULT_SNAPSHOT.hoseId,
     hoseIdUnit:
       input.hoseIdUnit ?? existing?.hoseIdUnit ?? DEFAULT_SNAPSHOT.hoseIdUnit,
+    hoseSetupMode:
+      input.hoseSetupMode ?? existing?.hoseSetupMode ?? DEFAULT_SNAPSHOT.hoseSetupMode,
+    mainHoseLength:
+      input.mainHoseLength ?? existing?.mainHoseLength ?? DEFAULT_SNAPSHOT.mainHoseLength,
+    mainHoseId:
+      input.mainHoseId ?? existing?.mainHoseId ?? DEFAULT_SNAPSHOT.mainHoseId,
+    leaderHoseLength:
+      input.leaderHoseLength ?? existing?.leaderHoseLength ?? DEFAULT_SNAPSHOT.leaderHoseLength,
+    leaderHoseId:
+      input.leaderHoseId ?? existing?.leaderHoseId ?? DEFAULT_SNAPSHOT.leaderHoseId,
     engineHp: input.engineHp ?? existing?.engineHp ?? null,
     sprayMode: input.sprayMode ?? existing?.sprayMode ?? DEFAULT_SNAPSHOT.sprayMode,
     nozzleCount:
@@ -950,6 +1023,11 @@ function buildSummary(setup: SavedSetup): Record<string, unknown> {
     machineLpm: setup.machineLpm,
     hoseLengthM: setup.hoseLengthM,
     hoseIdMm: setup.hoseIdMm,
+    hoseSetupMode: setup.hoseSetupMode ?? "single",
+    mainHoseLength: setup.mainHoseLength ?? null,
+    mainHoseId: setup.mainHoseId ?? null,
+    leaderHoseLength: setup.leaderHoseLength ?? null,
+    leaderHoseId: setup.leaderHoseId ?? null,
     nozzleSize: setup.nozzleSize,
     resultSummary: setup.calculatedResult?.resultSummary ?? null,
     setupHealth: setup.calculatedResult?.setupHealth ?? null,
@@ -994,6 +1072,11 @@ function normalizeSupabaseRow(row: SavedSetupRow, userId: string): SavedSetup | 
       hoseLengthUnit: rigInputs.hoseLengthUnit,
       hoseId: rigInputs.hoseId,
       hoseIdUnit: rigInputs.hoseIdUnit,
+      hoseSetupMode: rigInputs.hoseSetupMode,
+      mainHoseLength: rigInputs.mainHoseLength,
+      mainHoseId: rigInputs.mainHoseId,
+      leaderHoseLength: rigInputs.leaderHoseLength,
+      leaderHoseId: rigInputs.leaderHoseId,
       engineHp: rigInputs.engineHp,
       sprayMode: rigInputs.sprayMode,
       nozzleCount: rigInputs.nozzleCount,

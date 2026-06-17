@@ -9,6 +9,7 @@ import type {
   DiameterUnit,
   FlowUnit,
   Inputs,
+  HoseSetupMode,
   LengthUnit,
   PressureUnit,
 } from "../pressurecal";
@@ -49,6 +50,11 @@ const INPUT_DEFAULTS: Inputs = {
   hoseLengthUnit: "m",
   hoseId: 9.53,
   hoseIdUnit: "mm",
+  hoseSetupMode: "single",
+  mainHoseLength: 50,
+  mainHoseId: 9.53,
+  leaderHoseLength: 20,
+  leaderHoseId: 6.35,
   engineHp: "",
   sprayMode: "wand",
   nozzleCount: 1,
@@ -125,12 +131,21 @@ function toNullableNumber(value: number | string | null | undefined) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function getHoseSetupMode(inputs: Inputs): HoseSetupMode {
+  return inputs.hoseSetupMode === "mainLeader" ? "mainLeader" : "single";
+}
+
 function buildSyntheticSavedSetup(inputs: Inputs, name: string, notes?: string | null): SavedSetup {
   const pumpPressure = toNullableNumber(inputs.pumpPressure);
   const pumpFlow = toNullableNumber(inputs.pumpFlow);
   const maxPressure = toNullableNumber(inputs.maxPressure);
   const hoseLength = toNullableNumber(inputs.hoseLength);
   const hoseId = toNullableNumber(inputs.hoseId);
+  const hoseSetupMode = getHoseSetupMode(inputs);
+  const mainHoseLength = toNullableNumber(inputs.mainHoseLength);
+  const mainHoseId = toNullableNumber(inputs.mainHoseId);
+  const leaderHoseLength = toNullableNumber(inputs.leaderHoseLength);
+  const leaderHoseId = toNullableNumber(inputs.leaderHoseId);
   const engineHp = toNullableNumber(inputs.engineHp);
   const nozzleSizeText = (inputs.nozzleSizeText || "").trim() || null;
 
@@ -156,6 +171,11 @@ function buildSyntheticSavedSetup(inputs: Inputs, name: string, notes?: string |
     hoseLengthUnit: inputs.hoseLengthUnit,
     hoseId,
     hoseIdUnit: inputs.hoseIdUnit,
+    hoseSetupMode,
+    mainHoseLength,
+    mainHoseId,
+    leaderHoseLength,
+    leaderHoseId,
     engineHp,
     sprayMode: inputs.sprayMode,
     nozzleCount: Math.max(inputs.sprayMode === "surfaceCleaner" ? 2 : 1, Number(inputs.nozzleCount || 1)),

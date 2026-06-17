@@ -4,6 +4,7 @@ import type {
   FlowUnit,
   LengthUnit,
   DiameterUnit,
+  HoseSetupMode,
 } from "../pressurecal";
 
 type PartialInputs = Partial<Inputs>;
@@ -28,6 +29,10 @@ function asLengthUnit(value: string | null): LengthUnit | undefined {
 
 function asDiameterUnit(value: string | null): DiameterUnit | undefined {
   return value === "mm" || value === "in" ? value : undefined;
+}
+
+function asHoseSetupMode(value: string | null): HoseSetupMode | undefined {
+  return value === "single" || value === "mainLeader" ? value : undefined;
 }
 
 function asSprayMode(value: string | null): Inputs["sprayMode"] | undefined {
@@ -70,6 +75,26 @@ export function buildRigSearchParams(inputs: PartialInputs): URLSearchParams {
   }
   if (inputs.hoseIdUnit) {
     params.set("hoseIdUnit", inputs.hoseIdUnit);
+  }
+
+  if (inputs.hoseSetupMode) {
+    params.set("hoseSetupMode", inputs.hoseSetupMode);
+  }
+
+  if (inputs.mainHoseLength !== undefined && inputs.mainHoseLength !== "") {
+    params.set("mainHoseLength", String(inputs.mainHoseLength));
+  }
+
+  if (inputs.mainHoseId !== undefined && inputs.mainHoseId !== "") {
+    params.set("mainHoseId", String(inputs.mainHoseId));
+  }
+
+  if (inputs.leaderHoseLength !== undefined && inputs.leaderHoseLength !== "") {
+    params.set("leaderHoseLength", String(inputs.leaderHoseLength));
+  }
+
+  if (inputs.leaderHoseId !== undefined && inputs.leaderHoseId !== "") {
+    params.set("leaderHoseId", String(inputs.leaderHoseId));
   }
 
   if (inputs.engineHp !== undefined && inputs.engineHp !== "") {
@@ -170,6 +195,21 @@ export function parseRigSearchParams(search: string): PartialInputs {
 
   const hoseIdUnit = asDiameterUnit(params.get("hoseIdUnit"));
   if (hoseIdUnit) parsed.hoseIdUnit = hoseIdUnit;
+
+  const hoseSetupMode = asHoseSetupMode(params.get("hoseSetupMode"));
+  if (hoseSetupMode) parsed.hoseSetupMode = hoseSetupMode;
+
+  const mainHoseLength = asNumber(params.get("mainHoseLength"));
+  if (mainHoseLength !== undefined) parsed.mainHoseLength = Math.max(0, mainHoseLength);
+
+  const mainHoseId = asNumber(params.get("mainHoseId"));
+  if (mainHoseId !== undefined) parsed.mainHoseId = mainHoseId;
+
+  const leaderHoseLength = asNumber(params.get("leaderHoseLength"));
+  if (leaderHoseLength !== undefined) parsed.leaderHoseLength = Math.max(0, leaderHoseLength);
+
+  const leaderHoseId = asNumber(params.get("leaderHoseId"));
+  if (leaderHoseId !== undefined) parsed.leaderHoseId = leaderHoseId;
 
   const engineHp = asNumber(params.get("engineHp"));
   if (engineHp !== undefined) parsed.engineHp = engineHp;
