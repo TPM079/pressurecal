@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import BackToTopButton from "../components/BackToTopButton";
@@ -31,6 +31,39 @@ const examplePresets = [
   { label: "200 BAR / 15 LPM", pressure: 200, flow: "15.0" },
   { label: "250 BAR / 21 LPM", pressure: 250, flow: "20.8" },
   { label: "500 BAR / 30 LPM", pressure: 500, flow: "30.0" },
+];
+
+const faqItems = [
+  {
+    question: "What is a pressure washer nozzle size chart?",
+    answer:
+      "A pressure washer nozzle size chart is a quick reference table that compares nozzle / tip sizes against pressure and flow. It helps you match a nozzle code to PSI, GPM and LPM without doing the calculation manually.",
+  },
+  {
+    question: "How do I choose the right pressure washer nozzle size?",
+    answer:
+      "Start with the working pressure and flow rate for the machine. Find the closest pressure row, move across to the closest flow column, then use the intersecting nozzle / tip code as the quick reference result.",
+  },
+  {
+    question: "What does a 040 pressure washer nozzle mean?",
+    answer:
+      "A 040 nozzle generally means a 4.0 nozzle size. In the common pressure washer nozzle code convention, 055 means 5.5 and 070 means 7.0. A full marking may also include the spray angle, such as 25040 for a 25 degree 040 nozzle.",
+  },
+  {
+    question: "Is a pressure washer nozzle chart the same as a nozzle calculator?",
+    answer:
+      "No. A nozzle chart is best for fast lookup and comparison. A nozzle calculator is better when you want to enter exact PSI, BAR, GPM or LPM values and calculate the nozzle / tip code directly.",
+  },
+  {
+    question: "Why does hose length matter when choosing a nozzle?",
+    answer:
+      "Longer or narrower hose can create hose pressure loss before the water reaches the gun. That means the pump pressure and the working pressure at the gun may not be the same, especially on long hose runs.",
+  },
+  {
+    question: "Can I use this chart for LPM as well as GPM?",
+    answer:
+      "Yes. PressureCal shows LPM and US GPM together. GPM means US gallons per minute throughout PressureCal unless otherwise stated.",
+  },
 ];
 
 type FlowHeader = (typeof flowHeaders)[number];
@@ -167,7 +200,7 @@ function SectionCard({
 }: {
   eyebrow?: string;
   title: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <section className="rounded-3xl border border-slate-300 bg-white shadow-sm">
@@ -269,7 +302,7 @@ function ReferenceTable({
             </div>
             <div>
               <span className="font-semibold text-slate-800">Output:</span>{" "}
-              Tip code
+              Nozzle / tip code
             </div>
           </div>
         </div>
@@ -417,7 +450,7 @@ function ReferenceTable({
                             );
                           }}
                           className="w-full px-2 py-2"
-                          title="Copy tip code and open calculator"
+                          title="Copy nozzle / tip code and open calculator"
                         >
                           {value}
                         </button>
@@ -443,15 +476,15 @@ function ReferenceTable({
             <span className="font-semibold text-slate-800">
               Reference basis:
             </span>{" "}
-            Tip codes are generated using the same PressureCal sizing logic as
+            Nozzle / tip codes are generated using the same PressureCal sizing logic as
             the live nozzle calculator.
           </p>
           <p>
             <span className="font-semibold text-slate-800">
-              Tip code convention:
+              Code convention:
             </span>{" "}
-            PressureCal displays tip size using the common pressure-washer
-            nozzle code style, based on US GPM at 4000 PSI.
+            PressureCal displays nozzle size using the common pressure-washer
+            tip-code style, based on US GPM at 4000 PSI.
           </p>
         </div>
       </div>
@@ -459,24 +492,77 @@ function ReferenceTable({
   );
 }
 
+function ChartOrCalculatorPanel() {
+  return (
+    <SectionCard eyebrow="Choose the right tool" title="Nozzle chart or nozzle size calculator?">
+      <div className="grid gap-5 md:grid-cols-2">
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+          <h3 className="text-base font-semibold text-slate-900">
+            Use this chart when you want a quick reference
+          </h3>
+          <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
+            <li>• You already know the machine pressure and flow.</li>
+            <li>• You want to compare common PSI, GPM and LPM combinations.</li>
+            <li>• You are checking a known code such as 040, 055 or 070.</li>
+            <li>• You want a printable pressure washer nozzle sizing chart.</li>
+          </ul>
+          <a
+            href="#standard-chart"
+            className="mt-5 inline-flex rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+          >
+            Jump to nozzle chart
+          </a>
+        </div>
+
+        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5">
+          <h3 className="text-base font-semibold text-blue-950">
+            Use a calculator when you need the exact setup
+          </h3>
+          <ul className="mt-3 space-y-2 text-sm leading-6 text-blue-900">
+            <li>• You want PressureCal to calculate the nozzle / tip code.</li>
+            <li>• You are working with exact PSI, BAR, GPM or LPM values.</li>
+            <li>• You want to model a complete pressure washer setup.</li>
+            <li>• You need to check hose pressure loss and pressure at the gun.</li>
+          </ul>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Link
+              to="/nozzle-size-calculator"
+              className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+            >
+              Pressure Washer Nozzle Size Calculator
+            </Link>
+            <Link
+              to="/target-pressure-nozzle-calculator"
+              className="rounded-2xl border border-blue-200 bg-white px-4 py-2 text-sm font-medium text-blue-950 transition hover:bg-blue-50"
+            >
+              Target Pressure Nozzle Calculator
+            </Link>
+          </div>
+        </div>
+      </div>
+    </SectionCard>
+  );
+}
+
 function TechnicalNotesPanel() {
   return (
-    <SectionCard eyebrow="Notes" title="How to use this chart">
+    <SectionCard eyebrow="How to read it" title="How to read the pressure washer nozzle chart">
       <div className="space-y-4 text-sm leading-6 text-slate-600">
         <p>
           Use this chart as a <strong className="text-slate-900">quick field reference</strong>{" "}
-          for single-nozzle pressure washer setups. Match your machine pressure on the
-          left, then move across to your flow column to find the recommended tip code.
+          for single-nozzle pressure washer setups. Start with your working pressure on the
+          left, then move across to the flow column that best matches your pump output.
         </p>
 
         <p>
-          PressureCal shows <strong className="text-slate-900">PSI and LPM first</strong>,
-          with BAR and US GPM still visible for cross-checking mixed-spec equipment, manuals,
-          and parts lists. GPM means US gallons per minute throughout PressureCal unless otherwise stated.
+          The value where the pressure row and flow column meet is the suggested{" "}
+          <strong className="text-slate-900">nozzle / tip code</strong>. PressureCal shows
+          PSI and LPM first, with BAR and US GPM still visible for mixed-spec equipment,
+          manuals and parts lists.
         </p>
 
         <p>
-          If you are working with a <strong className="text-slate-900">surface cleaner or other
+          If you are using a <strong className="text-slate-900">surface cleaner or other
           multi-nozzle tool</strong>, divide total machine flow by the number of nozzles first.
           The chart should be used on a <strong className="text-slate-900">per-nozzle basis</strong>,
           not on total machine flow.
@@ -489,9 +575,9 @@ function TechnicalNotesPanel() {
         </div>
 
         <p className="text-xs text-slate-500">
-          These values are intended as a fast technical reference. Real-world operating
-          pressure can still vary due to hose length, hose ID, fittings, unloader setting,
-          wear, and water supply conditions.
+          A nozzle chart is a reference guide, not a complete system model. Real-world
+          working pressure can still vary due to hose length, hose ID, fittings, unloader
+          setting, nozzle wear and water supply conditions.
         </p>
       </div>
     </SectionCard>
@@ -526,7 +612,7 @@ function ExamplePanel() {
 
         <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-5">
           <div className="text-xs font-semibold uppercase tracking-wide text-blue-800">
-            Recommended Tip Code
+            Recommended Nozzle / Tip Code
           </div>
           <div className="mt-2 text-4xl font-bold tracking-tight text-blue-950">
             040
@@ -534,7 +620,7 @@ function ExamplePanel() {
           <p className="mt-3 text-sm leading-6 text-blue-900">
             Locate <strong>4000 PSI (276 BAR)</strong> on the left-hand pressure column,
             then move across to <strong>15 LPM (4 US GPM)</strong>. The intersection
-            gives a recommended tip code of <strong>040</strong>.
+            gives a recommended nozzle / tip code of <strong>040</strong>.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
             <Link
@@ -558,9 +644,10 @@ function ExamplePanel() {
 
 function PresetExamples() {
   return (
-    <SectionCard eyebrow="Quick Examples" title="Popular setup shortcuts">
+    <SectionCard eyebrow="Quick Examples" title="Popular pressure washer nozzle chart shortcuts">
       <p className="mb-4 text-sm leading-6 text-slate-600">
-        Use these presets to jump straight to common machine pressure and flow combinations. PressureCal keeps PSI and LPM first, with BAR and US GPM still available for reference.
+        Use these presets to jump straight to common machine pressure and flow combinations.
+        PressureCal keeps PSI and LPM first, with BAR and US GPM still available for reference.
       </p>
 
       <div className="flex flex-wrap gap-3">
@@ -664,7 +751,9 @@ function SurfaceCleanerHelper() {
       title="Surface cleaner per-nozzle helper"
     >
       <p className="text-sm leading-6 text-slate-600">
-        For surface cleaners and other multi-nozzle tools, divide total machine flow by the number of nozzles first. PressureCal then uses per-nozzle flow to point you to the closest chart column and recommended tip code.
+        For surface cleaners and other multi-nozzle tools, divide total machine flow by the
+        number of nozzles first. PressureCal then uses per-nozzle flow to point you to the
+        closest chart column and recommended nozzle / tip code.
       </p>
 
       <div className="mt-6 grid gap-4 md:grid-cols-3">
@@ -751,7 +840,7 @@ function SurfaceCleanerHelper() {
 
           <div className="mt-4 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4">
             <div className="text-xs font-semibold uppercase tracking-wide text-blue-800">
-              Estimated Tip Code
+              Estimated Nozzle / Tip Code
             </div>
             <div className="mt-2 text-3xl font-bold tracking-tight text-blue-950">
               {estimatedTipCode}
@@ -807,6 +896,34 @@ function SurfaceCleanerHelper() {
   );
 }
 
+function TipCodeExplanation() {
+  return (
+    <SectionCard eyebrow="Nozzle codes" title="What nozzle / tip codes like 040, 055 and 070 mean">
+      <div className="space-y-4 text-sm leading-7 text-slate-600">
+        <p>
+          A pressure washer nozzle code such as <strong className="text-slate-900">040</strong>{" "}
+          generally means a <strong className="text-slate-900">4.0 nozzle size</strong>.
+          In the same style, <strong className="text-slate-900">055</strong> means 5.5
+          and <strong className="text-slate-900">070</strong> means 7.0.
+        </p>
+
+        <p>
+          The size code is not the spray angle by itself. A full nozzle marking may combine
+          the spray angle and size. For example, <strong className="text-slate-900">25040</strong>{" "}
+          usually means a 25° spray pattern with a 040 nozzle size.
+        </p>
+
+        <p>
+          At the same pressure, a larger nozzle / tip code flows more water. A smaller code
+          restricts flow more and increases the pressure demand on the machine. That is why
+          nozzle size needs to be matched to both pressure and flow, not chosen from pressure
+          alone.
+        </p>
+      </div>
+    </SectionCard>
+  );
+}
+
 function NozzleColourGuide() {
   const rows = [
     {
@@ -840,7 +957,8 @@ function NozzleColourGuide() {
     <SectionCard eyebrow="Spray Pattern Reference" title="Pressure washer nozzle colour guide">
       <p className="mb-5 text-sm leading-6 text-slate-600">
         Spray tips are commonly colour coded to indicate spray angle. The
-        angle influences impact concentration and coverage width.
+        angle influences impact concentration and coverage width. Nozzle colour
+        is separate from the nozzle size code.
       </p>
 
       <div className="overflow-x-auto">
@@ -882,138 +1000,96 @@ function NozzleColourGuide() {
   );
 }
 
+function FAQSection() {
+  return (
+    <SectionCard title="Pressure washer nozzle chart FAQ">
+      <div className="space-y-5 text-sm leading-7 text-slate-600">
+        {faqItems.map((item) => (
+          <div key={item.question}>
+            <h3 className="text-base font-semibold text-slate-900">
+              {item.question}
+            </h3>
+            <p className="mt-2">{item.answer}</p>
+          </div>
+        ))}
+      </div>
+    </SectionCard>
+  );
+}
+
+function RelatedToolsSection() {
+  return (
+    <SectionCard title="Related PressureCal tools">
+      <p className="text-sm leading-7 text-slate-600">
+        Use the chart for quick reference, then move into the right calculator when you
+        need a more exact answer for your pressure washer setup.
+      </p>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Link
+          to="/nozzle-size-calculator"
+          className="rounded-2xl bg-slate-900 px-5 py-4 text-sm font-medium text-white transition hover:bg-slate-800"
+        >
+          Pressure Washer Nozzle Size Calculator
+        </Link>
+        <Link
+          to="/target-pressure-nozzle-calculator"
+          className="rounded-2xl border border-slate-300 bg-white px-5 py-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+        >
+          Target Pressure Nozzle Calculator
+        </Link>
+        <Link
+          to="/calculator"
+          className="rounded-2xl border border-slate-300 bg-white px-5 py-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+        >
+          Full Setup Calculator
+        </Link>
+        <Link
+          to="/hose-pressure-loss-calculator"
+          className="rounded-2xl border border-slate-300 bg-white px-5 py-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+        >
+          Hose Pressure Loss Calculator
+        </Link>
+      </div>
+    </SectionCard>
+  );
+}
+
 function SEOContentBlocks() {
   return (
     <section className="space-y-8 print:hidden">
-      <SectionCard title="Why this nozzle size chart is useful">
+      <SectionCard title="Why this pressure washer nozzle size chart is useful">
         <div className="space-y-4 text-sm leading-7 text-slate-600">
           <p>
             This pressure washer nozzle size chart is built for fast field lookup.
-            If you already know your machine pressure and flow, you can use it to
-            compare common nozzle / tip codes without guessing.
+            If you already know your machine pressure and flow, you can compare
+            common nozzle / tip codes without guessing.
           </p>
 
           <p>
             PressureCal shows <strong>PSI and LPM first</strong>, with BAR and US GPM
-            still visible for cross-checking equipment that uses mixed specs. GPM means US gallons per minute in PressureCal. That
-            makes it easier to compare machines, manuals, pumps, and nozzle data
-            without constantly converting units.
+            still visible for cross-checking equipment that uses mixed specs. GPM means
+            US gallons per minute in PressureCal. That makes it easier to compare machines,
+            manuals, pumps and nozzle data without constantly converting units.
           </p>
 
           <p>
-            The chart is the reference version. When you need an exact answer from your
-            actual PSI, BAR, LPM or US GPM values, use the live pressure washer nozzle
-            size calculator instead.
-          </p>
-        </div>
-      </SectionCard>
-
-      <SectionCard title="How to use the chart">
-        <div className="space-y-4 text-sm leading-7 text-slate-600">
-          <p>
-            Start with your machine pressure on the left-hand column, then move across
-            to your flow column. The intersecting value is the recommended tip code for
-            a single-nozzle setup.
-          </p>
-
-          <p>
-            If you are using a surface cleaner, dual lance, or another multi-nozzle tool,
-            divide total machine flow by the number of nozzles first. The chart should be
-            read using <strong>per-nozzle flow</strong>, not total machine flow.
-          </p>
-
-          <p>
-            When in doubt, use this chart for the quick lookup and the pressure washer nozzle
-            size calculator for the exact nozzle / tip code calculation.
-          </p>
-        </div>
-      </SectionCard>
-
-      <SectionCard title="Common example">
-        <div className="space-y-4 text-sm leading-7 text-slate-600">
-          <p>
-            A common professional setup is <strong>4000 PSI and 15 LPM</strong>.
-            In the chart, that lands on a <strong>040</strong> tip code.
-          </p>
-
-          <p>
-            That is why 4000 PSI / 15 LPM is such a useful reference point for
-            operators comparing machines, nozzles, and setup changes.
-          </p>
-
-          <div>
+            The chart is the reference version. When you need an exact result from your
+            actual PSI, BAR, LPM or US GPM values, use the live{" "}
             <Link
-              to="/nozzle-size-calculator?p=4000&pu=psi&f=15.1&fu=lpm"
-              className="inline-flex rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+              to="/nozzle-size-calculator"
+              className="font-semibold text-slate-900 underline decoration-slate-400 underline-offset-4"
             >
-              Open 4000 PSI / 15.1 LPM in the Nozzle Size Calculator
-            </Link>
-          </div>
+              pressure washer nozzle size calculator
+            </Link>{" "}
+            instead.
+          </p>
         </div>
       </SectionCard>
 
-      <SectionCard title="FAQ">
-        <div className="space-y-4 text-sm leading-7 text-slate-600">
-          <div>
-            <h3 className="text-base font-semibold text-slate-900">
-              How do I choose the right pressure washer nozzle size?
-            </h3>
-            <p className="mt-2">
-              Match both machine pressure and machine flow. Choosing a nozzle based
-              on only one number can lead to poor cleaning performance or the wrong
-              operating pressure.
-            </p>
-          </div>
+      <FAQSection />
 
-          <div>
-            <h3 className="text-base font-semibold text-slate-900">
-              What if my machine uses BAR and LPM instead of PSI and US GPM?
-            </h3>
-            <p className="mt-2">
-              That is fine. PressureCal still shows BAR and US GPM, but keeps PSI and
-              LPM clearly visible so operators can compare across different specs. The chart uses US gallons per minute because that matches the common pressure washer nozzle-chart convention.
-            </p>
-          </div>
-
-          <div>
-            <h3 className="text-base font-semibold text-slate-900">
-              Is this chart enough for every setup?
-            </h3>
-            <p className="mt-2">
-              Not always. The chart is best for quick nozzle selection. If you also
-              need to account for hose loss, at-gun pressure, or full setup behaviour,
-              use the live PressureCal calculators.
-            </p>
-          </div>
-        </div>
-      </SectionCard>
-
-      <SectionCard title="Related tools">
-        <p className="text-sm leading-7 text-slate-600">
-          Need a more exact answer? Move from the quick chart into the right live tool:
-        </p>
-
-        <div className="mt-4 flex flex-wrap gap-3">
-          <Link
-            to="/nozzle-size-calculator"
-            className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
-          >
-            Pressure Washer Nozzle Size Calculator
-          </Link>
-          <Link
-            to="/hose-pressure-loss-calculator"
-            className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-          >
-            Hose Pressure Loss Calculator
-          </Link>
-          <Link
-            to="/calculator"
-            className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-          >
-            Pressure Washer Setup Calculator
-          </Link>
-        </div>
-      </SectionCard>
+      <RelatedToolsSection />
     </section>
   );
 }
@@ -1081,17 +1157,17 @@ export default function NozzleSizeChartPage() {
         setCopiedTipCode("");
       }, 1600);
     } catch {
-      window.prompt("Copy this tip code:", tipCode);
+      window.prompt("Copy this nozzle / tip code:", tipCode);
     }
   }
 
   return (
     <>
       <Helmet>
-        <title>Pressure Washer Nozzle Size Chart | PSI, LPM & GPM | PressureCal</title>
+        <title>Pressure Washer Nozzle Size Chart | PSI, GPM & Tip Sizes | PressureCal</title>
         <meta
           name="description"
-          content="Use a pressure washer nozzle size chart to compare tip codes across PSI and flow. Check common sizes, then use the calculator for exact setups."
+          content="Use this pressure washer nozzle size chart to compare nozzle / tip sizes by PSI and flow rate. Includes practical sizing guidance and links to nozzle calculators."
         />
         <link
           rel="canonical"
@@ -1099,11 +1175,11 @@ export default function NozzleSizeChartPage() {
         />
         <meta
           property="og:title"
-          content="Pressure Washer Nozzle Size Chart | PSI, LPM & GPM | PressureCal"
+          content="Pressure Washer Nozzle Size Chart | PSI, GPM & Tip Sizes | PressureCal"
         />
         <meta
           property="og:description"
-          content="Use a pressure washer nozzle size chart to compare tip codes across PSI and flow. Check common sizes, then use the calculator for exact setups."
+          content="Use this pressure washer nozzle size chart to compare nozzle / tip sizes by PSI and flow rate. Includes practical sizing guidance and links to nozzle calculators."
         />
         <meta
           property="og:url"
@@ -1112,11 +1188,11 @@ export default function NozzleSizeChartPage() {
         <meta property="og:type" content="website" />
         <meta
           name="twitter:title"
-          content="Pressure Washer Nozzle Size Chart | PSI, LPM & GPM | PressureCal"
+          content="Pressure Washer Nozzle Size Chart | PSI, GPM & Tip Sizes | PressureCal"
         />
         <meta
           name="twitter:description"
-          content="Use a pressure washer nozzle size chart to compare tip codes across PSI and flow. Check common sizes, then use the calculator for exact setups."
+          content="Use this pressure washer nozzle size chart to compare nozzle / tip sizes by PSI and flow rate. Includes practical sizing guidance and links to nozzle calculators."
         />
         <script type="application/ld+json">
           {JSON.stringify({
@@ -1128,37 +1204,19 @@ export default function NozzleSizeChartPage() {
                 name: "Pressure Washer Nozzle Size Chart",
                 url: "https://www.pressurecal.com/nozzle-size-chart",
                 description:
-                  "Pressure washer nozzle size chart for comparing tip codes across PSI, BAR, LPM and US GPM before using the calculator for exact setups.",
+                  "Pressure washer nozzle size chart for comparing nozzle / tip sizes by PSI, BAR, LPM and US GPM.",
               },
               {
                 "@type": "FAQPage",
                 "@id": "https://www.pressurecal.com/nozzle-size-chart#faq",
-                mainEntity: [
-                  {
-                    "@type": "Question",
-                    name: "How do I use a pressure washer nozzle chart?",
-                    acceptedAnswer: {
-                      "@type": "Answer",
-                      text: "Find the pump pressure on the left, move across to the flow column, and use the intersecting value as the closest nozzle / tip code for a single-nozzle setup.",
-                    },
+                mainEntity: faqItems.map((item) => ({
+                  "@type": "Question",
+                  name: item.question,
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: item.answer,
                   },
-                  {
-                    "@type": "Question",
-                    name: "Is a nozzle chart as accurate as a calculator?",
-                    acceptedAnswer: {
-                      "@type": "Answer",
-                      text: "A chart is useful as a quick reference, but a calculator is better when you want to enter exact PSI, BAR, LPM or US GPM values.",
-                    },
-                  },
-                  {
-                    "@type": "Question",
-                    name: "What is the difference between a nozzle chart and nozzle calculator?",
-                    acceptedAnswer: {
-                      "@type": "Answer",
-                      text: "A chart shows common reference values. A nozzle calculator works from your actual pressure and flow to estimate the best nozzle / tip code.",
-                    },
-                  },
-                ],
+                })),
               },
             ],
           })}
@@ -1180,15 +1238,24 @@ export default function NozzleSizeChartPage() {
                   </h1>
 
                   <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">
-                    Use this pressure washer nozzle size chart as a quick field reference for comparing nozzle / tip codes across PSI, BAR, LPM and US GPM. It is useful for common sizes, but it does not replace calculating your exact setup.
+                    Use this pressure washer nozzle size chart to compare common
+                    nozzle / tip sizes against pressure and flow. It is a quick
+                    reference for matching pressure washer nozzles to PSI, GPM and LPM.
                   </p>
 
                   <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-500">
-                    For the most accurate result, use the pressure washer nozzle size calculator to enter your actual pump flow, working pressure and preferred units.
+                    For an exact nozzle / tip code based on your own pressure and flow, use the{" "}
+                    <Link
+                      to="/nozzle-size-calculator"
+                      className="font-semibold text-slate-900 underline decoration-slate-400 underline-offset-4"
+                    >
+                      Pressure Washer Nozzle Size Calculator
+                    </Link>.
                   </p>
 
                   <p className="mt-2 max-w-3xl text-xs leading-5 text-slate-500">
-                    In PressureCal, GPM means US gallons per minute. That matches the convention used by most pressure washer nozzle charts and pump specifications.
+                    In PressureCal, GPM means US gallons per minute. That matches the
+                    convention used by most pressure washer nozzle charts and pump specifications.
                   </p>
 
                   <div className="mt-6 flex flex-wrap gap-3">
@@ -1228,7 +1295,11 @@ export default function NozzleSizeChartPage() {
           </section>
 
           <div className="mx-auto max-w-[1320px] px-4 pb-8 md:px-6 md:pb-10 print:max-w-none print:px-0 print:py-0">
-            <div className="grid gap-6 lg:grid-cols-[1.35fr_0.9fr] print:hidden">
+            <div className="print:hidden">
+              <ChartOrCalculatorPanel />
+            </div>
+
+            <div className="mt-8 grid gap-6 lg:grid-cols-[1.35fr_0.9fr] print:hidden">
               <TechnicalNotesPanel />
               <ExamplePanel />
             </div>
@@ -1243,7 +1314,7 @@ export default function NozzleSizeChartPage() {
 
             <div id="standard-chart" className="mt-8 print:mt-0">
               <ReferenceTable
-                title="Standard pressure washer nozzle reference table"
+                title="Standard pressure washer nozzle size chart"
                 subtitle="Quick reference chart for standard single-nozzle pressure washer setups from 70 BAR to 350 BAR, with pressure shown as PSI (BAR) and flow shown as LPM (US GPM)."
                 flowHeaders={flowHeaders}
                 rows={standardNozzleChart}
@@ -1262,7 +1333,7 @@ export default function NozzleSizeChartPage() {
 
             <div id="high-chart" className="mt-8 print:mt-6">
               <ReferenceTable
-                title="High pressure / industrial nozzle reference table"
+                title="High pressure / industrial nozzle size chart"
                 subtitle="Quick reference chart for higher-pressure single-nozzle setups from 360 BAR to 500 BAR, with pressure shown as PSI (BAR) and flow shown as LPM (US GPM)."
                 flowHeaders={flowHeaders}
                 rows={highPressureNozzleChart}
@@ -1277,6 +1348,10 @@ export default function NozzleSizeChartPage() {
                 onCopyTipCode={handleCopyTipCode}
                 tableId="high-reference-table"
               />
+            </div>
+
+            <div className="mt-8 print:hidden">
+              <TipCodeExplanation />
             </div>
 
             <div className="mt-8 print:hidden">
@@ -1299,15 +1374,23 @@ export default function NozzleSizeChartPage() {
 
               <div className="px-5 py-5 md:px-6">
                 <p className="max-w-3xl text-sm leading-6 text-slate-600">
-                  These tables are built for fast field reference. For custom inputs, unusual machine setups, or direct link sharing, use the PressureCal nozzle size calculator.
+                  These tables are built for fast field reference. For custom inputs,
+                  unusual machine setups, target pressure matching or direct link sharing,
+                  use the relevant PressureCal nozzle calculator.
                 </p>
 
-                <div className="mt-5">
+                <div className="mt-5 flex flex-wrap gap-3">
                   <Link
                     to="/nozzle-size-calculator"
                     className="inline-flex rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
                   >
                     Go to Nozzle Size Calculator
+                  </Link>
+                  <Link
+                    to="/target-pressure-nozzle-calculator"
+                    className="inline-flex rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  >
+                    Go to Target Pressure Nozzle Calculator
                   </Link>
                 </div>
               </div>
