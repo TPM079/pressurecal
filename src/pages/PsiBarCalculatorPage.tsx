@@ -1,6 +1,6 @@
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import PressureCalLayout from "../components/PressureCalLayout";
 import BackToTopButton from "../components/BackToTopButton";
 import CalculationExplainer from "../components/CalculationExplainer";
@@ -332,9 +332,6 @@ export default function PsiBarCalculatorPage() {
   );
   const [copied, setCopied] = useState(false);
 
-  const psiInputRef = useRef<HTMLInputElement | null>(null);
-  const barInputRef = useRef<HTMLInputElement | null>(null);
-
   useEffect(() => {
     if (!copied) return;
 
@@ -392,7 +389,6 @@ export default function PsiBarCalculatorPage() {
     setActiveUnit("psi");
     setBaseBar(null);
     setCopied(false);
-    psiInputRef.current?.focus();
   }
 
   function setPressurePreset(unit: PressureUnit, value: number) {
@@ -400,26 +396,6 @@ export default function PsiBarCalculatorPage() {
     setRawValue(String(value));
     setBaseBar(pressureToBar(value, unit));
     setCopied(false);
-  }
-
-  function handleSwapPsiBar() {
-    if (!hasValidResult) return;
-
-    const nextUnit: Extract<PressureUnit, "psi" | "bar"> =
-      activeUnit === "psi" ? "bar" : "psi";
-    const nextValue = nextUnit === "bar" ? result.bar : result.psi;
-
-    setActiveUnit(nextUnit);
-    setRawValue(nextValue);
-    setCopied(false);
-
-    window.setTimeout(() => {
-      const nextInput =
-        nextUnit === "bar" ? barInputRef.current : psiInputRef.current;
-
-      nextInput?.focus();
-      nextInput?.select();
-    }, 0);
   }
 
   async function handleCopyResult() {
@@ -497,6 +473,10 @@ export default function PsiBarCalculatorPage() {
               <p className="text-sm font-semibold text-slate-900">
                 Primary conversion
               </p>
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                Type into any pressure unit. The highlighted field is used as
+                the source pressure and the other units update instantly.
+              </p>
               <div className="mt-3 grid gap-4 md:grid-cols-2">
                 {PRESSURE_UNIT_META.slice(0, 2).map((unit) => (
                   <div key={unit.id}>
@@ -507,13 +487,6 @@ export default function PsiBarCalculatorPage() {
                       {unit.label}
                     </label>
                     <input
-                      ref={
-                        unit.id === "psi"
-                          ? psiInputRef
-                          : unit.id === "bar"
-                            ? barInputRef
-                            : undefined
-                      }
                       id={unit.id}
                       type="number"
                       inputMode="decimal"
@@ -586,15 +559,6 @@ export default function PsiBarCalculatorPage() {
                 className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 active:scale-[0.98]"
               >
                 Clear
-              </button>
-
-              <button
-                type="button"
-                onClick={handleSwapPsiBar}
-                disabled={!hasValidResult}
-                className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {activeUnit === "psi" ? "Use BAR as input" : "Use PSI as input"}
               </button>
 
               <button
