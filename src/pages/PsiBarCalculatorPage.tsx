@@ -333,6 +333,7 @@ export default function PsiBarCalculatorPage() {
   const [copied, setCopied] = useState(false);
 
   const psiInputRef = useRef<HTMLInputElement | null>(null);
+  const barInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (!copied) return;
@@ -402,18 +403,23 @@ export default function PsiBarCalculatorPage() {
   }
 
   function handleSwapPsiBar() {
-    if (baseBar === null || !Number.isFinite(baseBar)) return;
+    if (!hasValidResult) return;
 
-    if (activeUnit === "psi") {
-      setActiveUnit("bar");
-      setRawValue(formatNumber(baseBar, 4));
-      setCopied(false);
-      return;
-    }
+    const nextUnit: Extract<PressureUnit, "psi" | "bar"> =
+      activeUnit === "psi" ? "bar" : "psi";
+    const nextValue = nextUnit === "bar" ? result.bar : result.psi;
 
-    setActiveUnit("psi");
-    setRawValue(formatNumber(baseBar * BAR_TO_PSI, 4));
+    setActiveUnit(nextUnit);
+    setRawValue(nextValue);
     setCopied(false);
+
+    window.setTimeout(() => {
+      const nextInput =
+        nextUnit === "bar" ? barInputRef.current : psiInputRef.current;
+
+      nextInput?.focus();
+      nextInput?.select();
+    }, 0);
   }
 
   async function handleCopyResult() {
@@ -501,7 +507,13 @@ export default function PsiBarCalculatorPage() {
                       {unit.label}
                     </label>
                     <input
-                      ref={unit.id === "psi" ? psiInputRef : undefined}
+                      ref={
+                        unit.id === "psi"
+                          ? psiInputRef
+                          : unit.id === "bar"
+                            ? barInputRef
+                            : undefined
+                      }
                       id={unit.id}
                       type="number"
                       inputMode="decimal"
@@ -512,10 +524,16 @@ export default function PsiBarCalculatorPage() {
                         if (e.key === "Enter") e.currentTarget.blur();
                       }}
                       placeholder={unit.placeholder}
-                      className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                      className={`w-full rounded-2xl border bg-white px-4 py-3 text-lg text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 ${
+                        activeUnit === unit.id
+                          ? "border-blue-500 ring-4 ring-blue-100"
+                          : "border-slate-300"
+                      }`}
                     />
                     <p className="mt-2 text-xs leading-5 text-slate-500">
-                      {unit.hint}
+                      {activeUnit === unit.id
+                        ? "Currently used as the source pressure."
+                        : unit.hint}
                     </p>
                   </div>
                 ))}
@@ -545,10 +563,16 @@ export default function PsiBarCalculatorPage() {
                         if (e.key === "Enter") e.currentTarget.blur();
                       }}
                       placeholder={unit.placeholder}
-                      className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                      className={`w-full rounded-2xl border bg-white px-4 py-3 text-lg text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 ${
+                        activeUnit === unit.id
+                          ? "border-blue-500 ring-4 ring-blue-100"
+                          : "border-slate-300"
+                      }`}
                     />
                     <p className="mt-2 text-xs leading-5 text-slate-500">
-                      {unit.hint}
+                      {activeUnit === unit.id
+                        ? "Currently used as the source pressure."
+                        : unit.hint}
                     </p>
                   </div>
                 ))}
@@ -570,7 +594,7 @@ export default function PsiBarCalculatorPage() {
                 disabled={!hasValidResult}
                 className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Swap PSI/BAR
+                {activeUnit === "psi" ? "Use BAR as input" : "Use PSI as input"}
               </button>
 
               <button
