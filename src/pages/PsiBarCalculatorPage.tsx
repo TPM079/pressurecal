@@ -6,7 +6,7 @@ import BackToTopButton from "../components/BackToTopButton";
 import CalculationExplainer from "../components/CalculationExplainer";
 
 const PSI_TO_BAR = 0.0689476;
-const BAR_TO_PSI = 14.5038;
+const BAR_TO_PSI = 1 / PSI_TO_BAR;
 const BAR_TO_MPA = 0.1;
 const MPA_TO_BAR = 10;
 const BAR_TO_KPA = 100;
@@ -46,8 +46,6 @@ type FaqItem = {
   question: string;
   answer: string;
 };
-
-const PRESSURE_UNITS: PressureUnit[] = ["psi", "bar", "mpa", "kpa"];
 
 const PRESSURE_UNIT_META: PressureUnitMeta[] = [
   {
@@ -329,6 +327,9 @@ function getConversionFactorNote(unit: PressureUnit) {
 export default function PsiBarCalculatorPage() {
   const [activeUnit, setActiveUnit] = useState<PressureUnit>("psi");
   const [rawValue, setRawValue] = useState("4000");
+  const [baseBar, setBaseBar] = useState<number | null>(() =>
+    pressureToBar(4000, "psi")
+  );
   const [copied, setCopied] = useState(false);
 
   const psiInputRef = useRef<HTMLInputElement | null>(null);
@@ -344,40 +345,51 @@ export default function PsiBarCalculatorPage() {
   }, [copied]);
 
   const result = useMemo<PressureResult>(() => {
-    const sourcePressure = parseFloat(rawValue);
-
-    if (!Number.isFinite(sourcePressure)) {
+    if (baseBar === null || !Number.isFinite(baseBar)) {
       return {
         ...EMPTY_RESULT,
         [activeUnit]: rawValue,
       };
     }
 
-    const bar = pressureToBar(sourcePressure, activeUnit);
-
     return {
-      psi: activeUnit === "psi" ? rawValue : formatNumber(bar * BAR_TO_PSI, 2),
-      bar: activeUnit === "bar" ? rawValue : formatNumber(bar, 4),
-      mpa: activeUnit === "mpa" ? rawValue : formatNumber(bar * BAR_TO_MPA, 4),
-      kpa: activeUnit === "kpa" ? rawValue : formatNumber(bar * BAR_TO_KPA, 2),
+      psi:
+        activeUnit === "psi"
+          ? rawValue
+          : formatNumber(baseBar * BAR_TO_PSI, 2),
+      bar: activeUnit === "bar" ? rawValue : formatNumber(baseBar, 4),
+      mpa:
+        activeUnit === "mpa"
+          ? rawValue
+          : formatNumber(baseBar * BAR_TO_MPA, 4),
+      kpa:
+        activeUnit === "kpa"
+          ? rawValue
+          : formatNumber(baseBar * BAR_TO_KPA, 2),
     };
-  }, [activeUnit, rawValue]);
+  }, [activeUnit, baseBar, rawValue]);
 
-  const hasValidResult = PRESSURE_UNITS.every((unit) =>
-    Number.isFinite(parseFloat(result[unit]))
-  );
+  const hasValidResult = baseBar !== null && Number.isFinite(baseBar);
 
   const activeUnitLabel = getUnitLabel(activeUnit);
 
   function handleUnitChange(unit: PressureUnit, value: string) {
+    const sourcePressure = parseFloat(value);
+
     setActiveUnit(unit);
     setRawValue(value);
+    setBaseBar(
+      Number.isFinite(sourcePressure)
+        ? pressureToBar(sourcePressure, unit)
+        : null
+    );
     setCopied(false);
   }
 
   function handleClear() {
     setRawValue("");
     setActiveUnit("psi");
+    setBaseBar(null);
     setCopied(false);
     psiInputRef.current?.focus();
   }
@@ -385,25 +397,22 @@ export default function PsiBarCalculatorPage() {
   function setPressurePreset(unit: PressureUnit, value: number) {
     setActiveUnit(unit);
     setRawValue(String(value));
+    setBaseBar(pressureToBar(value, unit));
     setCopied(false);
   }
 
   function handleSwapPsiBar() {
-    const sourcePressure = parseFloat(rawValue);
-
-    if (!Number.isFinite(sourcePressure)) return;
-
-    const bar = pressureToBar(sourcePressure, activeUnit);
+    if (baseBar === null || !Number.isFinite(baseBar)) return;
 
     if (activeUnit === "psi") {
       setActiveUnit("bar");
-      setRawValue(formatNumber(bar, 4));
+      setRawValue(formatNumber(baseBar, 4));
       setCopied(false);
       return;
     }
 
     setActiveUnit("psi");
-    setRawValue(formatNumber(bar * BAR_TO_PSI, 4));
+    setRawValue(formatNumber(baseBar * BAR_TO_PSI, 4));
     setCopied(false);
   }
 
