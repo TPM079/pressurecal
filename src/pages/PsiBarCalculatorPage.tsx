@@ -7,10 +7,10 @@ import CalculationExplainer from "../components/CalculationExplainer";
 
 const PSI_TO_BAR = 0.0689476;
 const BAR_TO_PSI = 14.5038;
-const PSI_TO_MPA = 0.00689476;
-const MPA_TO_PSI = 145.038;
-const PSI_TO_KPA = 6.89476;
-const KPA_TO_PSI = 0.145038;
+const BAR_TO_MPA = 0.1;
+const MPA_TO_BAR = 10;
+const BAR_TO_KPA = 100;
+const KPA_TO_BAR = 0.01;
 
 const PAGE_URL = "https://www.pressurecal.com/psi-bar-calculator";
 const SEO_TITLE = "PSI to BAR Converter | MPa & kPa Pressure Conversion | PressureCal";
@@ -281,16 +281,16 @@ function getUnitLabel(unit: PressureUnit) {
   return PRESSURE_UNIT_META.find((item) => item.id === unit)?.label ?? "PSI";
 }
 
-function pressureToPsi(value: number, unit: PressureUnit) {
+function pressureToBar(value: number, unit: PressureUnit) {
   switch (unit) {
     case "psi":
-      return value;
+      return value * PSI_TO_BAR;
     case "bar":
-      return value * BAR_TO_PSI;
+      return value;
     case "mpa":
-      return value * MPA_TO_PSI;
+      return value * MPA_TO_BAR;
     case "kpa":
-      return value * KPA_TO_PSI;
+      return value * KPA_TO_BAR;
     default:
       return value;
   }
@@ -353,16 +353,13 @@ export default function PsiBarCalculatorPage() {
       };
     }
 
-    const psi = pressureToPsi(sourcePressure, activeUnit);
+    const bar = pressureToBar(sourcePressure, activeUnit);
 
     return {
-      psi: activeUnit === "psi" ? rawValue : formatNumber(psi, 2),
-      bar:
-        activeUnit === "bar" ? rawValue : formatNumber(psi * PSI_TO_BAR, 4),
-      mpa:
-        activeUnit === "mpa" ? rawValue : formatNumber(psi * PSI_TO_MPA, 4),
-      kpa:
-        activeUnit === "kpa" ? rawValue : formatNumber(psi * PSI_TO_KPA, 2),
+      psi: activeUnit === "psi" ? rawValue : formatNumber(bar * BAR_TO_PSI, 2),
+      bar: activeUnit === "bar" ? rawValue : formatNumber(bar, 4),
+      mpa: activeUnit === "mpa" ? rawValue : formatNumber(bar * BAR_TO_MPA, 4),
+      kpa: activeUnit === "kpa" ? rawValue : formatNumber(bar * BAR_TO_KPA, 2),
     };
   }, [activeUnit, rawValue]);
 
@@ -392,17 +389,21 @@ export default function PsiBarCalculatorPage() {
   }
 
   function handleSwapPsiBar() {
-    if (!hasValidResult) return;
+    const sourcePressure = parseFloat(rawValue);
+
+    if (!Number.isFinite(sourcePressure)) return;
+
+    const bar = pressureToBar(sourcePressure, activeUnit);
 
     if (activeUnit === "psi") {
       setActiveUnit("bar");
-      setRawValue(result.bar);
+      setRawValue(formatNumber(bar, 4));
       setCopied(false);
       return;
     }
 
     setActiveUnit("psi");
-    setRawValue(result.psi);
+    setRawValue(formatNumber(bar * BAR_TO_PSI, 4));
     setCopied(false);
   }
 
