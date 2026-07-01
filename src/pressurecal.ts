@@ -1,7 +1,7 @@
 /**
  * PressureCal core (V1.2)
  * Adds realistic unloader/max-pressure behaviour:
- * - If a restrictive tip would require pressure above max,
+ * - If a restrictive nozzle would require pressure above max,
  *   pressure is clamped and flow at the gun drops.
  * - The difference becomes bypass flow (unloader bypass).
  *
@@ -82,9 +82,13 @@ export interface SolveResult {
   selectedTipCode: string;
   selectedOrificeMm: number;
 
-  /** Nozzle equivalent (calibrated to rated point) */
+  /** Nozzle equivalent (calibrated to rated pump specs, matching manufacturer charts) */
   calibratedNozzleQ4000Gpm: number;
   calibratedTipCode: string;
+
+  /** Nozzle equivalent (calibrated to rated pump flow after rated-flow hose loss) */
+  calibratedNozzleQ4000GpmWithHoseLoss: number;
+  calibratedTipCodeWithHoseLoss: string;
 
   /** AS/NZS 4233.01 reference (P×Q) */
   ratedPQ: number; // bar·L/min using rated specs (maximum output reference)
@@ -139,7 +143,7 @@ function clampPos(n: number, min = 0): number {
 }
 
 /**
- * Parse tip text into Q@4000 (GPM @ 4000 PSI).
+ * Parse nozzle code text into Q@4000 (GPM @ 4000 PSI).
  * - "040" => 4.0
  * - "4.0" => 4.0
  * - "40"  => 4.0
@@ -370,7 +374,8 @@ export function solvePressureCal(inputs: Inputs): SolveResult {
   const hoseSections = buildHoseSections(inputs);
   const totalHoseLengthM = hoseSections.reduce((total, section) => total + clampPos(section.lengthM), 0);
 
-  // Calibrated nozzle (tip) that matches rated pump point
+  // Calibrated nozzle that matches rated pump point.
+  // This is the standard manufacturer-chart reference and intentionally excludes hose loss.
   const nozzleCount =
     inputs.sprayMode === "surfaceCleaner"
       ? Math.max(2, Number(inputs.nozzleCount || 2))
@@ -379,6 +384,23 @@ export function solvePressureCal(inputs: Inputs): SolveResult {
   const calibratedSystemQ4000 = q4000FromFlowAtPressure(pumpGpmRated, pumpPsiRated);
   const calibratedQ4000 = calibratedSystemQ4000 / nozzleCount;
   const calibratedCode = q4000ToTipCode(calibratedQ4000);
+
+  // Calibrated nozzle that matches this actual setup at rated pump flow.
+  // This keeps the manufacturer-chart reference unchanged, while also providing
+  // a setup-aware recommendation that accounts for hose loss at rated flow.
+  const hoseLossAtRatedBreakdown = hoseLossBreakdownPsi(
+    pumpGpmRated,
+    hoseSections,
+    inputs.waterDensity,
+    inputs.hoseRoughnessMm
+  );
+  const gunPsiAtRated = Math.max(pumpPsiRated - hoseLossAtRatedBreakdown.totalLossPsi, 0);
+  const calibratedSystemQ4000WithHoseLoss = q4000FromFlowAtPressure(
+    pumpGpmRated,
+    gunPsiAtRated
+  );
+  const calibratedQ4000WithHoseLoss = calibratedSystemQ4000WithHoseLoss / nozzleCount;
+  const calibratedCodeWithHoseLoss = q4000ToTipCode(calibratedQ4000WithHoseLoss);
 
   // Selected nozzle -> derive per-nozzle Q4000 + system Q4000 + equivalent orifice
   let selectedPerNozzleQ4000: number;
@@ -514,7 +536,7 @@ export function solvePressureCal(inputs: Inputs): SolveResult {
 
     if (isPressureLimited) {
       statusMessage =
-        `Tip is restrictive. System is pressure-limited (unloader bypass likely). ` +
+        `Nozzle is restrictive. System is pressure-limited (unloader bypass likely). ` +
         `Approx bypass: ${bypassPct.toFixed(0)}% (${formatFlowFromGpm(bypassFlowGpm, inputs.pumpFlowUnit)}). ` +
         `Without the limit, required pressure would be ~${requiredPumpPsi.toFixed(0)} PSI.`;
     } else {
@@ -552,6 +574,8 @@ export function solvePressureCal(inputs: Inputs): SolveResult {
 
     calibratedNozzleQ4000Gpm: clampPos(calibratedQ4000),
     calibratedTipCode: calibratedCode,
+    calibratedNozzleQ4000GpmWithHoseLoss: clampPos(calibratedQ4000WithHoseLoss),
+    calibratedTipCodeWithHoseLoss: calibratedCodeWithHoseLoss,
 
     ratedPQ: clampPos(ratedPQ),
     ratedClass,

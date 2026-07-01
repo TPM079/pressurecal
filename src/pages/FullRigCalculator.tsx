@@ -663,17 +663,23 @@ export default function FullRigCalculatorPage() {
     .filter(Boolean)
     .join(" · ");
   const pressureVariancePct = ratedPsi > 0 ? ((r.gunPressurePsi - ratedPsi) / ratedPsi) * 100 : 0;
-  const lossPctAbs = Math.abs(pressureVariancePct);
+  const lossPctAbs = Math.abs(r.hoseLossPct);
   const efficiencyTier =
-    lossPctAbs < 5 ? "Optimal" : lossPctAbs < 10 ? "Moderate loss" : lossPctAbs < 20 ? "High loss" : "Severe loss";
+    lossPctAbs < 5
+      ? "Low hose loss"
+      : lossPctAbs < 10
+        ? "Moderate hose loss"
+        : lossPctAbs < 20
+          ? "High hose loss"
+          : "Severe hose loss";
   const efficiencyNote =
     lossPctAbs < 5
-      ? "Very close to rated performance."
+      ? "Low hose pressure loss for this setup."
       : lossPctAbs < 10
-        ? "Some pressure drop — typically acceptable."
+        ? "Some hose pressure loss — typically acceptable."
         : lossPctAbs < 20
-          ? "Noticeable drop — consider hose length or diameter."
-          : "Large drop — hose length or ID is significantly reducing performance.";
+          ? "Noticeable hose pressure loss — consider shorter hose length or larger hose ID."
+          : "Large hose pressure loss — hose length or ID is significantly reducing at-gun pressure.";
   const badge = statusBadge(r.status);
   const systemBadge = r.isPressureLimited
     ? { text: "Bypass active", cls: "bg-red-50 text-red-800 border-red-200" }
@@ -684,6 +690,7 @@ export default function FullRigCalculatorPage() {
   const pqClassGun = pqAtGun >= 5600 ? "Class B" : "Class A";
   const selectedDisplayTipCode = roundTipCodeToFive(r.selectedTipCode);
   const calibratedDisplayTipCode = roundTipCodeToFive(r.calibratedTipCode);
+  const calibratedWithHoseLossDisplayTipCode = roundTipCodeToFive(r.calibratedTipCodeWithHoseLoss);
   const nozzleDisplaySuffix = inputs.sprayMode === "surfaceCleaner" ? " each" : "";
   const enginePowerInputValue =
     inputs.engineHp === ""
@@ -1068,9 +1075,9 @@ export default function FullRigCalculatorPage() {
       const detailItemGap = 10;
       const stackedDetailGap = 24;
 
-      const selectedDetailText = `Selected nozzle ${selectedDisplayTipCode}${nozzleDisplaySuffix}`;
-      const recommendedDetailText = `Recommended nozzle for rated pump output: ${calibratedDisplayTipCode}${nozzleDisplaySuffix}`;
-      const pressureGuideText = `Pressure loss guide: ${efficiencyTier}`;
+      const selectedDetailText = `Selected nozzle: ${selectedDisplayTipCode}${nozzleDisplaySuffix}`;
+      const recommendedDetailText = `Recommended nozzle (pump specs): ${calibratedDisplayTipCode}${nozzleDisplaySuffix} · Recommended nozzle (actual setup): ${calibratedWithHoseLossDisplayTipCode}${nozzleDisplaySuffix}`;
+      const pressureGuideText = `Hose pressure loss guide: ${efficiencyTier}`;
 
       measureCtx.font = `700 24px ${EXPORT_CARD.fontFamily}`;
       const selectedDetailLines = wrapCanvasText(measureCtx, selectedDetailText, detailTextWidth);
@@ -1393,6 +1400,7 @@ export default function FullRigCalculatorPage() {
   }
 
   const calculatedNozzleLabel = `${calibratedDisplayTipCode}${nozzleDisplaySuffix}`;
+  const calculatedNozzleWithHoseLossLabel = `${calibratedWithHoseLossDisplayTipCode}${nozzleDisplaySuffix}`;
   const selectedNozzleLabel = `${selectedDisplayTipCode}${nozzleDisplaySuffix}`;
   const sprayModeLabel =
     inputs.sprayMode === "surfaceCleaner"
@@ -1462,8 +1470,8 @@ export default function FullRigCalculatorPage() {
     },
     {
       label: "Nozzle match",
-      value: `${badge.text}: selected ${selectedNozzleLabel}, recommended ${calculatedNozzleLabel}`,
-      note: r.statusMessage,
+      value: `${badge.text}: selected ${selectedNozzleLabel}`,
+      note: `Recommended nozzle (pump specs): ${calculatedNozzleLabel}. Recommended nozzle (actual setup): ${calculatedNozzleWithHoseLossLabel}. ${r.statusMessage}`,
     },
     {
       label: "Required power",
@@ -1509,7 +1517,7 @@ export default function FullRigCalculatorPage() {
                 to="/nozzle-size-calculator"
                 className="rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-950"
               >
-                Only need a nozzle / tip code? Use the pressure washer nozzle size calculator
+                Only need a nozzle code? Use the pressure washer nozzle size calculator
               </Link>
               <Link
                 to="/target-pressure-nozzle-calculator"
@@ -2350,12 +2358,38 @@ export default function FullRigCalculatorPage() {
                     <div className="mt-1 text-sm text-slate-600">{fmt(lossBar, 1)} bar · {efficiencyTier}</div>
                   </div>
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Recommended nozzle for rated pump output</div>
-                    <div className="mt-2 text-2xl font-semibold text-slate-950">{calibratedDisplayTipCode}{nozzleDisplaySuffix}</div>
-                    <div className="mt-1 text-sm text-slate-600">Selected nozzle {selectedDisplayTipCode}{nozzleDisplaySuffix}</div>
-                    <p className="mt-3 text-xs leading-5 text-slate-500">
-                      Recommended size is based on rated pump pressure and flow. At-gun pressure may be lower once hose loss is included.
-                    </p>
+                    <div className="text-xs tracking-[0.14em] text-slate-500">
+                      Recommended nozzle
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-2 gap-4">
+                      <div>
+                        <div className="text-xs font-semibold tracking-[0.14em] text-slate-500">
+                          Pump specs
+                        </div>
+                        <div className="mt-1 text-2xl font-semibold text-slate-950">
+                          {calibratedDisplayTipCode}{nozzleDisplaySuffix}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="text-xs font-semibold tracking-[0.14em] text-slate-500">
+                          Actual setup
+                        </div>
+                        <div className="mt-1 text-2xl font-semibold text-slate-950">
+                          {calibratedWithHoseLossDisplayTipCode}{nozzleDisplaySuffix}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 text-sm text-slate-600">
+                      Selected nozzle: {selectedDisplayTipCode}{nozzleDisplaySuffix}
+                    </div>
+
+                    <div className="mt-3 space-y-1 text-xs leading-5 text-slate-500">
+                      <p>Pump specs match standard manufacturer nozzle charts using rated pump pressure and flow.</p>
+                      <p>Actual setup accounts for estimated hose pressure loss at rated flow.</p>
+                    </div>
                   </div>
                 </div>
 
@@ -2389,7 +2423,7 @@ export default function FullRigCalculatorPage() {
                 ) : null}
 
                 <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm font-semibold text-slate-900">Pressure loss guide</p>
+                  <p className="text-sm font-semibold text-slate-900">Hose pressure loss guide</p>
                   <p className="mt-2 text-sm leading-6 text-slate-600">{efficiencyNote}</p>
                 </div>
 
