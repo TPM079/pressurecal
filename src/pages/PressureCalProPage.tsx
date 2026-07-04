@@ -1097,6 +1097,10 @@ export default function PressureCalProPage() {
                       <button
                         type="button"
                         onClick={() => {
+                          trackEvent("pricing_plan_monthly_selected", {
+                            page: "pricing",
+                            location: "plans",
+                          });
                           setSelectedPlan("monthly");
                           setSelectedLocation("plans");
                           setSignInError(null);
@@ -1114,6 +1118,10 @@ export default function PressureCalProPage() {
                       <button
                         type="button"
                         onClick={() => {
+                          trackEvent("pricing_plan_yearly_selected", {
+                            page: "pricing",
+                            location: "plans",
+                          });
                           setSelectedPlan("yearly");
                           setSelectedLocation("plans");
                           setSignInError(null);

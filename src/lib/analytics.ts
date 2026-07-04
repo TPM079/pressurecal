@@ -17,6 +17,8 @@ export type PressureCalEventName =
   | "pricing_use_free_calculator_clicked"
   | "pricing_choose_monthly_clicked"
   | "pricing_choose_yearly_clicked"
+  | "pricing_plan_monthly_selected"
+  | "pricing_plan_yearly_selected"
   | "checkout_started"
   | "checkout_completed"
   | "saved_setup_created";
