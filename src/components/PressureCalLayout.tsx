@@ -14,6 +14,7 @@ type PressureCalLayoutProps = {
 
 const toolLinks = [
   { to: "/nozzle-size-calculator", label: "Nozzle Size Calculator" },
+  { to: "/orifice-diameter-calculator", label: "Orifice Diameter Calculator" },
   { to: "/target-pressure-nozzle-calculator", label: "Target Pressure Nozzle Calculator" },
   { to: "/hose-pressure-loss-calculator", label: "Hose Pressure Loss Calculator" },
   { to: "/nozzle-size-chart", label: "Nozzle Size Chart" },
@@ -24,6 +25,7 @@ const toolLinks = [
 const footerQuickLinks = [
   { to: "/calculator", label: "Full Setup Calculator" },
   { to: "/nozzle-size-calculator", label: "Nozzle Size Calculator" },
+  { to: "/orifice-diameter-calculator", label: "Orifice Diameter Calculator" },
   { to: "/hose-pressure-loss-calculator", label: "Hose Pressure Loss Calculator" },
   { to: "/pricing", label: "PressureCal Pro" },
 ];

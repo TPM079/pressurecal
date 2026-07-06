@@ -537,6 +537,12 @@ function ChartOrCalculatorPanel() {
             >
               Target Pressure Nozzle Calculator
             </Link>
+            <Link
+  to="/orifice-diameter-calculator"
+  className="rounded-2xl border border-blue-200 bg-white px-4 py-2 text-sm font-medium text-blue-950 transition hover:bg-blue-50"
+>
+  Orifice Diameter Calculator
+</Link>
           </div>
         </div>
       </div>

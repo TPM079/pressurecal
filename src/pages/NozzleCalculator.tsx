@@ -386,7 +386,18 @@ function CalculatorCore({
                     {fmt(orificeIn, 3)} in
                   </p>
                 </div>
+                <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+  <p className="text-sm font-medium text-blue-950">
+    Measured an orifice diameter instead?
+  </p>
 
+  <Link
+    to="/orifice-diameter-calculator"
+    className="mt-2 inline-flex text-sm font-semibold text-blue-700 transition hover:text-blue-900"
+  >
+    Calculate the equivalent nozzle code →
+  </Link>
+</div>
                 <div className="rounded-2xl border border-slate-200 bg-white p-4">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
                     Tip equivalent
@@ -539,11 +550,11 @@ function CalculatorCore({
 
             <div className="mt-4 rounded-2xl border border-blue-200 bg-blue-50 p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-800">
-                Recommended nozzle / tip code
+              Recommended nozzle code
               </p>
               <p className="mt-2 text-4xl font-bold tracking-tight text-blue-950">040</p>
               <p className="mt-3 text-sm leading-6 text-blue-900">
-                A common 4000 PSI / 15 LPM setup lands on a 040 tip code. That is why 040 is
+                A common 4000 PSI / 15 LPM setup lands on a 040 Nozzle code. That is why 040 is
                 such a familiar reference point for many professional pressure washer setups.
               </p>
             </div>
@@ -560,7 +571,7 @@ function CalculatorCore({
                   What size nozzle do I need for my pressure washer?
                 </h3>
                 <p className="mt-2">
-                  The correct nozzle size depends on pump flow and working pressure. Enter your LPM or GPM and PSI or BAR to calculate the nozzle / tip code that best matches your setup.
+                  The correct nozzle size depends on pump flow and working pressure. Enter your LPM or GPM and PSI or BAR to calculate the nozzle code that best matches your setup.
                 </p>
               </div>
 

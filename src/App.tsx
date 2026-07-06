@@ -25,6 +25,7 @@ import HomePage from "./pages/HomePage";
 import FullRigCalculatorPage from "./pages/FullRigCalculator";
 import AdminFeedbackPage from "./pages/AdminFeedbackPage";
 import NozzleCalculator from "./pages/NozzleCalculator";
+import OrificeDiameterCalculatorPage from "./pages/OrificeDiameterCalculatorPage";
 import NozzleSizeChartPage from "./pages/NozzleSizeChartPage";
 import HosePressureLossCalculator from "./pages/HosePressureLossCalculator";
 import PsiBarCalculatorPage from "./pages/PsiBarCalculatorPage";
@@ -105,6 +106,10 @@ export default function App() {
           <Route path="/saved-setups/:setupId/report" element={<PageTransition><SavedSetupReportPage /></PageTransition>} />
           <Route path="/compare-setups" element={<PageTransition><CompareSetupsPage /></PageTransition>} />
           <Route path="/nozzle-size-calculator" element={<PageTransition><NozzleCalculator /></PageTransition>} />
+          <Route
+  path="/orifice-diameter-calculator"
+  element={<PageTransition><OrificeDiameterCalculatorPage /></PageTransition>}
+/>
           <Route path="/target-pressure-nozzle-calculator" element={<PageTransition><TargetPressureNozzleCalculatorPage /></PageTransition>} />
           <Route path="/nozzle-size-chart" element={<PageTransition><NozzleSizeChartPage /></PageTransition>} />
           <Route path="/hose-pressure-loss-calculator" element={<PageTransition><HosePressureLossCalculator /></PageTransition>} />
