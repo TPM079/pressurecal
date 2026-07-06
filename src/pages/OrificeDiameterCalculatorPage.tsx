@@ -213,10 +213,10 @@ export default function OrificeDiameterCalculatorPage() {
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-blue-600">
             PressureCal calculator
           </p>
-          <h1 className="max-w-3xl text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">
+          <h1 className="max-w-3xl text-3xl font-black leading-tight tracking-tight text-slate-950 sm:text-5xl">
             Orifice Diameter to Nozzle Size Calculator
           </h1>
-          <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
+          <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg sm:leading-8">
             Measure an orifice diameter and estimate the equivalent pressure washer
             nozzle code. Useful for checking unmarked nozzles, worn nozzles, or
             matching a replacement before buying.
@@ -224,11 +224,11 @@ export default function OrificeDiameterCalculatorPage() {
         </div>
 
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
-          <div className="rounded-[1.5rem] border border-blue-200 bg-white p-5 shadow-sm sm:p-6">
+          <div className="rounded-[1.5rem] border border-blue-200 bg-white p-4 shadow-sm sm:p-6">
             <h2 className="text-lg font-bold text-slate-950">Enter orifice diameter</h2>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Use calipers where possible. For very small changes, the equivalent
-              nozzle code can move quickly.
+              Use calipers where possible. Small diameter changes can move the equivalent
+              nozzle code quickly.
             </p>
 
             <div className="mt-6 space-y-5">
@@ -236,12 +236,12 @@ export default function OrificeDiameterCalculatorPage() {
                 <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
                   Orifice diameter
                 </span>
-                <div className="grid grid-cols-[1fr_110px] gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_110px]">
                   <input
                     value={diameterInput}
                     onChange={(event) => setDiameterInput(event.target.value)}
                     inputMode="decimal"
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-lg font-bold text-slate-950 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                    className="min-w-0 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-lg font-bold text-slate-950 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                     placeholder="1.48"
                   />
                   <select
@@ -249,7 +249,7 @@ export default function OrificeDiameterCalculatorPage() {
                     onChange={(event) =>
                       setDiameterUnit(event.target.value as DiameterUnit)
                     }
-                    className="rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm font-semibold text-slate-950 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                    className="min-w-0 w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm font-semibold text-slate-950 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                   >
                     <option value="mm">mm</option>
                     <option value="in">in</option>
@@ -261,15 +261,15 @@ export default function OrificeDiameterCalculatorPage() {
                 <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
                   Reference pressure
                 </span>
-                <div className="grid grid-cols-[1fr_110px] gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_110px]">
                   <input
                     value={referencePressurePsi}
                     onChange={(event) => setReferencePressurePsi(event.target.value)}
                     inputMode="decimal"
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-lg font-bold text-slate-950 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                    className="min-w-0 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-lg font-bold text-slate-950 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                     placeholder="4000"
                   />
-                  <div className="flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-600">
+                  <div className="flex min-w-0 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-600">
                     PSI
                   </div>
                 </div>
@@ -295,7 +295,7 @@ export default function OrificeDiameterCalculatorPage() {
             </div>
           </div>
 
-          <div className="rounded-[1.5rem] border border-blue-200 bg-blue-50 p-5 shadow-sm sm:p-6">
+          <div className="rounded-[1.5rem] border border-blue-200 bg-blue-50 p-4 shadow-sm sm:p-6">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blue-700">
               Equivalent nozzle code
             </p>
@@ -307,7 +307,7 @@ export default function OrificeDiameterCalculatorPage() {
               </div>
             ) : (
               <>
-                <div className="mt-5 flex flex-wrap items-end gap-4">
+                <div className="mt-5 flex flex-col items-start gap-4 sm:flex-row sm:items-end">
                   <div className="rounded-2xl bg-blue-600 px-6 py-5 text-white shadow-sm">
                     <div className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-100">
                       Nozzle code
@@ -369,7 +369,48 @@ export default function OrificeDiameterCalculatorPage() {
                     </p>
                   </div>
 
-                  <div className="overflow-x-auto">
+                  <div className="divide-y divide-slate-100 sm:hidden">
+                    {result.closestNozzles.map((item) => (
+                      <div key={item.code} className="grid grid-cols-[72px_1fr] gap-3 px-4 py-3">
+                        <div>
+                          <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                            Code
+                          </div>
+                          <div className="mt-1 text-lg font-black text-slate-950">
+                            {item.code}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div>
+                            <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                              Diameter
+                            </div>
+                            <div className="mt-1 font-semibold text-slate-800">
+                              {roundTo(item.diameterMm, 3)} mm
+                            </div>
+                            <div className="text-xs text-slate-500">
+                              {roundTo(item.diameterIn, 4)} in
+                            </div>
+                          </div>
+
+                          <div>
+                            <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                              Flow
+                            </div>
+                            <div className="mt-1 font-semibold text-slate-800">
+                              {roundTo(item.lpmAtReferencePressure, 1)} LPM
+                            </div>
+                            <div className="text-xs text-slate-500">
+                              {roundTo(item.gpmAtReferencePressure, 2)} GPM
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="hidden overflow-x-auto sm:block">
                     <table className="w-full min-w-[520px] text-left text-sm">
                       <thead className="bg-slate-50 text-xs uppercase tracking-[0.18em] text-slate-500">
                         <tr>
