@@ -870,12 +870,12 @@ export default function CompareSetupsPage() {
                       key={`${item.setup.id}-${index}`}
                       className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8"
                     >
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div className="min-w-0 flex-1">
+                      <div className="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-start md:justify-between md:gap-3">
+                        <div className="w-full min-w-0 md:min-w-[12rem] md:flex-1">
                           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
                             Setup {index === 0 ? "A" : "B"}
                           </p>
-                          <h2 className="mt-2 break-words text-2xl font-semibold tracking-tight text-slate-950">
+                          <h2 className="mt-2 whitespace-normal break-normal text-2xl font-semibold tracking-tight text-slate-950">
                             {item.setup.name}
                           </h2>
                           {compareNotePreview(item.setup.notes) ? (
@@ -890,16 +890,16 @@ export default function CompareSetupsPage() {
                           ) : null}
                         </div>
 
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex w-full max-w-full flex-wrap gap-2 md:w-auto md:shrink-0">
                           <span
-                            className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${badgeClassForStatus(
+                            className={`inline-flex shrink-0 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-semibold ${badgeClassForStatus(
                               item.nozzleStatus
                             )}`}
                           >
                             {item.nozzleStatus}
                           </span>
                           {item.isPressureLimited ? (
-                            <span className="inline-flex rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">
+                            <span className="inline-flex shrink-0 whitespace-nowrap rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">
                               Pressure limited
                             </span>
                           ) : null}
