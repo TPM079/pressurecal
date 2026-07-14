@@ -1033,54 +1033,69 @@ export default function CompareSetupsPage() {
                     </p>
                   </div>
 
-                  <dl className="mt-6 space-y-4 sm:hidden">
-                    {comparisonRows.map((row, index) => (
-                      <div
-                        key={row.label}
-                        className={`min-w-0 rounded-2xl border border-slate-200 p-4 ${
-                          index % 2 === 0 ? "bg-white" : "bg-slate-50"
-                        }`}
-                      >
-                        <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">
-                          {row.label}
-                        </dt>
-                        <dd className="mt-3 grid min-w-0 grid-cols-2 gap-3">
-                          <div
-                            className="min-w-0 rounded-xl border border-slate-200 bg-white p-3"
-                            aria-label={`Setup A: ${comparedA.setup.name}`}
+                  <div
+                    className="mt-6 grid min-w-0 grid-cols-2 gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:hidden"
+                    aria-label="Compared setups"
+                  >
+                    <div
+                      id="mobile-comparison-setup-a"
+                      className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3"
+                    >
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                        Setup A
+                      </p>
+                      <p className="mt-1 whitespace-normal break-normal text-sm font-semibold leading-5 text-slate-800">
+                        {comparedA.setup.name}
+                      </p>
+                    </div>
+
+                    <div
+                      id="mobile-comparison-setup-b"
+                      className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3"
+                    >
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                        Setup B
+                      </p>
+                      <p className="mt-1 whitespace-normal break-normal text-sm font-semibold leading-5 text-slate-800">
+                        {comparedB.setup.name}
+                      </p>
+                    </div>
+                  </div>
+
+                  <dl className="mt-4 min-w-0 overflow-hidden rounded-2xl border border-slate-200 sm:hidden">
+                    {comparisonRows.map((row, index) => {
+                      const metricId = `mobile-comparison-metric-${index}`;
+
+                      return (
+                        <div
+                          key={row.label}
+                          className={`min-w-0 px-4 py-4 ${
+                            index > 0 ? "border-t border-slate-200" : ""
+                          } ${index % 2 === 0 ? "bg-white" : "bg-slate-50"}`}
+                        >
+                          <dt
+                            id={metricId}
+                            className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500"
                           >
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                              Setup A
-                            </p>
-                            <p className="mt-1 whitespace-normal break-words text-xs font-semibold leading-5 text-slate-700">
-                              {comparedA.setup.name}
-                            </p>
-                            <p
-                              className={`mt-3 whitespace-normal break-words text-sm font-semibold leading-6 ${row.aClass}`}
+                            {row.label}
+                          </dt>
+                          <dd className="mt-2 grid min-w-0 grid-cols-2 gap-x-4">
+                            <div
+                              className={`min-w-0 whitespace-normal break-normal text-sm font-semibold leading-5 ${row.aClass}`}
+                              aria-labelledby={`mobile-comparison-setup-a ${metricId}`}
                             >
                               {row.aValue}
-                            </p>
-                          </div>
-
-                          <div
-                            className="min-w-0 rounded-xl border border-slate-200 bg-white p-3"
-                            aria-label={`Setup B: ${comparedB.setup.name}`}
-                          >
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                              Setup B
-                            </p>
-                            <p className="mt-1 whitespace-normal break-words text-xs font-semibold leading-5 text-slate-700">
-                              {comparedB.setup.name}
-                            </p>
-                            <p
-                              className={`mt-3 whitespace-normal break-words text-sm font-semibold leading-6 ${row.bClass}`}
+                            </div>
+                            <div
+                              className={`min-w-0 whitespace-normal break-normal text-sm font-semibold leading-5 ${row.bClass}`}
+                              aria-labelledby={`mobile-comparison-setup-b ${metricId}`}
                             >
                               {row.bValue}
-                            </p>
-                          </div>
-                        </dd>
-                      </div>
-                    ))}
+                            </div>
+                          </dd>
+                        </div>
+                      );
+                    })}
                   </dl>
 
                   <div className="mt-6 hidden min-w-0 overflow-x-auto sm:block">
