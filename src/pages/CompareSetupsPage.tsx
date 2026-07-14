@@ -699,7 +699,7 @@ export default function CompareSetupsPage() {
       </Helmet>
 
       <div className="-mx-4 -my-8 bg-slate-100 px-4 py-8 sm:-my-10 sm:py-10">
-        <div className="mx-auto max-w-6xl space-y-8">
+        <div className="mx-auto min-w-0 max-w-6xl space-y-8">
           <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
             <div className="max-w-3xl">
               <div className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
@@ -1023,7 +1023,7 @@ export default function CompareSetupsPage() {
                   </div>
                 </section>
 
-                <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+                <section className="min-w-0 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
                   <div>
                     <h2 className="text-2xl font-semibold tracking-tight text-slate-950">
                       Side-by-side comparison
@@ -1033,7 +1033,57 @@ export default function CompareSetupsPage() {
                     </p>
                   </div>
 
-                  <div className="mt-6 overflow-x-auto">
+                  <dl className="mt-6 space-y-4 sm:hidden">
+                    {comparisonRows.map((row, index) => (
+                      <div
+                        key={row.label}
+                        className={`min-w-0 rounded-2xl border border-slate-200 p-4 ${
+                          index % 2 === 0 ? "bg-white" : "bg-slate-50"
+                        }`}
+                      >
+                        <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">
+                          {row.label}
+                        </dt>
+                        <dd className="mt-3 grid min-w-0 grid-cols-2 gap-3">
+                          <div
+                            className="min-w-0 rounded-xl border border-slate-200 bg-white p-3"
+                            aria-label={`Setup A: ${comparedA.setup.name}`}
+                          >
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                              Setup A
+                            </p>
+                            <p className="mt-1 whitespace-normal break-words text-xs font-semibold leading-5 text-slate-700">
+                              {comparedA.setup.name}
+                            </p>
+                            <p
+                              className={`mt-3 whitespace-normal break-words text-sm font-semibold leading-6 ${row.aClass}`}
+                            >
+                              {row.aValue}
+                            </p>
+                          </div>
+
+                          <div
+                            className="min-w-0 rounded-xl border border-slate-200 bg-white p-3"
+                            aria-label={`Setup B: ${comparedB.setup.name}`}
+                          >
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                              Setup B
+                            </p>
+                            <p className="mt-1 whitespace-normal break-words text-xs font-semibold leading-5 text-slate-700">
+                              {comparedB.setup.name}
+                            </p>
+                            <p
+                              className={`mt-3 whitespace-normal break-words text-sm font-semibold leading-6 ${row.bClass}`}
+                            >
+                              {row.bValue}
+                            </p>
+                          </div>
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+
+                  <div className="mt-6 hidden min-w-0 overflow-x-auto sm:block">
                     <table className="min-w-full border-separate border-spacing-0 overflow-hidden rounded-2xl border border-slate-200">
                       <thead className="bg-slate-950 text-white">
                         <tr>
