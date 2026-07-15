@@ -204,7 +204,7 @@ function CalculatedResultSnapshot({ result }: { result: SavedSetupCalculatedResu
 
         <div className="rounded-2xl bg-white/80 px-4 py-3">
           <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
-            Nozzle guide
+            Nozzle / tip code guide
           </dt>
           <dd className="mt-1 font-medium text-slate-900">
             Selected {result.selectedTipCode} · rated match {result.calibratedTipCode}

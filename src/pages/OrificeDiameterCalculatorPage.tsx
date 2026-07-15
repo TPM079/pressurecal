@@ -9,9 +9,9 @@ import BackToTopButton from "../components/BackToTopButton";
  * Drop-in React + TypeScript + Tailwind page for PressureCal.
  *
  * It converts a measured orifice diameter into:
- * - equivalent nozzle code
+ * - equivalent nozzle / tip code
  * - flow at the selected reference pressure
- * - closest common nozzle codes
+ * - closest common nozzle / tip codes
  *
  * Notes:
  * - Uses the same plain orifice equation style as PressureCal:
@@ -200,7 +200,7 @@ export default function OrificeDiameterCalculatorPage() {
         <title>Orifice Diameter to Nozzle Size Calculator | PressureCal</title>
         <meta
           name="description"
-          content="Measure a pressure washer nozzle orifice diameter and estimate the equivalent nozzle code, flow rate, and closest common nozzle size."
+          content="Measure a pressure washer nozzle orifice diameter and estimate the equivalent nozzle / tip code, flow rate, and closest common nozzle size."
         />
         <link
           rel="canonical"
@@ -218,7 +218,7 @@ export default function OrificeDiameterCalculatorPage() {
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg sm:leading-8">
             Measure an orifice diameter and estimate the equivalent pressure washer
-            nozzle code. Useful for checking unmarked nozzles, worn nozzles, or
+            nozzle / tip code. Useful for checking unmarked nozzles, worn nozzles, or
             matching a replacement before buying.
           </p>
         </div>
@@ -228,7 +228,7 @@ export default function OrificeDiameterCalculatorPage() {
             <h2 className="text-lg font-bold text-slate-950">Enter orifice diameter</h2>
             <p className="mt-2 text-sm leading-6 text-slate-600">
               Use calipers where possible. Small diameter changes can move the equivalent
-              nozzle code quickly.
+              nozzle / tip code quickly.
             </p>
 
             <div className="mt-6 space-y-5">
@@ -274,7 +274,7 @@ export default function OrificeDiameterCalculatorPage() {
                   </div>
                 </div>
                 <p className="mt-2 text-xs leading-5 text-slate-500">
-                  Keep this at 4000 PSI for standard nozzle code matching, or change
+                  Keep this at 4000 PSI for standard nozzle / tip code matching, or change
                   it to estimate flow at another pressure.
                 </p>
               </label>
@@ -297,20 +297,20 @@ export default function OrificeDiameterCalculatorPage() {
 
           <div className="rounded-[1.5rem] border border-blue-200 bg-blue-50 p-4 shadow-sm sm:p-6">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blue-700">
-              Equivalent nozzle code
+              Equivalent nozzle / tip code
             </p>
 
             {!result.isValid ? (
               <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-medium leading-6 text-amber-900">
                 Enter a positive orifice diameter and reference pressure to calculate
-                an equivalent nozzle code.
+                an equivalent nozzle / tip code.
               </div>
             ) : (
               <>
                 <div className="mt-5 flex flex-col items-start gap-4 sm:flex-row sm:items-end">
                   <div className="rounded-2xl bg-blue-600 px-6 py-5 text-white shadow-sm">
                     <div className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-100">
-                      Nozzle code
+                      Nozzle / tip code
                     </div>
                     <div className="mt-2 text-5xl font-black tracking-tight">
                       {result.roundedNozzleCode}
@@ -328,7 +328,7 @@ export default function OrificeDiameterCalculatorPage() {
                 </div>
 
                 <div className="mt-5 rounded-2xl border border-blue-200 bg-white p-4 text-sm leading-6 text-slate-700">
-                  This estimates the nozzle code from measured orifice diameter using
+                  This estimates the nozzle / tip code from measured orifice diameter using
                   a plain orifice calculation. Actual flow can vary with nozzle design,
                   wear, spray angle, and manufacturer.
                 </div>
@@ -362,7 +362,7 @@ export default function OrificeDiameterCalculatorPage() {
                 <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-white">
                   <div className="border-b border-slate-200 px-4 py-3">
                     <h2 className="text-sm font-black text-slate-950">
-                      Closest nozzle codes
+                      Closest nozzle / tip codes
                     </h2>
                     <p className="mt-1 text-xs leading-5 text-slate-500">
                       Based on common pressure washer nozzle sizing.
@@ -371,17 +371,17 @@ export default function OrificeDiameterCalculatorPage() {
 
                   <div className="divide-y divide-slate-100 sm:hidden">
                     {result.closestNozzles.map((item) => (
-                      <div key={item.code} className="grid grid-cols-[72px_1fr] gap-3 px-4 py-3">
+                      <div key={item.code} className="grid min-w-0 grid-cols-[minmax(0,0.9fr)_minmax(0,1.5fr)] gap-3 px-4 py-3">
                         <div>
                           <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
-                            Code
+                            Nozzle / tip code
                           </div>
                           <div className="mt-1 text-lg font-black text-slate-950">
                             {item.code}
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div className="grid min-w-0 grid-cols-2 gap-3 text-sm">
                           <div>
                             <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
                               Diameter
@@ -414,7 +414,7 @@ export default function OrificeDiameterCalculatorPage() {
                     <table className="w-full min-w-[520px] text-left text-sm">
                       <thead className="bg-slate-50 text-xs uppercase tracking-[0.18em] text-slate-500">
                         <tr>
-                          <th className="px-4 py-3 font-bold">Code</th>
+                          <th className="px-4 py-3 font-bold">Nozzle / tip code</th>
                           <th className="px-4 py-3 font-bold">Diameter</th>
                           <th className="px-4 py-3 font-bold">Flow</th>
                           <th className="px-4 py-3 font-bold">Difference</th>
@@ -461,10 +461,10 @@ export default function OrificeDiameterCalculatorPage() {
                       Q = Cd × A × √(2 × pressure ÷ water density)
                     </p>
                     <p>
-                      The equivalent nozzle code is then calculated as:
+                      The equivalent nozzle / tip code is then calculated as:
                     </p>
                     <p className="rounded-xl bg-slate-50 p-3 font-mono text-xs text-slate-700">
-                      nozzle code = GPM at reference pressure × 10
+                      nozzle / tip code = GPM at reference pressure × 10
                     </p>
                   </div>
                 </details>

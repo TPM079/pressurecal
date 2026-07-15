@@ -362,7 +362,7 @@ function CalculatorCore({
                 <div className="mt-4 flex flex-wrap items-end gap-4">
                   <div className="rounded-2xl bg-blue-600 px-5 py-4 text-white shadow-sm">
                     <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-100">
-                      Tip code
+                      Nozzle / tip code
                     </div>
                     <div className="mt-1 text-5xl font-bold tracking-tight">{tip}</div>
                   </div>
@@ -395,12 +395,12 @@ function CalculatorCore({
     to="/orifice-diameter-calculator"
     className="mt-2 inline-flex text-sm font-semibold text-blue-700 transition hover:text-blue-900"
   >
-    Calculate the equivalent nozzle code →
+    Calculate the equivalent nozzle / tip code →
   </Link>
 </div>
                 <div className="rounded-2xl border border-slate-200 bg-white p-4">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                    Tip equivalent
+                    Flow equivalent
                   </p>
                   <p className="mt-2 text-xl font-semibold text-slate-900">
                     {tipFlowLabel}
@@ -413,8 +413,8 @@ function CalculatorCore({
                 formula={
                   <p>
                     PressureCal converts the entered flow to US GPM, converts pressure to PSI,
-                    then estimates the US GPM equivalent at 4000 PSI: tip flow = flow × √(4000 ÷ pressure).
-                    The nozzle code is then rounded to the nearest standard tip code.
+                    then estimates the US GPM equivalent at 4000 PSI: flow equivalent = flow × √(4000 ÷ pressure).
+                    The nozzle / tip code is then rounded to the nearest standard code.
                   </p>
                 }
                 inputs={[
@@ -431,7 +431,7 @@ function CalculatorCore({
                   {
                     label: "Reference pressure",
                     value: "4000 PSI",
-                    note: "Pressure washer nozzle codes are commonly based on US GPM at 4000 PSI.",
+                    note: "Pressure washer nozzle / tip codes are commonly based on US GPM at 4000 PSI.",
                   },
                 ]}
                 results={[
@@ -441,9 +441,9 @@ function CalculatorCore({
                     note: `${fmtRounded(gpmAt4000 * LPM_PER_GPM)} LPM equivalent after pressure adjustment.`,
                   },
                   {
-                    label: "Recommended tip code",
+                    label: "Recommended nozzle / tip code",
                     value: tip,
-                    note: "Rounded to the nearest practical pressure washer nozzle code.",
+                    note: "Rounded to the nearest practical pressure washer nozzle / tip code.",
                   },
                   {
                     label: "Estimated orifice",
@@ -550,11 +550,11 @@ function CalculatorCore({
 
             <div className="mt-4 rounded-2xl border border-blue-200 bg-blue-50 p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-800">
-              Recommended nozzle code
+              Recommended nozzle / tip code
               </p>
               <p className="mt-2 text-4xl font-bold tracking-tight text-blue-950">040</p>
               <p className="mt-3 text-sm leading-6 text-blue-900">
-                A common 4000 PSI / 15 LPM setup lands on a 040 Nozzle code. That is why 040 is
+                A common 4000 PSI / 15 LPM setup lands on a 040 nozzle / tip code. That is why 040 is
                 such a familiar reference point for many professional pressure washer setups.
               </p>
             </div>
@@ -571,7 +571,7 @@ function CalculatorCore({
                   What size nozzle do I need for my pressure washer?
                 </h3>
                 <p className="mt-2">
-                  The correct nozzle size depends on pump flow and working pressure. Enter your LPM or GPM and PSI or BAR to calculate the nozzle code that best matches your setup.
+                  The correct nozzle size depends on pump flow and working pressure. Enter your LPM or GPM and PSI or BAR to calculate the nozzle / tip code that best matches your setup.
                 </p>
               </div>
 
@@ -580,7 +580,7 @@ function CalculatorCore({
                   What does a pressure washer nozzle / tip code mean?
                 </h3>
                 <p className="mt-2">
-                  A nozzle or tip code is a practical way to identify the orifice size used
+                  A nozzle / tip code is a practical way to identify the orifice size used
                   to match pump flow and pressure. For example, common sizes such as 030,
                   035 and 040 help operators compare nozzles against machine output.
                 </p>
@@ -779,7 +779,7 @@ export default function NozzleCalculator({ embedded = false }: NozzleCalculatorP
               name: "What does a pressure washer nozzle / tip code mean?",
               acceptedAnswer: {
                 "@type": "Answer",
-                text: "A nozzle or tip code is a practical way to identify the orifice size used to match pump flow and pressure. Common sizes such as 030, 035 and 040 help operators compare nozzles against machine output.",
+                text: "A nozzle / tip code is a practical way to identify the orifice size used to match pump flow and pressure. Common sizes such as 030, 035 and 040 help operators compare nozzles against machine output.",
               },
             },
             {

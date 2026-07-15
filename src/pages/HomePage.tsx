@@ -61,7 +61,7 @@ const toolCards: ToolCard[] = [
     href: "/nozzle-size-chart",
     title: "Pressure Washer Nozzle Size Chart",
     description:
-      "Use a quick PSI, LPM and US GPM chart for common nozzle / tip sizes, then calculate exact setups when needed.",
+      "Use a quick PSI, LPM and US GPM chart for common nozzle / tip codes, then calculate exact setups when needed.",
     cta: "Open pressure washer nozzle size chart →",
   },
 ];
@@ -409,7 +409,7 @@ export default function HomePage() {
       value: `${fmt(solved.hoseLossPsi, 0)} PSI`,
     },
     {
-      label: "Tip",
+      label: "Nozzle / tip code",
       value: recommendedTip,
     },
   ];

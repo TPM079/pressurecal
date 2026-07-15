@@ -82,7 +82,7 @@ const EQUIPMENT_TYPE_OPTIONS: EquipmentTypeOption[] = [
   {
     value: "surface_cleaner",
     label: "Surface cleaner",
-    description: "Cleaner size, nozzle count, and common nozzle code.",
+    description: "Cleaner size, nozzle count, and common nozzle / tip code.",
   },
   {
     value: "gun_lance",
@@ -644,14 +644,14 @@ function buildSpecsSummary(item: EquipmentItem) {
       ];
     case "nozzle":
       return [
-        { label: "Nozzle / tip", value: String(item.specs.nozzleCode ?? "—") },
+        { label: "Nozzle / tip code", value: String(item.specs.nozzleCode ?? "—") },
         { label: "Count", value: `${formatNumber(item.specs.nozzleCount)} nozzle${item.specs.nozzleCount === 1 ? "" : "s"}` },
         { label: "Spray mode", value: item.specs.sprayMode === "surfaceCleaner" ? "Surface cleaner" : "Wand" },
       ];
     case "surface_cleaner":
       return [
         { label: "Diameter", value: `${formatNumber(item.specs.surfaceCleanerDiameter)} in` },
-        { label: "Nozzle / tip", value: String(item.specs.nozzleCode ?? "—") },
+        { label: "Nozzle / tip code per nozzle", value: String(item.specs.nozzleCode ?? "—") },
         { label: "Nozzle count", value: `${formatNumber(item.specs.nozzleCount)} nozzles` },
       ];
     case "gun_lance":
@@ -815,7 +815,7 @@ function buildSetupBuilderSummary(
             : "Optional",
     },
     {
-      label: "Nozzle",
+      label: "Nozzle / tip code",
       value:
         inputs.nozzleSizeText
           ? `${inputs.nozzleSizeText} · ${inputs.nozzleCount ?? 1} nozzle${
@@ -1830,7 +1830,7 @@ export default function EquipmentLibraryPage() {
                         />
                         <p className="mt-2 text-xs text-slate-500">inches</p>
                       </FormField>
-                      <FormField label="Nozzle / tip code">
+                      <FormField label="Nozzle / tip code per nozzle">
                         <input
                           value={form.nozzleCode}
                           onChange={(event) => updateForm("nozzleCode", event.target.value)}

@@ -100,9 +100,9 @@ const ROUTES = [
   },
   {
     path: "/nozzle-size-calculator",
-    title: "Pressure Washer Nozzle Size Calculator | PressureCal",
+    title: "Pressure Washer Nozzle Size Calculator | PSI, LPM & GPM | PressureCal",
     description:
-      "Calculate the correct pressure washer nozzle size using PSI and GPM. Get accurate tip sizing for optimal performance, cleaning power, and equipment protection.",
+      "Calculate the correct pressure washer nozzle / tip code from pump flow and working pressure. Supports PSI, BAR, LPM and US GPM for real pressure washer setups.",
     schema: {
       "@context": "https://schema.org",
       "@type": "WebApplication",
@@ -112,7 +112,7 @@ const ROUTES = [
       operatingSystem: "Web",
       isAccessibleForFree: true,
       description:
-        "Calculate the correct pressure washer nozzle size using PSI and GPM. Get accurate tip sizing for optimal performance, cleaning power, and equipment protection.",
+        "Calculate the correct pressure washer nozzle / tip code from pump flow and working pressure. Supports PSI, BAR, LPM and US GPM for real pressure washer setups.",
     },
   },
   {
@@ -168,16 +168,16 @@ const ROUTES = [
   },
   {
     path: "/nozzle-size-chart",
-    title: "Pressure Washer Nozzle Size Chart (PSI & LPM) | PressureCal",
+    title: "Pressure Washer Nozzle Size Chart | PSI, GPM & Tip Sizes | PressureCal",
     description:
-      "View a complete pressure washer nozzle size chart based on PSI and LPM. Quickly find the correct nozzle size for your setup.",
+      "Use this pressure washer nozzle size chart to compare nozzle / tip codes by PSI and flow rate. Includes practical sizing guidance and links to nozzle calculators.",
     schema: {
       "@context": "https://schema.org",
       "@type": "WebPage",
       name: "Pressure Washer Nozzle Size Chart",
       url: `${SITE_URL}/nozzle-size-chart`,
       description:
-        "Pressure washer nozzle size chart for matching machine pressure and flow to the correct tip code.",
+        "Pressure washer nozzle size chart for matching machine pressure and flow to the correct nozzle / tip code.",
     },
   },
 ];

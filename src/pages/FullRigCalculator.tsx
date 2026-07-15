@@ -247,7 +247,7 @@ function buildSuggestedSetupName(inputs: Inputs) {
   ];
 
   if (nozzleText) {
-    parts.push(`nozzle ${nozzleText}`);
+    parts.push(`nozzle / tip code ${nozzleText}`);
   }
 
   parts.push(modeText);
@@ -284,8 +284,8 @@ function buildShareSummaryText(args: {
     `${fmt(Number(inputs.pumpPressure || 0), 0)} ${inputs.pumpPressureUnit.toUpperCase()}`,
     ...buildHoseSetupSummaryParts(inputs),
     inputs.sprayMode === "surfaceCleaner"
-      ? `Nozzle ${inputs.nozzleSizeText || "—"} × ${inputs.nozzleCount}`
-      : `Nozzle ${inputs.nozzleSizeText || "—"}`,
+      ? `Nozzle / tip code per nozzle ${inputs.nozzleSizeText || "—"} × ${inputs.nozzleCount}`
+      : `Nozzle / tip code ${inputs.nozzleSizeText || "—"}`,
     inputs.engineHp === "" ? "Engine power optional" : `Engine ${formatEnginePowerFromHp(Number(inputs.engineHp || 0))}`,
   ].join(" · ");
 
@@ -297,7 +297,7 @@ function buildShareSummaryText(args: {
     `Flow: ${fmt(gunFlowLpm, 1)} L/min (${fmt(gunFlowGpm, 2)} GPM)`,
     `${getHoseSetupMode(inputs) === "mainLeader" ? "Combined hose pressure loss" : "Hose pressure loss"}: ${fmt(hoseLossPsi, 0)} PSI (${fmt(hoseLossBar, 1)} bar)`,
     `Nozzle status: ${nozzleStatusText}`,
-    `Selected nozzle: ${selectedTipCode}`,
+    `Selected nozzle / tip code: ${selectedTipCode}`,
     `Note: ${nozzleStatusMessage}`,
   ].join("\n");
 }
@@ -319,8 +319,8 @@ function buildLiveCompareHref(inputs: Inputs, savedSetupId: string, liveName: st
 function buildExportSetupLine(inputs: Inputs) {
   const nozzlePart =
     inputs.sprayMode === "surfaceCleaner"
-      ? `Nozzle ${inputs.nozzleSizeText || "—"} × ${inputs.nozzleCount}`
-      : `Nozzle ${inputs.nozzleSizeText || "—"}`;
+      ? `Nozzle / tip code per nozzle ${inputs.nozzleSizeText || "—"} × ${inputs.nozzleCount}`
+      : `Nozzle / tip code ${inputs.nozzleSizeText || "—"}`;
 
   const enginePart =
     inputs.engineHp === "" ? "Engine power optional" : `Engine ${formatEnginePowerFromHp(Number(inputs.engineHp || 0))}`;
@@ -732,7 +732,7 @@ export default function FullRigCalculatorPage() {
       value: hoseSetupDisplay,
     },
     {
-      label: "Nozzle",
+      label: inputs.sprayMode === "surfaceCleaner" ? "Nozzle / tip code per nozzle" : "Nozzle / tip code",
       value:
         inputs.sprayMode === "surfaceCleaner"
           ? `${inputs.nozzleSizeText || "—"} × ${inputs.nozzleCount}`
@@ -875,7 +875,7 @@ export default function FullRigCalculatorPage() {
       value: inputs.sprayMode === "surfaceCleaner" ? "Surface cleaner" : "Wand",
     },
     {
-      label: "Nozzle",
+      label: inputs.sprayMode === "surfaceCleaner" ? "Nozzle / tip code per nozzle" : "Nozzle / tip code",
       value: inputs.nozzleSizeText || "—",
     },
   ];
@@ -1075,8 +1075,8 @@ export default function FullRigCalculatorPage() {
       const detailItemGap = 10;
       const stackedDetailGap = 24;
 
-      const selectedDetailText = `Selected nozzle: ${selectedDisplayTipCode}${nozzleDisplaySuffix}`;
-      const recommendedDetailText = `Recommended nozzle (pump specs): ${calibratedDisplayTipCode}${nozzleDisplaySuffix} · Recommended nozzle (actual setup): ${calibratedWithHoseLossDisplayTipCode}${nozzleDisplaySuffix}`;
+      const selectedDetailText = `Selected nozzle / tip code: ${selectedDisplayTipCode}${nozzleDisplaySuffix}`;
+      const recommendedDetailText = `Recommended nozzle / tip code (pump specs): ${calibratedDisplayTipCode}${nozzleDisplaySuffix} · Recommended nozzle / tip code (actual setup): ${calibratedWithHoseLossDisplayTipCode}${nozzleDisplaySuffix}`;
       const pressureGuideText = `Hose pressure loss guide: ${efficiencyTier}`;
 
       measureCtx.font = `700 24px ${EXPORT_CARD.fontFamily}`;
@@ -1435,11 +1435,11 @@ export default function FullRigCalculatorPage() {
       value: sprayModeLabel,
       note:
         inputs.sprayMode === "surfaceCleaner"
-          ? "PressureCal treats the entered nozzle size as the size of each individual nozzle."
+          ? "PressureCal treats the entered nozzle / tip code as the code for each individual nozzle."
           : "PressureCal treats this as a single-nozzle wand setup.",
     },
     {
-      label: "Selected nozzle",
+      label: "Selected nozzle / tip code",
       value: selectedNozzleLabel,
     },
     {
@@ -1470,8 +1470,8 @@ export default function FullRigCalculatorPage() {
     },
     {
       label: "Nozzle match",
-      value: `${badge.text}: selected ${selectedNozzleLabel}`,
-      note: `Recommended nozzle (pump specs): ${calculatedNozzleLabel}. Recommended nozzle (actual setup): ${calculatedNozzleWithHoseLossLabel}. ${r.statusMessage}`,
+      value: `${badge.text}: selected nozzle / tip code ${selectedNozzleLabel}`,
+      note: `Recommended nozzle / tip code (pump specs): ${calculatedNozzleLabel}. Recommended nozzle / tip code (actual setup): ${calculatedNozzleWithHoseLossLabel}. ${r.statusMessage}`,
     },
     {
       label: "Required power",
@@ -1517,7 +1517,7 @@ export default function FullRigCalculatorPage() {
                 to="/nozzle-size-calculator"
                 className="rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-950"
               >
-                Only need a nozzle code? Use the pressure washer nozzle size calculator
+                Only need a nozzle / tip code? Use the pressure washer nozzle size calculator
               </Link>
               <Link
                 to="/target-pressure-nozzle-calculator"
@@ -2305,7 +2305,7 @@ export default function FullRigCalculatorPage() {
 
                 <div className="lg:col-span-2">
                   <label className="block text-sm font-semibold text-slate-800">
-                    {inputs.sprayMode === "surfaceCleaner" ? "Nozzle size per nozzle" : "Nozzle size"}
+                    {inputs.sprayMode === "surfaceCleaner" ? "Nozzle / tip code per nozzle" : "Nozzle / tip code"}
                   </label>
                   <input
                     type="text"
@@ -2315,7 +2315,7 @@ export default function FullRigCalculatorPage() {
                   />
                   {inputs.sprayMode === "surfaceCleaner" ? (
                     <p className="mt-2 text-xs leading-5 text-slate-500">
-                      Enter the size of each individual nozzle. PressureCal multiplies this by the nozzle count.
+                      Enter the nozzle / tip code for each individual nozzle. PressureCal applies it across the selected nozzle count.
                     </p>
                   ) : null}
                 </div>
@@ -2359,7 +2359,7 @@ export default function FullRigCalculatorPage() {
                   </div>
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <div className="text-xs tracking-[0.14em] text-slate-500">
-                      Recommended nozzle
+                      Recommended nozzle / tip code
                     </div>
 
                     <div className="mt-3 grid grid-cols-2 gap-4">
@@ -2383,7 +2383,7 @@ export default function FullRigCalculatorPage() {
                     </div>
 
                     <div className="mt-3 text-sm text-slate-600">
-                      Selected nozzle: {selectedDisplayTipCode}{nozzleDisplaySuffix}
+                      Selected nozzle / tip code: {selectedDisplayTipCode}{nozzleDisplaySuffix}
                     </div>
 
                     <div className="mt-3 space-y-1 text-xs leading-5 text-slate-500">

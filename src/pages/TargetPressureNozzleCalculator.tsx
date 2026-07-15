@@ -648,7 +648,7 @@ export default function TargetPressureNozzleCalculator() {
                   <div className="mt-3 flex flex-wrap items-end gap-3">
                     <div className="rounded-2xl bg-blue-600 px-4 py-3 text-white shadow-sm">
                       <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-100">
-                        Tip code
+                        Nozzle / tip code
                       </div>
                       <div className="mt-1 text-4xl font-bold tracking-tight">
                         {result.recommendedTipCode}
@@ -793,14 +793,14 @@ export default function TargetPressureNozzleCalculator() {
               </h2>
               <p className="mt-2 text-sm leading-6 text-slate-600">
                 Use this to see what happens if you go one size smaller or larger
-                than the recommended tip.
+                than the recommended nozzle / tip code.
               </p>
 
               <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200">
                 <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
                   <thead className="bg-slate-50">
                     <tr>
-                      <th className="px-4 py-3 font-medium text-slate-600">Tip</th>
+                      <th className="px-4 py-3 font-medium text-slate-600">Nozzle / tip code</th>
                       <th className="px-4 py-3 font-medium text-slate-600">
                         Nozzle size
                       </th>

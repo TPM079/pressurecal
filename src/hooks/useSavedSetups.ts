@@ -333,7 +333,7 @@ function buildResultSummary(args: {
   return `${roundNumber(atGunPressurePsi, 0)} PSI at gun · ${roundNumber(
     operatingFlowLpm,
     1
-  )} LPM · ${roundNumber(hoseLossPsi, 0)} PSI hose loss · nozzle ${selectedTipCode} · ${nozzleStatus}`;
+  )} LPM · ${roundNumber(hoseLossPsi, 0)} PSI hose loss · nozzle / tip code ${selectedTipCode} · ${nozzleStatus}`;
 }
 
 const NEGLIGIBLE_BYPASS_PERCENT = 2;
