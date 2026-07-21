@@ -13,6 +13,7 @@ type PressureCalLayoutProps = {
 };
 
 const toolLinks = [
+  { to: "/target-performance-calculator", label: "Target Performance Calculator" },
   { to: "/nozzle-size-calculator", label: "Nozzle Size Calculator" },
   { to: "/orifice-diameter-calculator", label: "Orifice Diameter Calculator" },
   { to: "/target-pressure-nozzle-calculator", label: "Target Pressure Nozzle Calculator" },
