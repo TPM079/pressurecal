@@ -33,7 +33,7 @@ import GpmLpmCalculatorPage from "./pages/GpmLpmCalculatorPage";
 import EquipmentLibraryPage from "./pages/EquipmentLibraryPage";
 import CookieConsentBanner from "./components/CookieConsentBanner";
 import { trackPageView } from "./lib/analytics";
-
+import TargetPerformanceCalculatorPage from "./pages/TargetPerformanceCalculatorPage";
 function PageTransition({ children }: { children: ReactNode }) {
   return (
     <motion.div
@@ -96,6 +96,14 @@ export default function App() {
         <Routes location={location} key={location.pathname}>
           <Route path="/" element={<PageTransition><HomePage /></PageTransition>} />
           <Route path="/calculator" element={<PageTransition><FullRigCalculatorPage /></PageTransition>} />
+          <Route
+  path="/target-performance-calculator"
+  element={
+    <PageTransition>
+      <TargetPerformanceCalculatorPage />
+    </PageTransition>
+  }
+/>
           <Route path="/admin-feedback" element={<PageTransition><AdminFeedbackPage /></PageTransition>} />
           <Route path="/pricing" element={<PageTransition><PressureCalProPage /></PageTransition>} />
           <Route path="/pro" element={<Navigate to="/pricing" replace />} />

@@ -21,7 +21,10 @@ export type PressureCalEventName =
   | "pricing_plan_yearly_selected"
   | "checkout_started"
   | "checkout_completed"
-  | "saved_setup_created";
+  | "saved_setup_created"
+  | "target_calculator_viewed"
+  | "target_calculation_completed"
+  | "target_setup_shared";
 
 export type PressureCalEventParams = Record<string, string | number | boolean | null | undefined>;
 
