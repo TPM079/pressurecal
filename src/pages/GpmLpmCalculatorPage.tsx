@@ -651,39 +651,75 @@ export default function GpmLpmCalculatorPage() {
               specifications. Values are rounded to two decimal places.
             </p>
 
-            <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-slate-200 text-sm">
-                  <thead className="bg-slate-50 text-left">
-                    <tr>
-                      <th className="px-4 py-3 font-semibold text-slate-900">
+            <div className="mt-6 space-y-3 md:hidden">
+              {commonFlowConversions.map((row) => (
+                <article
+                  key={`${row.lpm}-${row.gpm}`}
+                  className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                >
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-xl bg-white p-3 ring-1 ring-slate-200">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                         LPM
-                      </th>
-                      <th className="px-4 py-3 font-semibold text-slate-900">
+                      </p>
+                      <p className="mt-1 text-lg font-semibold text-slate-900">
+                        {row.lpm}
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl bg-white p-3 ring-1 ring-slate-200">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                         GPM (US)
-                      </th>
-                      <th className="px-4 py-3 font-semibold text-slate-900">
-                        Common use or context
-                      </th>
+                      </p>
+                      <p className="mt-1 text-lg font-semibold text-slate-900">
+                        {row.gpm}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 border-t border-slate-200 pt-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Common use or context
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                      {row.context}
+                    </p>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            <div className="mt-6 hidden overflow-hidden rounded-2xl border border-slate-200 md:block">
+              <table className="min-w-full divide-y divide-slate-200 text-sm">
+                <thead className="bg-slate-50 text-left">
+                  <tr>
+                    <th className="px-4 py-3 font-semibold text-slate-900">
+                      LPM
+                    </th>
+                    <th className="px-4 py-3 font-semibold text-slate-900">
+                      GPM (US)
+                    </th>
+                    <th className="px-4 py-3 font-semibold text-slate-900">
+                      Common use or context
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 bg-white">
+                  {commonFlowConversions.map((row) => (
+                    <tr key={`${row.lpm}-${row.gpm}`}>
+                      <td className="whitespace-nowrap px-4 py-3 font-medium text-slate-900">
+                        {row.lpm}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-slate-700">
+                        {row.gpm}
+                      </td>
+                      <td className="px-4 py-3 text-slate-600">
+                        {row.context}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200 bg-white">
-                    {commonFlowConversions.map((row) => (
-                      <tr key={`${row.lpm}-${row.gpm}`}>
-                        <td className="whitespace-nowrap px-4 py-3 font-medium text-slate-900">
-                          {row.lpm}
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-slate-700">
-                          {row.gpm}
-                        </td>
-                        <td className="px-4 py-3 text-slate-600">
-                          {row.context}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </section>
 
