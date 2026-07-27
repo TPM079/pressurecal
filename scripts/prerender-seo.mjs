@@ -72,6 +72,121 @@ const HOMEPAGE_SCHEMA = {
   ],
 };
 
+const LPM_GPM_PATH = "/lpm-gpm-calculator";
+const LPM_GPM_URL = `${SITE_URL}${LPM_GPM_PATH}`;
+const LPM_GPM_TITLE =
+  "LPM to GPM Converter for Pressure Washers | PressureCal";
+const LPM_GPM_DESCRIPTION =
+  "Convert LPM to GPM and GPM to LPM for pressure washer flow rates. Includes common pressure washer examples like 15 LPM, 21 LPM, 4 GPM and 5.5 GPM.";
+
+const LPM_GPM_FAQS = [
+  {
+    question: "How many GPM is 15 LPM?",
+    answer:
+      "15 LPM is approximately 3.96 GPM. PressureCal uses US gallons per minute for GPM.",
+  },
+  {
+    question: "How many GPM is 21 LPM?",
+    answer:
+      "21 LPM is approximately 5.55 GPM using US gallons per minute.",
+  },
+  {
+    question: "How many LPM is 5.5 GPM?",
+    answer: "5.5 US GPM is approximately 20.82 LPM.",
+  },
+  {
+    question: "Is pressure washer GPM US or imperial?",
+    answer:
+      "Pressure washer GPM normally means US gallons per minute, especially on US pump specifications, machine ratings and nozzle charts. PressureCal uses US GPM, not imperial gallons per minute.",
+  },
+  {
+    question: "Why does flow rate matter for pressure washers?",
+    answer:
+      "Flow rate affects how much water reaches the cleaning surface and therefore influences rinsing ability and cleaning speed. It also needs to be matched with the correct nozzle size, hose and working pressure at the gun.",
+  },
+  {
+    question: "Do I need LPM or GPM for nozzle sizing?",
+    answer:
+      "Either LPM or GPM can be used for nozzle sizing as long as the calculator or nozzle chart uses the same unit. Australian pump specifications commonly use LPM, while many pressure washer nozzle charts use US GPM.",
+  },
+  {
+    question: "How does flow rate affect hose pressure loss?",
+    answer:
+      "Higher flow through the same hose length and internal diameter creates more hose pressure loss. When LPM or GPM increases, check the hose size and length so the setup can still deliver the required working pressure at the gun.",
+  },
+];
+
+const LPM_GPM_SCHEMA = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": `${LPM_GPM_URL}#webpage`,
+      url: LPM_GPM_URL,
+      name: LPM_GPM_TITLE,
+      description: LPM_GPM_DESCRIPTION,
+      isPartOf: {
+        "@type": "WebSite",
+        name: "PressureCal",
+        url: SITE_URL,
+      },
+      about: [
+        "LPM to GPM conversion",
+        "GPM to LPM conversion",
+        "litres per minute to gallons per minute",
+        "pressure washer flow rates",
+        "pressure washer nozzle sizing",
+        "hose pressure loss",
+      ],
+    },
+    {
+      "@type": "WebApplication",
+      "@id": `${LPM_GPM_URL}#app`,
+      name: "LPM to GPM Converter for Pressure Washers",
+      url: LPM_GPM_URL,
+      applicationCategory: "UtilitiesApplication",
+      operatingSystem: "Web",
+      isAccessibleForFree: true,
+      description: LPM_GPM_DESCRIPTION,
+      offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "AUD",
+      },
+    },
+    {
+      "@type": "FAQPage",
+      "@id": `${LPM_GPM_URL}#faq`,
+      mainEntity: LPM_GPM_FAQS.map((faq) => ({
+        "@type": "Question",
+        name: faq.question,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: faq.answer,
+        },
+      })),
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": `${LPM_GPM_URL}#breadcrumbs`,
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "PressureCal",
+          item: SITE_URL,
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: "LPM to GPM Converter",
+          item: LPM_GPM_URL,
+        },
+      ],
+    },
+  ],
+};
+
 const ROUTES = [
   {
     path: "/",
@@ -150,21 +265,10 @@ const ROUTES = [
     },
   },
   {
-    path: "/lpm-gpm-calculator",
-    title: "LPM to GPM Calculator | PressureCal",
-    description:
-      "Convert LPM to GPM and GPM to LPM instantly. Accurate flow rate calculator for pressure washers, pumps, and equipment sizing.",
-    schema: {
-      "@context": "https://schema.org",
-      "@type": "WebApplication",
-      name: "LPM to GPM Calculator",
-      url: `${SITE_URL}/lpm-gpm-calculator`,
-      applicationCategory: "Calculator",
-      operatingSystem: "Web",
-      isAccessibleForFree: true,
-      description:
-        "Convert LPM to GPM and GPM to LPM instantly. Accurate flow rate calculator for pressure washers, pumps, and equipment sizing.",
-    },
+    path: LPM_GPM_PATH,
+    title: LPM_GPM_TITLE,
+    description: LPM_GPM_DESCRIPTION,
+    schema: LPM_GPM_SCHEMA,
   },
   {
     path: "/nozzle-size-chart",

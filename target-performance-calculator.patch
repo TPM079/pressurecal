@@ -1,0 +1,1523 @@
+--- /dev/null	2026-07-21 01:36:28.169077653 +0000
++++ b/src/lib/targetPerformance.ts
+@@ -0,0 +1,375 @@
++import {
++  barFromPsi,
++  gpmFrom,
++  hoseLossPsi,
++  lpmFromGpm,
++  metersFrom,
++  mmFrom,
++  psiFrom,
++  q4000FromFlowAtPressure,
++} from "../pressurecal";
++import type {
++  DiameterUnit,
++  FlowUnit,
++  HoseSetupMode,
++  LengthUnit,
++  PressureUnit,
++} from "../pressurecal";
++import {
++  STANDARD_NOZZLE_SIZES,
++  formatTipCode,
++} from "./targetPressureNozzle";
++
++export type TargetHoseSectionInput = {
++  length: number;
++  lengthUnit: LengthUnit;
++  internalDiameter: number;
++  diameterUnit: DiameterUnit;
++};
++
++export type TargetPerformanceInput = {
++  targetPressure: number;
++  targetPressureUnit: PressureUnit;
++  targetFlow: number;
++  targetFlowUnit: FlowUnit;
++  hoseSetupMode: HoseSetupMode;
++  singleHose: TargetHoseSectionInput;
++  mainHose: TargetHoseSectionInput;
++  leaderHose: TargetHoseSectionInput;
++  componentLossAllowancePsi: number;
++  pumpPressureHeadroomPercent: number;
++  pumpEfficiencyPercent: number;
++  driveEfficiencyPercent: number;
++  waterDensity?: number;
++  hoseRoughnessMm?: number;
++};
++
++export type PracticalNozzleOption = {
++  relationship: "smaller" | "closest" | "larger";
++  nozzleSize: number;
++  nozzleCode: string;
++  estimatedGunPressurePsi: number;
++  requiredPumpPressurePsi: number;
++  exceedsPracticalPumpRating: boolean;
++};
++
++export type TargetPerformanceResult = {
++  targetPressurePsi: number;
++  targetFlowGpm: number;
++  targetFlowLpm: number;
++  mainHoseLossPsi: number;
++  leaderHoseLossPsi: number;
++  totalHoseLossPsi: number;
++  hoseLossPercentOfTarget: number;
++  componentLossAllowancePsi: number;
++  totalPressureAboveTargetPsi: number;
++  minimumPumpOperatingPressurePsi: number;
++  recommendedPumpPressureRatingPsi: number;
++  practicalPumpPressureRatingPsi: number;
++  requiredPumpFlowGpm: number;
++  requiredPumpFlowLpm: number;
++  idealNozzleSize: number;
++  idealNozzleCode: string;
++  closestPracticalNozzle: PracticalNozzleOption;
++  practicalNozzleOptions: PracticalNozzleOption[];
++  hydraulicPowerKw: number;
++  estimatedInputPowerKw: number;
++  estimatedInputPowerHp: number;
++  warnings: string[];
++};
++
++export type TargetPerformanceCalculation = {
++  errors: string[];
++  result: TargetPerformanceResult | null;
++};
++
++const DEFAULT_WATER_DENSITY = 1000;
++const DEFAULT_HOSE_ROUGHNESS_MM = 0.0015;
++const KW_PER_HP = 0.745699872;
++
++function isFinitePositive(value: number) {
++  return Number.isFinite(value) && value > 0;
++}
++
++function validateHoseSection(
++  label: string,
++  section: TargetHoseSectionInput,
++  errors: string[]
++) {
++  if (!Number.isFinite(section.length) || section.length < 0) {
++    errors.push(`${label} length cannot be negative.`);
++  }
++
++  if (section.length > 0 && !isFinitePositive(section.internalDiameter)) {
++    errors.push(`${label} internal diameter must be greater than zero.`);
++  }
++}
++
++function calculateSectionLossPsi(
++  section: TargetHoseSectionInput,
++  flowGpm: number,
++  waterDensity: number,
++  hoseRoughnessMm: number
++) {
++  const lengthM = metersFrom(section.length, section.lengthUnit);
++  const internalDiameterMm = mmFrom(section.internalDiameter, section.diameterUnit);
++
++  return hoseLossPsi(
++    flowGpm,
++    lengthM,
++    internalDiameterMm,
++    waterDensity,
++    hoseRoughnessMm
++  );
++}
++
++function pressureForNozzleAtFlowPsi(flowGpm: number, nozzleSize: number) {
++  if (!isFinitePositive(flowGpm) || !isFinitePositive(nozzleSize)) return 0;
++  return 4000 * Math.pow(flowGpm / nozzleSize, 2);
++}
++
++function nearestStandardNozzle(exactSize: number) {
++  return STANDARD_NOZZLE_SIZES.reduce((closest, current) =>
++    Math.abs(current - exactSize) < Math.abs(closest - exactSize)
++      ? current
++      : closest
++  );
++}
++
++function buildPracticalNozzleOptions(args: {
++  idealNozzleSize: number;
++  targetFlowGpm: number;
++  totalHoseLossPsi: number;
++  componentLossAllowancePsi: number;
++  practicalPumpPressureRatingPsi: number;
++}): PracticalNozzleOption[] {
++  const ordered = [...STANDARD_NOZZLE_SIZES].sort((a, b) => a - b);
++  const closestSize = nearestStandardNozzle(args.idealNozzleSize);
++  const smallerSize = [...ordered]
++    .reverse()
++    .find((size) => size < args.idealNozzleSize);
++  const largerSize = ordered.find((size) => size > args.idealNozzleSize);
++
++  const candidates: Array<{
++    relationship: PracticalNozzleOption["relationship"];
++    nozzleSize: number | undefined;
++  }> = [
++    { relationship: "smaller", nozzleSize: smallerSize },
++    { relationship: "closest", nozzleSize: closestSize },
++    { relationship: "larger", nozzleSize: largerSize },
++  ];
++
++  const seen = new Set<number>();
++
++  return candidates.flatMap(({ relationship, nozzleSize }) => {
++    if (!nozzleSize || seen.has(nozzleSize)) return [];
++    seen.add(nozzleSize);
++
++    const estimatedGunPressurePsi = pressureForNozzleAtFlowPsi(
++      args.targetFlowGpm,
++      nozzleSize
++    );
++    const requiredPumpPressurePsi =
++      estimatedGunPressurePsi +
++      args.totalHoseLossPsi +
++      args.componentLossAllowancePsi;
++
++    return [
++      {
++        relationship,
++        nozzleSize,
++        nozzleCode: formatTipCode(nozzleSize),
++        estimatedGunPressurePsi,
++        requiredPumpPressurePsi,
++        exceedsPracticalPumpRating:
++          requiredPumpPressurePsi > args.practicalPumpPressureRatingPsi,
++      },
++    ];
++  });
++}
++
++/**
++ * Designs a basic series pressure-washer setup around a required at-gun duty.
++ * Hose sections carry the same flow and are calculated independently.
++ */
++export function calculateTargetPerformance(
++  input: TargetPerformanceInput
++): TargetPerformanceCalculation {
++  const errors: string[] = [];
++
++  if (!isFinitePositive(input.targetPressure)) {
++    errors.push("Target working pressure at the gun must be greater than zero.");
++  }
++
++  if (!isFinitePositive(input.targetFlow)) {
++    errors.push("Target flow at the gun must be greater than zero.");
++  }
++
++  if (
++    !Number.isFinite(input.componentLossAllowancePsi) ||
++    input.componentLossAllowancePsi < 0
++  ) {
++    errors.push("Gun and fittings allowance cannot be negative.");
++  }
++
++  if (
++    !Number.isFinite(input.pumpPressureHeadroomPercent) ||
++    input.pumpPressureHeadroomPercent < 0
++  ) {
++    errors.push("Pump pressure headroom cannot be negative.");
++  }
++
++  if (
++    !isFinitePositive(input.pumpEfficiencyPercent) ||
++    input.pumpEfficiencyPercent > 100
++  ) {
++    errors.push("Pump efficiency must be greater than zero and no more than 100%.");
++  }
++
++  if (
++    !isFinitePositive(input.driveEfficiencyPercent) ||
++    input.driveEfficiencyPercent > 100
++  ) {
++    errors.push("Drive efficiency must be greater than zero and no more than 100%.");
++  }
++
++  if (input.hoseSetupMode === "mainLeader") {
++    validateHoseSection("Main hose", input.mainHose, errors);
++    validateHoseSection("Leader hose", input.leaderHose, errors);
++  } else {
++    validateHoseSection("Hose", input.singleHose, errors);
++  }
++
++  if (errors.length > 0) {
++    return { errors, result: null };
++  }
++
++  const targetPressurePsi = psiFrom(
++    input.targetPressure,
++    input.targetPressureUnit
++  );
++  const targetFlowGpm = gpmFrom(input.targetFlow, input.targetFlowUnit);
++  const targetFlowLpm = lpmFromGpm(targetFlowGpm);
++  const waterDensity = input.waterDensity ?? DEFAULT_WATER_DENSITY;
++  const hoseRoughnessMm =
++    input.hoseRoughnessMm ?? DEFAULT_HOSE_ROUGHNESS_MM;
++
++  const mainHoseLossPsi =
++    input.hoseSetupMode === "mainLeader"
++      ? calculateSectionLossPsi(
++          input.mainHose,
++          targetFlowGpm,
++          waterDensity,
++          hoseRoughnessMm
++        )
++      : calculateSectionLossPsi(
++          input.singleHose,
++          targetFlowGpm,
++          waterDensity,
++          hoseRoughnessMm
++        );
++
++  const leaderHoseLossPsi =
++    input.hoseSetupMode === "mainLeader" && input.leaderHose.length > 0
++      ? calculateSectionLossPsi(
++          input.leaderHose,
++          targetFlowGpm,
++          waterDensity,
++          hoseRoughnessMm
++        )
++      : 0;
++
++  const totalHoseLossPsi = mainHoseLossPsi + leaderHoseLossPsi;
++  const componentLossAllowancePsi = Math.max(
++    0,
++    input.componentLossAllowancePsi
++  );
++  const totalPressureAboveTargetPsi =
++    totalHoseLossPsi + componentLossAllowancePsi;
++  const minimumPumpOperatingPressurePsi =
++    targetPressurePsi + totalPressureAboveTargetPsi;
++  const recommendedPumpPressureRatingPsi =
++    minimumPumpOperatingPressurePsi *
++    (1 + input.pumpPressureHeadroomPercent / 100);
++  const practicalPumpPressureRatingPsi =
++    Math.ceil(recommendedPumpPressureRatingPsi / 100) * 100;
++
++  const idealNozzleSize = q4000FromFlowAtPressure(
++    targetFlowGpm,
++    targetPressurePsi
++  );
++  const idealNozzleCode = formatTipCode(idealNozzleSize);
++
++  const practicalNozzleOptions = buildPracticalNozzleOptions({
++    idealNozzleSize,
++    targetFlowGpm,
++    totalHoseLossPsi,
++    componentLossAllowancePsi,
++    practicalPumpPressureRatingPsi,
++  });
++  const closestPracticalNozzle =
++    practicalNozzleOptions.find((option) => option.relationship === "closest") ??
++    practicalNozzleOptions[0];
++
++  const hydraulicPowerKw =
++    (barFromPsi(minimumPumpOperatingPressurePsi) * targetFlowLpm) / 600;
++  const estimatedInputPowerKw =
++    hydraulicPowerKw /
++    (input.pumpEfficiencyPercent / 100) /
++    (input.driveEfficiencyPercent / 100);
++  const estimatedInputPowerHp = estimatedInputPowerKw / KW_PER_HP;
++  const hoseLossPercentOfTarget =
++    targetPressurePsi > 0 ? (totalHoseLossPsi / targetPressurePsi) * 100 : 0;
++
++  const warnings: string[] = [];
++
++  if (input.pumpPressureHeadroomPercent === 0) {
++    warnings.push(
++      "This setup leaves no pump pressure headroom. Actual at-gun performance may be lower due to component condition, hose construction and other restrictions."
++    );
++  }
++
++  if (hoseLossPercentOfTarget > 10) {
++    warnings.push(
++      "Hose pressure loss is more than 10% of the target pressure. Consider a shorter hose or larger internal diameter."
++    );
++  } else if (hoseLossPercentOfTarget > 5) {
++    warnings.push(
++      "Hose pressure loss is more than 5% of the target pressure. Review hose length and internal diameter before selecting the pump."
++    );
++  }
++
++  if (closestPracticalNozzle?.exceedsPracticalPumpRating) {
++    warnings.push(
++      "The closest practical nozzle would require more pressure at the target flow than the rounded recommended pump rating. Select a larger nozzle or a suitably rated pump."
++    );
++  }
++
++  return {
++    errors,
++    result: {
++      targetPressurePsi,
++      targetFlowGpm,
++      targetFlowLpm,
++      mainHoseLossPsi,
++      leaderHoseLossPsi,
++      totalHoseLossPsi,
++      hoseLossPercentOfTarget,
++      componentLossAllowancePsi,
++      totalPressureAboveTargetPsi,
++      minimumPumpOperatingPressurePsi,
++      recommendedPumpPressureRatingPsi,
++      practicalPumpPressureRatingPsi,
++      requiredPumpFlowGpm: targetFlowGpm,
++      requiredPumpFlowLpm: targetFlowLpm,
++      idealNozzleSize,
++      idealNozzleCode,
++      closestPracticalNozzle,
++      practicalNozzleOptions,
++      hydraulicPowerKw,
++      estimatedInputPowerKw,
++      estimatedInputPowerHp,
++      warnings,
++    },
++  };
++}
+--- /dev/null	2026-07-21 01:36:28.169077653 +0000
++++ b/src/pages/TargetPerformanceCalculatorPage.tsx
+@@ -0,0 +1,972 @@
++import { useEffect, useMemo, useRef, useState } from "react";
++import { Helmet } from "react-helmet-async";
++import BackToTopButton from "../components/BackToTopButton";
++import PressureCalLayout from "../components/PressureCalLayout";
++import { trackEvent } from "../lib/analytics";
++import {
++  calculateTargetPerformance,
++  type PracticalNozzleOption,
++  type TargetPerformanceInput,
++} from "../lib/targetPerformance";
++import type {
++  DiameterUnit,
++  FlowUnit,
++  HoseSetupMode,
++  LengthUnit,
++  PressureUnit,
++} from "../pressurecal";
++
++const PSI_PER_BAR = 14.5037738;
++const LPM_PER_GPM = 3.785411784;
++const FT_PER_M = 3.280839895;
++const MM_PER_IN = 25.4;
++
++const hosePresets = [
++  { label: '1/4" (6.35 mm)', mm: 6.35 },
++  { label: '5/16" (7.94 mm)', mm: 7.94 },
++  { label: '3/8" (9.53 mm)', mm: 9.53 },
++  { label: '1/2" (12.70 mm)', mm: 12.7 },
++];
++
++type FormState = {
++  targetPressure: number;
++  targetPressureUnit: PressureUnit;
++  targetFlow: number;
++  targetFlowUnit: FlowUnit;
++  hoseSetupMode: HoseSetupMode;
++  hoseLength: number;
++  hoseLengthUnit: LengthUnit;
++  hoseId: number;
++  hoseIdUnit: DiameterUnit;
++  mainHoseLength: number;
++  mainHoseId: number;
++  leaderHoseLength: number;
++  leaderHoseId: number;
++  componentLossAllowancePsi: number;
++  pumpPressureHeadroomPercent: number;
++  pumpEfficiencyPercent: number;
++  driveEfficiencyPercent: number;
++};
++
++const defaultState: FormState = {
++  targetPressure: 3800,
++  targetPressureUnit: "psi",
++  targetFlow: 15,
++  targetFlowUnit: "lpm",
++  hoseSetupMode: "single",
++  hoseLength: 15,
++  hoseLengthUnit: "m",
++  hoseId: 9.53,
++  hoseIdUnit: "mm",
++  mainHoseLength: 50,
++  mainHoseId: 9.53,
++  leaderHoseLength: 20,
++  leaderHoseId: 6.35,
++  componentLossAllowancePsi: 75,
++  pumpPressureHeadroomPercent: 5,
++  pumpEfficiencyPercent: 85,
++  driveEfficiencyPercent: 95,
++};
++
++function numberParam(params: URLSearchParams, key: string, fallback: number) {
++  const parsed = Number(params.get(key));
++  return Number.isFinite(parsed) ? parsed : fallback;
++}
++
++function parseInitialState(): FormState {
++  const params = new URLSearchParams(window.location.search);
++  const targetPressureUnit =
++    params.get("targetPressureUnit") === "bar" ||
++    params.get("pumpPressureUnit") === "bar"
++      ? "bar"
++      : "psi";
++  const targetFlowUnit =
++    params.get("targetFlowUnit") === "gpm" ||
++    params.get("pumpFlowUnit") === "gpm"
++      ? "gpm"
++      : "lpm";
++
++  return {
++    ...defaultState,
++    targetPressure: numberParam(
++      params,
++      "targetPressure",
++      numberParam(params, "pumpPressure", defaultState.targetPressure)
++    ),
++    targetPressureUnit,
++    targetFlow: numberParam(
++      params,
++      "targetFlow",
++      numberParam(params, "pumpFlow", defaultState.targetFlow)
++    ),
++    targetFlowUnit,
++    hoseSetupMode:
++      params.get("hoseSetupMode") === "mainLeader" ? "mainLeader" : "single",
++    hoseLength: Math.max(
++      0,
++      numberParam(params, "hoseLength", defaultState.hoseLength)
++    ),
++    hoseLengthUnit: params.get("hoseLengthUnit") === "ft" ? "ft" : "m",
++    hoseId: numberParam(params, "hoseId", defaultState.hoseId),
++    hoseIdUnit: params.get("hoseIdUnit") === "in" ? "in" : "mm",
++    mainHoseLength: Math.max(
++      0,
++      numberParam(params, "mainHoseLength", defaultState.mainHoseLength)
++    ),
++    mainHoseId: numberParam(params, "mainHoseId", defaultState.mainHoseId),
++    leaderHoseLength: Math.max(
++      0,
++      numberParam(params, "leaderHoseLength", defaultState.leaderHoseLength)
++    ),
++    leaderHoseId: numberParam(params, "leaderHoseId", defaultState.leaderHoseId),
++    componentLossAllowancePsi: Math.max(
++      0,
++      numberParam(
++        params,
++        "componentLossAllowancePsi",
++        defaultState.componentLossAllowancePsi
++      )
++    ),
++    pumpPressureHeadroomPercent: Math.max(
++      0,
++      numberParam(
++        params,
++        "pumpPressureHeadroomPercent",
++        defaultState.pumpPressureHeadroomPercent
++      )
++    ),
++    pumpEfficiencyPercent: numberParam(
++      params,
++      "pumpEfficiencyPercent",
++      defaultState.pumpEfficiencyPercent
++    ),
++    driveEfficiencyPercent: numberParam(
++      params,
++      "driveEfficiencyPercent",
++      defaultState.driveEfficiencyPercent
++    ),
++  };
++}
++
++function toPsi(value: number, unit: PressureUnit) {
++  return unit === "psi" ? value : value * PSI_PER_BAR;
++}
++
++function fromPsi(value: number, unit: PressureUnit) {
++  return unit === "psi" ? value : value / PSI_PER_BAR;
++}
++
++function toGpm(value: number, unit: FlowUnit) {
++  return unit === "gpm" ? value : value / LPM_PER_GPM;
++}
++
++function fromGpm(value: number, unit: FlowUnit) {
++  return unit === "gpm" ? value : value * LPM_PER_GPM;
++}
++
++function toMeters(value: number, unit: LengthUnit) {
++  return unit === "m" ? value : value / FT_PER_M;
++}
++
++function fromMeters(value: number, unit: LengthUnit) {
++  return unit === "m" ? value : value * FT_PER_M;
++}
++
++function toMm(value: number, unit: DiameterUnit) {
++  return unit === "mm" ? value : value * MM_PER_IN;
++}
++
++function fromMm(value: number, unit: DiameterUnit) {
++  return unit === "mm" ? value : value / MM_PER_IN;
++}
++
++function rounded(value: number, decimals = 1) {
++  return Number(value.toFixed(decimals));
++}
++
++function formatPressure(psi: number, unit: PressureUnit, decimals = 0) {
++  const value = fromPsi(psi, unit);
++  return `${value.toFixed(unit === "psi" ? decimals : Math.max(1, decimals))} ${
++    unit === "psi" ? "PSI" : "BAR"
++  }`;
++}
++
++function formatFlow(gpm: number, unit: FlowUnit) {
++  const value = fromGpm(gpm, unit);
++  return `${value.toFixed(unit === "lpm" ? 1 : 2)} ${unit.toUpperCase()}`;
++}
++
++function nozzleRelationshipLabel(option: PracticalNozzleOption) {
++  if (option.relationship === "smaller") return "Smaller standard nozzle";
++  if (option.relationship === "larger") return "Larger standard nozzle";
++  return "Closest practical nozzle";
++}
++
++const inputClass =
++  "mt-2 h-12 w-full rounded-xl border border-slate-300 bg-white px-3 text-base text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
++const labelClass = "block text-sm font-semibold text-slate-800";
++
++export default function TargetPerformanceCalculatorPage() {
++  const [state, setState] = useState<FormState>(parseInitialState);
++  const [allowanceSelection, setAllowanceSelection] = useState<
++    "0" | "50" | "75" | "100" | "custom"
++  >(() => {
++    const initial = parseInitialState().componentLossAllowancePsi;
++    return [0, 50, 75, 100].includes(initial)
++      ? (String(initial) as "0" | "50" | "75" | "100")
++      : "custom";
++  });
++  const [headroomSelection, setHeadroomSelection] = useState<
++    "0" | "5" | "10" | "custom"
++  >(() => {
++    const initial = parseInitialState().pumpPressureHeadroomPercent;
++    return [0, 5, 10].includes(initial)
++      ? (String(initial) as "0" | "5" | "10")
++      : "custom";
++  });
++  const lastResultSignatureRef = useRef<string | null>(null);
++
++  const calculationInput = useMemo<TargetPerformanceInput>(
++    () => ({
++      targetPressure: state.targetPressure,
++      targetPressureUnit: state.targetPressureUnit,
++      targetFlow: state.targetFlow,
++      targetFlowUnit: state.targetFlowUnit,
++      hoseSetupMode: state.hoseSetupMode,
++      singleHose: {
++        length: state.hoseLength,
++        lengthUnit: state.hoseLengthUnit,
++        internalDiameter: state.hoseId,
++        diameterUnit: state.hoseIdUnit,
++      },
++      mainHose: {
++        length: state.mainHoseLength,
++        lengthUnit: state.hoseLengthUnit,
++        internalDiameter: state.mainHoseId,
++        diameterUnit: state.hoseIdUnit,
++      },
++      leaderHose: {
++        length: state.leaderHoseLength,
++        lengthUnit: state.hoseLengthUnit,
++        internalDiameter: state.leaderHoseId,
++        diameterUnit: state.hoseIdUnit,
++      },
++      componentLossAllowancePsi: state.componentLossAllowancePsi,
++      pumpPressureHeadroomPercent: state.pumpPressureHeadroomPercent,
++      pumpEfficiencyPercent: state.pumpEfficiencyPercent,
++      driveEfficiencyPercent: state.driveEfficiencyPercent,
++    }),
++    [state]
++  );
++
++  const calculation = useMemo(
++    () => calculateTargetPerformance(calculationInput),
++    [calculationInput]
++  );
++  const result = calculation.result;
++
++  useEffect(() => {
++    trackEvent("target_calculator_viewed", {
++      calculator: "target_performance",
++    });
++  }, []);
++
++  useEffect(() => {
++    const params = new URLSearchParams(window.location.search);
++    params.set("calculationMode", "target");
++    params.set("targetPressure", String(state.targetPressure));
++    params.set("targetPressureUnit", state.targetPressureUnit);
++    params.set("targetFlow", String(state.targetFlow));
++    params.set("targetFlowUnit", state.targetFlowUnit);
++    params.set("hoseSetupMode", state.hoseSetupMode);
++    params.set("hoseLengthUnit", state.hoseLengthUnit);
++    params.set("hoseIdUnit", state.hoseIdUnit);
++    params.set("componentLossAllowancePsi", String(state.componentLossAllowancePsi));
++    params.set(
++      "pumpPressureHeadroomPercent",
++      String(state.pumpPressureHeadroomPercent)
++    );
++    params.set("pumpEfficiencyPercent", String(state.pumpEfficiencyPercent));
++    params.set("driveEfficiencyPercent", String(state.driveEfficiencyPercent));
++
++    if (state.hoseSetupMode === "mainLeader") {
++      params.set("mainHoseLength", String(state.mainHoseLength));
++      params.set("mainHoseId", String(state.mainHoseId));
++      params.set("leaderHoseLength", String(state.leaderHoseLength));
++      params.set("leaderHoseId", String(state.leaderHoseId));
++    } else {
++      params.set("hoseLength", String(state.hoseLength));
++      params.set("hoseId", String(state.hoseId));
++    }
++
++    window.history.replaceState(
++      {},
++      "",
++      `${window.location.pathname}?${params.toString()}`
++    );
++  }, [state]);
++
++  useEffect(() => {
++    if (!result) return;
++
++    const signature = [
++      result.targetPressurePsi.toFixed(2),
++      result.targetFlowGpm.toFixed(3),
++      result.totalHoseLossPsi.toFixed(2),
++      result.minimumPumpOperatingPressurePsi.toFixed(2),
++      result.idealNozzleSize.toFixed(3),
++    ].join("|");
++
++    if (lastResultSignatureRef.current === signature) return;
++    lastResultSignatureRef.current = signature;
++
++    trackEvent("target_calculation_completed", {
++      calculator: "target_performance",
++      hose_setup_mode: state.hoseSetupMode,
++      headroom_percent: state.pumpPressureHeadroomPercent,
++    });
++  }, [result, state.hoseSetupMode, state.pumpPressureHeadroomPercent]);
++
++  function patchState(patch: Partial<FormState>) {
++    setState((current) => ({ ...current, ...patch }));
++  }
++
++  function updatePressureUnit(nextUnit: PressureUnit) {
++    setState((current) => ({
++      ...current,
++      targetPressure: rounded(
++        fromPsi(toPsi(current.targetPressure, current.targetPressureUnit), nextUnit),
++        nextUnit === "psi" ? 0 : 1
++      ),
++      targetPressureUnit: nextUnit,
++    }));
++  }
++
++  function updateFlowUnit(nextUnit: FlowUnit) {
++    setState((current) => ({
++      ...current,
++      targetFlow: rounded(
++        fromGpm(toGpm(current.targetFlow, current.targetFlowUnit), nextUnit),
++        nextUnit === "lpm" ? 1 : 2
++      ),
++      targetFlowUnit: nextUnit,
++    }));
++  }
++
++  function updateLengthUnit(nextUnit: LengthUnit) {
++    setState((current) => ({
++      ...current,
++      hoseLength: rounded(
++        fromMeters(toMeters(current.hoseLength, current.hoseLengthUnit), nextUnit),
++        1
++      ),
++      mainHoseLength: rounded(
++        fromMeters(
++          toMeters(current.mainHoseLength, current.hoseLengthUnit),
++          nextUnit
++        ),
++        1
++      ),
++      leaderHoseLength: rounded(
++        fromMeters(
++          toMeters(current.leaderHoseLength, current.hoseLengthUnit),
++          nextUnit
++        ),
++        1
++      ),
++      hoseLengthUnit: nextUnit,
++    }));
++  }
++
++  function updateDiameterUnit(nextUnit: DiameterUnit) {
++    setState((current) => ({
++      ...current,
++      hoseId: rounded(
++        fromMm(toMm(current.hoseId, current.hoseIdUnit), nextUnit),
++        nextUnit === "mm" ? 2 : 3
++      ),
++      mainHoseId: rounded(
++        fromMm(toMm(current.mainHoseId, current.hoseIdUnit), nextUnit),
++        nextUnit === "mm" ? 2 : 3
++      ),
++      leaderHoseId: rounded(
++        fromMm(toMm(current.leaderHoseId, current.hoseIdUnit), nextUnit),
++        nextUnit === "mm" ? 2 : 3
++      ),
++      hoseIdUnit: nextUnit,
++    }));
++  }
++
++  function setHosePreset(key: "hoseId" | "mainHoseId" | "leaderHoseId", mm: number) {
++    setState((current) => ({
++      ...current,
++      [key]: rounded(
++        fromMm(mm, current.hoseIdUnit),
++        current.hoseIdUnit === "mm" ? 2 : 3
++      ),
++    }));
++  }
++
++  async function copyResultLink() {
++    try {
++      await navigator.clipboard.writeText(window.location.href);
++      trackEvent("target_setup_shared", {
++        calculator: "target_performance",
++        method: "copy_link",
++      });
++    } catch {
++      window.prompt("Copy this link:", window.location.href);
++    }
++  }
++
++  return (
++    <>
++      <Helmet>
++        <title>Target Pressure Washer Performance Calculator | PressureCal</title>
++        <meta
++          name="description"
++          content="Enter the pressure and flow you need at the gun. Calculate the pump pressure, nozzle size, hose pressure loss and power required for your pressure washer setup."
++        />
++        <link
++          rel="canonical"
++          href="https://www.pressurecal.com/target-performance-calculator"
++        />
++      </Helmet>
++
++      <PressureCalLayout>
++        <section className="-mx-4 bg-slate-100 px-4 pb-10 pt-6 sm:pt-10">
++          <div className="mx-auto max-w-6xl">
++            <div className="max-w-3xl">
++              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
++                Design for a target
++              </div>
++              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
++                Target Performance Calculator
++              </h1>
++              <p className="mt-3 text-sm leading-6 text-slate-600 sm:text-base">
++                Design a pressure washer setup around the performance you need at the gun.
++                Enter your target pressure, flow and hose setup to estimate the required pump
++                pressure, nozzle size and power.
++              </p>
++            </div>
++
++            <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.85fr)] lg:items-start">
++              <div className="space-y-5">
++                <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
++                  <h2 className="text-xl font-semibold text-slate-900">Target performance</h2>
++                  <div className="mt-5 grid gap-4 sm:grid-cols-2">
++                    <label className={labelClass}>
++                      Target working pressure at the gun
++                      <div className="grid grid-cols-[1fr_92px] gap-2">
++                        <input
++                          className={inputClass}
++                          type="number"
++                          min="0"
++                          inputMode="decimal"
++                          value={state.targetPressure}
++                          onChange={(event) =>
++                            patchState({ targetPressure: Number(event.target.value) })
++                          }
++                        />
++                        <select
++                          className={inputClass}
++                          aria-label="Target pressure unit"
++                          value={state.targetPressureUnit}
++                          onChange={(event) =>
++                            updatePressureUnit(event.target.value as PressureUnit)
++                          }
++                        >
++                          <option value="psi">PSI</option>
++                          <option value="bar">BAR</option>
++                        </select>
++                      </div>
++                    </label>
++
++                    <label className={labelClass}>
++                      Target flow at the gun
++                      <div className="grid grid-cols-[1fr_92px] gap-2">
++                        <input
++                          className={inputClass}
++                          type="number"
++                          min="0"
++                          step="0.1"
++                          inputMode="decimal"
++                          value={state.targetFlow}
++                          onChange={(event) =>
++                            patchState({ targetFlow: Number(event.target.value) })
++                          }
++                        />
++                        <select
++                          className={inputClass}
++                          aria-label="Target flow unit"
++                          value={state.targetFlowUnit}
++                          onChange={(event) =>
++                            updateFlowUnit(event.target.value as FlowUnit)
++                          }
++                        >
++                          <option value="lpm">LPM</option>
++                          <option value="gpm">GPM</option>
++                        </select>
++                      </div>
++                    </label>
++                  </div>
++                </section>
++
++                <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
++                  <h2 className="text-xl font-semibold text-slate-900">Hose setup</h2>
++                  <div
++                    className="mt-5 grid grid-cols-2 rounded-2xl border border-slate-200 bg-slate-50 p-1"
++                    role="radiogroup"
++                    aria-label="Hose setup"
++                  >
++                    {([
++                      ["single", "Single hose"],
++                      ["mainLeader", "Main + Leader Hose"],
++                    ] as const).map(([value, label]) => (
++                      <button
++                        key={value}
++                        type="button"
++                        role="radio"
++                        aria-checked={state.hoseSetupMode === value}
++                        onClick={() => patchState({ hoseSetupMode: value })}
++                        className={`min-h-11 rounded-xl px-3 py-2 text-sm font-semibold transition ${
++                          state.hoseSetupMode === value
++                            ? "bg-white text-slate-950 shadow-sm"
++                            : "text-slate-600 hover:text-slate-900"
++                        }`}
++                      >
++                        {label}
++                      </button>
++                    ))}
++                  </div>
++
++                  <div className="mt-5 grid gap-4 sm:grid-cols-2">
++                    <label className={labelClass}>
++                      Hose length unit
++                      <select
++                        className={inputClass}
++                        value={state.hoseLengthUnit}
++                        onChange={(event) =>
++                          updateLengthUnit(event.target.value as LengthUnit)
++                        }
++                      >
++                        <option value="m">Metres</option>
++                        <option value="ft">Feet</option>
++                      </select>
++                    </label>
++                    <label className={labelClass}>
++                      Hose diameter unit
++                      <select
++                        className={inputClass}
++                        value={state.hoseIdUnit}
++                        onChange={(event) =>
++                          updateDiameterUnit(event.target.value as DiameterUnit)
++                        }
++                      >
++                        <option value="mm">Millimetres</option>
++                        <option value="in">Inches</option>
++                      </select>
++                    </label>
++                  </div>
++
++                  {state.hoseSetupMode === "single" ? (
++                    <div className="mt-5 grid gap-4 sm:grid-cols-2">
++                      <label className={labelClass}>
++                        Hose length
++                        <input
++                          className={inputClass}
++                          type="number"
++                          min="0"
++                          step="0.1"
++                          value={state.hoseLength}
++                          onChange={(event) =>
++                            patchState({ hoseLength: Number(event.target.value) })
++                          }
++                        />
++                      </label>
++                      <label className={labelClass}>
++                        Hose internal diameter
++                        <input
++                          className={inputClass}
++                          type="number"
++                          min="0"
++                          step="0.01"
++                          value={state.hoseId}
++                          onChange={(event) =>
++                            patchState({ hoseId: Number(event.target.value) })
++                          }
++                        />
++                        <select
++                          className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
++                          value=""
++                          onChange={(event) => {
++                            if (event.target.value) setHosePreset("hoseId", Number(event.target.value));
++                          }}
++                        >
++                          <option value="">Choose common size</option>
++                          {hosePresets.map((preset) => (
++                            <option key={preset.mm} value={preset.mm}>{preset.label}</option>
++                          ))}
++                        </select>
++                      </label>
++                    </div>
++                  ) : (
++                    <div className="mt-5 space-y-5">
++                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
++                        <h3 className="font-semibold text-slate-900">Main hose</h3>
++                        <div className="mt-3 grid gap-4 sm:grid-cols-2">
++                          <label className={labelClass}>
++                            Length
++                            <input
++                              className={inputClass}
++                              type="number"
++                              min="0"
++                              step="0.1"
++                              value={state.mainHoseLength}
++                              onChange={(event) =>
++                                patchState({ mainHoseLength: Number(event.target.value) })
++                              }
++                            />
++                          </label>
++                          <label className={labelClass}>
++                            Internal diameter
++                            <input
++                              className={inputClass}
++                              type="number"
++                              min="0"
++                              step="0.01"
++                              value={state.mainHoseId}
++                              onChange={(event) =>
++                                patchState({ mainHoseId: Number(event.target.value) })
++                              }
++                            />
++                          </label>
++                        </div>
++                      </div>
++
++                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
++                        <h3 className="font-semibold text-slate-900">Leader hose / whip hose</h3>
++                        <div className="mt-3 grid gap-4 sm:grid-cols-2">
++                          <label className={labelClass}>
++                            Length
++                            <input
++                              className={inputClass}
++                              type="number"
++                              min="0"
++                              step="0.1"
++                              value={state.leaderHoseLength}
++                              onChange={(event) =>
++                                patchState({ leaderHoseLength: Number(event.target.value) })
++                              }
++                            />
++                          </label>
++                          <label className={labelClass}>
++                            Internal diameter
++                            <input
++                              className={inputClass}
++                              type="number"
++                              min="0"
++                              step="0.01"
++                              value={state.leaderHoseId}
++                              onChange={(event) =>
++                                patchState({ leaderHoseId: Number(event.target.value) })
++                              }
++                            />
++                          </label>
++                        </div>
++                      </div>
++                    </div>
++                  )}
++                </section>
++
++                <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
++                  <h2 className="text-xl font-semibold text-slate-900">Allowances</h2>
++                  <div className="mt-5 grid gap-5 sm:grid-cols-2">
++                    <label className={labelClass}>
++                      Gun and fittings allowance
++                      <select
++                        className={inputClass}
++                        value={allowanceSelection}
++                        onChange={(event) => {
++                          const next = event.target.value as
++                            | "0"
++                            | "50"
++                            | "75"
++                            | "100"
++                            | "custom";
++                          setAllowanceSelection(next);
++                          if (next !== "custom") {
++                            patchState({ componentLossAllowancePsi: Number(next) });
++                          }
++                        }}
++                      >
++                        {[0, 50, 75, 100].map((psi) => (
++                          <option key={psi} value={psi}>
++                            {formatPressure(psi, state.targetPressureUnit, 0)}
++                          </option>
++                        ))}
++                        <option value="custom">Custom</option>
++                      </select>
++                      {allowanceSelection === "custom" ? (
++                        <input
++                          className={inputClass}
++                          type="number"
++                          min="0"
++                          step="0.1"
++                          aria-label="Custom gun and fittings allowance"
++                          value={rounded(fromPsi(state.componentLossAllowancePsi, state.targetPressureUnit), 1)}
++                          onChange={(event) =>
++                            patchState({
++                              componentLossAllowancePsi: Math.max(
++                                0,
++                                toPsi(Number(event.target.value), state.targetPressureUnit)
++                              ),
++                            })
++                          }
++                        />
++                      ) : null}
++                      <span className="mt-2 block text-xs leading-5 text-slate-500">
++                        Estimated loss through the gun, lance, quick-connects, swivel and other components. Actual loss varies.
++                      </span>
++                    </label>
++
++                    <label className={labelClass}>
++                      Pump pressure headroom
++                      <select
++                        className={inputClass}
++                        value={headroomSelection}
++                        onChange={(event) => {
++                          const next = event.target.value as
++                            | "0"
++                            | "5"
++                            | "10"
++                            | "custom";
++                          setHeadroomSelection(next);
++                          if (next !== "custom") {
++                            patchState({ pumpPressureHeadroomPercent: Number(next) });
++                          }
++                        }}
++                      >
++                        <option value="0">0%</option>
++                        <option value="5">5%</option>
++                        <option value="10">10%</option>
++                        <option value="custom">Custom</option>
++                      </select>
++                      {headroomSelection === "custom" ? (
++                        <input
++                          className={inputClass}
++                          type="number"
++                          min="0"
++                          step="0.1"
++                          aria-label="Custom pump pressure headroom"
++                          value={state.pumpPressureHeadroomPercent}
++                          onChange={(event) =>
++                            patchState({ pumpPressureHeadroomPercent: Number(event.target.value) })
++                          }
++                        />
++                      ) : null}
++                      <span className="mt-2 block text-xs leading-5 text-slate-500">
++                        Adds capacity only to the recommended pump rating, not the target pressure at the gun.
++                      </span>
++                    </label>
++                  </div>
++
++                  <details className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
++                    <summary className="cursor-pointer text-sm font-semibold text-slate-800">
++                      Advanced power assumptions
++                    </summary>
++                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
++                      <label className={labelClass}>
++                        Pump efficiency (%)
++                        <input
++                          className={inputClass}
++                          type="number"
++                          min="0.1"
++                          max="100"
++                          step="0.1"
++                          value={state.pumpEfficiencyPercent}
++                          onChange={(event) =>
++                            patchState({ pumpEfficiencyPercent: Number(event.target.value) })
++                          }
++                        />
++                      </label>
++                      <label className={labelClass}>
++                        Drive efficiency (%)
++                        <input
++                          className={inputClass}
++                          type="number"
++                          min="0.1"
++                          max="100"
++                          step="0.1"
++                          value={state.driveEfficiencyPercent}
++                          onChange={(event) =>
++                            patchState({ driveEfficiencyPercent: Number(event.target.value) })
++                          }
++                        />
++                      </label>
++                    </div>
++                  </details>
++                </section>
++              </div>
++
++              <aside className="space-y-5 lg:sticky lg:top-24">
++                {calculation.errors.length > 0 ? (
++                  <div className="rounded-3xl border border-red-200 bg-red-50 p-5 text-red-900 shadow-sm">
++                    <h2 className="font-semibold">Check these inputs</h2>
++                    <ul className="mt-3 space-y-2 text-sm">
++                      {calculation.errors.map((error) => (
++                        <li key={error}>• {error}</li>
++                      ))}
++                    </ul>
++                  </div>
++                ) : null}
++
++                {result ? (
++                  <>
++                    <section className="rounded-3xl border border-blue-200 bg-white p-5 shadow-sm sm:p-6">
++                      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
++                        Required pump specification
++                      </div>
++                      <div className="mt-5 space-y-4">
++                        <div>
++                          <div className="text-sm text-slate-500">Minimum pump operating pressure</div>
++                          <div className="mt-1 text-3xl font-semibold text-slate-950">
++                            {formatPressure(result.minimumPumpOperatingPressurePsi, state.targetPressureUnit)}
++                          </div>
++                        </div>
++                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
++                          <div className="rounded-2xl bg-slate-50 p-4">
++                            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Recommended rating</div>
++                            <div className="mt-2 text-lg font-semibold text-slate-900">
++                              {formatPressure(result.recommendedPumpPressureRatingPsi, state.targetPressureUnit)}
++                            </div>
++                          </div>
++                          <div className="rounded-2xl bg-slate-50 p-4">
++                            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Practical specification</div>
++                            <div className="mt-2 text-lg font-semibold text-slate-900">
++                              ≈ {formatPressure(result.practicalPumpPressureRatingPsi, state.targetPressureUnit)}
++                            </div>
++                          </div>
++                        </div>
++                        <div className="rounded-2xl border border-slate-200 p-4">
++                          <div className="text-sm text-slate-500">Required pump flow</div>
++                          <div className="mt-1 text-xl font-semibold text-slate-900">
++                            {formatFlow(result.requiredPumpFlowGpm, state.targetFlowUnit)}
++                          </div>
++                          <div className="mt-1 text-xs text-slate-500">
++                            No leakage, bypass or injector flow margin is included.
++                          </div>
++                        </div>
++                      </div>
++                    </section>
++
++                    <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
++                      <h2 className="text-lg font-semibold text-slate-900">Nozzle</h2>
++                      <div className="mt-4 grid grid-cols-2 gap-3">
++                        <div className="rounded-2xl bg-slate-50 p-4">
++                          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Ideal nozzle size</div>
++                          <div className="mt-2 text-2xl font-semibold text-slate-950">#{result.idealNozzleSize.toFixed(2)}</div>
++                        </div>
++                        <div className="rounded-2xl bg-slate-50 p-4">
++                          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Closest practical</div>
++                          <div className="mt-2 text-2xl font-semibold text-slate-950">
++                            #{result.closestPracticalNozzle.nozzleSize.toFixed(1)}
++                          </div>
++                          <div className="text-xs text-slate-500">Code {result.closestPracticalNozzle.nozzleCode}</div>
++                        </div>
++                      </div>
++
++                      <div className="mt-4 space-y-3">
++                        {result.practicalNozzleOptions.map((option) => (
++                          <div key={`${option.relationship}-${option.nozzleSize}`} className="rounded-2xl border border-slate-200 p-4">
++                            <div className="flex items-start justify-between gap-3">
++                              <div>
++                                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
++                                  {nozzleRelationshipLabel(option)}
++                                </div>
++                                <div className="mt-1 font-semibold text-slate-900">
++                                  #{option.nozzleSize.toFixed(1)} · code {option.nozzleCode}
++                                </div>
++                              </div>
++                              {option.exceedsPracticalPumpRating ? (
++                                <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-900">Review rating</span>
++                              ) : null}
++                            </div>
++                            <div className="mt-2 text-sm text-slate-600">
++                              Estimated gun pressure at target flow: {formatPressure(option.estimatedGunPressurePsi, state.targetPressureUnit)}
++                            </div>
++                          </div>
++                        ))}
++                      </div>
++                      <p className="mt-4 text-xs leading-5 text-slate-500">
++                        A smaller nozzle generally increases pressure demand. A larger nozzle generally reduces pressure at the same flow. A nozzle cannot force a pump safely beyond its manufacturer-rated pressure.
++                      </p>
++                    </section>
++
++                    <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
++                      <h2 className="text-lg font-semibold text-slate-900">Pressure-loss breakdown</h2>
++                      <dl className="mt-4 space-y-3 text-sm">
++                        {state.hoseSetupMode === "mainLeader" ? (
++                          <>
++                            <div className="flex justify-between gap-4"><dt className="text-slate-600">Main hose pressure loss</dt><dd className="font-semibold text-slate-900">{formatPressure(result.mainHoseLossPsi, state.targetPressureUnit)}</dd></div>
++                            <div className="flex justify-between gap-4"><dt className="text-slate-600">Leader hose pressure loss</dt><dd className="font-semibold text-slate-900">{formatPressure(result.leaderHoseLossPsi, state.targetPressureUnit)}</dd></div>
++                          </>
++                        ) : null}
++                        <div className="flex justify-between gap-4"><dt className="text-slate-600">Combined hose pressure loss</dt><dd className="font-semibold text-slate-900">{formatPressure(result.totalHoseLossPsi, state.targetPressureUnit)}</dd></div>
++                        <div className="flex justify-between gap-4"><dt className="text-slate-600">Gun and fittings allowance</dt><dd className="font-semibold text-slate-900">{formatPressure(result.componentLossAllowancePsi, state.targetPressureUnit)}</dd></div>
++                        <div className="flex justify-between gap-4 border-t border-slate-200 pt-3"><dt className="font-semibold text-slate-800">Total pressure above target</dt><dd className="font-semibold text-slate-950">{formatPressure(result.totalPressureAboveTargetPsi, state.targetPressureUnit)}</dd></div>
++                      </dl>
++                    </section>
++
++                    <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
++                      <h2 className="text-lg font-semibold text-slate-900">Power</h2>
++                      <div className="mt-4 grid grid-cols-2 gap-3">
++                        <div className="rounded-2xl bg-slate-50 p-4">
++                          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Hydraulic power required</div>
++                          <div className="mt-2 text-xl font-semibold text-slate-950">{result.hydraulicPowerKw.toFixed(1)} kW</div>
++                        </div>
++                        <div className="rounded-2xl bg-slate-50 p-4">
++                          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Estimated minimum input</div>
++                          <div className="mt-2 text-xl font-semibold text-slate-950">{result.estimatedInputPowerKw.toFixed(1)} kW</div>
++                          <div className="text-xs text-slate-500">{result.estimatedInputPowerHp.toFixed(1)} HP</div>
++                        </div>
++                      </div>
++                      <p className="mt-4 text-xs leading-5 text-slate-500">
++                        Actual engine or motor selection should allow for pump efficiency, drive losses, service factor, altitude and manufacturer requirements.
++                      </p>
++                    </section>
++
++                    <section className="rounded-3xl border border-blue-200 bg-blue-50 p-5 text-blue-950 shadow-sm">
++                      <h2 className="font-semibold">Result summary</h2>
++                      <p className="mt-3 text-sm leading-6">
++                        To achieve an estimated {formatPressure(result.targetPressurePsi, state.targetPressureUnit)} at {formatFlow(result.targetFlowGpm, state.targetFlowUnit)} at the gun through this hose setup, the pump must produce at least approximately {formatPressure(result.minimumPumpOperatingPressurePsi, state.targetPressureUnit)} at the required flow. With {state.pumpPressureHeadroomPercent.toFixed(0)}% pressure headroom, a pump rated for approximately {formatPressure(result.practicalPumpPressureRatingPsi, state.targetPressureUnit)} would be appropriate.
++                      </p>
++                      <button
++                        type="button"
++                        onClick={copyResultLink}
++                        className="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
++                      >
++                        Copy setup link
++                      </button>
++                    </section>
++
++                    <section className="rounded-3xl border border-amber-200 bg-amber-50 p-5 text-amber-950 shadow-sm">
++                      <h2 className="font-semibold">Warnings and guidance</h2>
++                      <ul className="mt-3 space-y-2 text-sm leading-6">
++                        {result.warnings.map((warning) => <li key={warning}>• {warning}</li>)}
++                        <li>• Do not operate a pump above its manufacturer-rated pressure.</li>
++                        <li>• The gun and fittings allowance is an estimate. Actual pressure loss depends on the components used.</li>
++                        <li>• Verify the completed setup with a suitable pressure gauge while the trigger is open and water is flowing.</li>
++                      </ul>
++                    </section>
++                  </>
++                ) : null}
++              </aside>
++            </div>
++          </div>
++        </section>
++        <BackToTopButton />
++      </PressureCalLayout>
++    </>
++  );
++}
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -25,6 +25,7 @@ import AccountPage from "./pages/AccountPage";
+ import UpdatePasswordPage from "./pages/UpdatePasswordPage";
+ import HomePage from "./pages/HomePage";
+ import FullRigCalculatorPage from "./pages/FullRigCalculator";
++import TargetPerformanceCalculatorPage from "./pages/TargetPerformanceCalculatorPage";
+ import AdminFeedbackPage from "./pages/AdminFeedbackPage";
+ import NozzleCalculator from "./pages/NozzleCalculator";
+ import OrificeDiameterCalculatorPage from "./pages/OrificeDiameterCalculatorPage";
+@@ -98,6 +99,7 @@ export default function App() {
+         <Routes location={location} key={location.pathname}>
+           <Route path="/" element={<PageTransition><HomePage /></PageTransition>} />
+           <Route path="/calculator" element={<PageTransition><FullRigCalculatorPage /></PageTransition>} />
++          <Route path="/target-performance-calculator" element={<PageTransition><TargetPerformanceCalculatorPage /></PageTransition>} />
+           <Route path="/admin-feedback" element={<PageTransition><AdminFeedbackPage /></PageTransition>} />
+           <Route path="/pricing" element={<PageTransition><PressureCalProPage /></PageTransition>} />
+           <Route path="/pro" element={<Navigate to="/pricing" replace />} />
+--- a/src/components/PressureCalLayout.tsx
++++ b/src/components/PressureCalLayout.tsx
+@@ -5,6 +5,7 @@ import { Link, useLocation } from "react-router-dom";
+ 
+ import { useProAccess } from "../hooks/useProAccess";
+ import { openCookiePreferences } from "../lib/cookieConsent";
++import { trackEvent } from "../lib/analytics";
+ import { supabase } from "../lib/supabase-browser";
+ import FeedbackWidget from "./FeedbackWidget";
+ import FooterSocialLinks from "./FooterSocialLinks";
+@@ -15,6 +16,7 @@ type PressureCalLayoutProps = {
+ };
+ 
+ const toolLinks = [
++  { to: "/target-performance-calculator", label: "Target Performance Calculator" },
+   { to: "/nozzle-size-calculator", label: "Nozzle Size Calculator" },
+   { to: "/orifice-diameter-calculator", label: "Orifice Diameter Calculator" },
+   { to: "/target-pressure-nozzle-calculator", label: "Target Pressure Nozzle Calculator" },
+@@ -26,6 +28,7 @@ const toolLinks = [
+ 
+ const footerQuickLinks = [
+   { to: "/calculator", label: "Full Setup Calculator" },
++  { to: "/target-performance-calculator", label: "Target Performance Calculator" },
+   { to: "/nozzle-size-calculator", label: "Nozzle Size Calculator" },
+   { to: "/orifice-diameter-calculator", label: "Orifice Diameter Calculator" },
+   { to: "/hose-pressure-loss-calculator", label: "Hose Pressure Loss Calculator" },
+@@ -57,8 +60,23 @@ export default function PressureCalLayout({
+   const [toolsOpen, setToolsOpen] = useState(false);
+   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+ 
+-  const isCalculatorPage = location.pathname === "/calculator";
++  const isTargetMode = location.pathname === "/target-performance-calculator";
++  const isCalculatorPage = location.pathname === "/calculator" || isTargetMode;
+   const proLinkTo = isPro ? "/account" : "/pricing";
++
++  function calculatorModeHref(pathname: string, mode: "performance" | "target") {
++    const params = new URLSearchParams(location.search);
++    params.set("calculationMode", mode);
++    const query = params.toString();
++    return query ? `${pathname}?${query}` : pathname;
++  }
++
++  function trackCalculationMode(mode: "performance" | "target") {
++    trackEvent("calculation_mode_changed", {
++      calculator: "full_setup",
++      calculation_mode: mode,
++    });
++  }
+ 
+   useEffect(() => {
+     setToolsOpen(false);
+@@ -157,7 +174,7 @@ export default function PressureCalLayout({
+ 
+             {isCalculatorPage ? (
+               <span className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-500">
+-                Full Setup Calculator
++                {isTargetMode ? "Target Calculator" : "Full Setup Calculator"}
+               </span>
+             ) : (
+               <Link
+@@ -203,6 +220,6 @@ export default function PressureCalLayout({
+               </Link>
+             ) : (
+               <span className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-500">
+-                Calculator
++                {isTargetMode ? "Target" : "Calculator"}
+               </span>
+             )}
+@@ -286,6 +303,44 @@ export default function PressureCalLayout({
+         ) : null}
+       </header>
+ 
+-      <main className="px-4 py-8 pb-24 sm:py-10 sm:pb-10">{children}</main>
++      <main className="px-4 py-8 pb-24 sm:py-10 sm:pb-10">
++        {isCalculatorPage ? (
++          <div className="mx-auto max-w-6xl pb-6">
++            <div
++              className="grid grid-cols-2 rounded-2xl border border-slate-200 bg-slate-100 p-1 shadow-sm"
++              role="tablist"
++              aria-label="Full setup calculator mode"
++            >
++              <Link
++                to={calculatorModeHref("/calculator", "performance")}
++                role="tab"
++                aria-selected={!isTargetMode}
++                onClick={() => trackCalculationMode("performance")}
++                className={`flex min-h-12 items-center justify-center rounded-xl px-3 py-2 text-center text-sm font-semibold transition ${
++                  !isTargetMode
++                    ? "bg-white text-slate-950 shadow-sm"
++                    : "text-slate-600 hover:text-slate-900"
++                }`}
++              >
++                Calculate performance
++              </Link>
++              <Link
++                to={calculatorModeHref("/target-performance-calculator", "target")}
++                role="tab"
++                aria-selected={isTargetMode}
++                onClick={() => trackCalculationMode("target")}
++                className={`flex min-h-12 items-center justify-center rounded-xl px-3 py-2 text-center text-sm font-semibold transition ${
++                  isTargetMode
++                    ? "bg-white text-slate-950 shadow-sm"
++                    : "text-slate-600 hover:text-slate-900"
++                }`}
++              >
++                Design for a target
++              </Link>
++            </div>
++          </div>
++        ) : null}
++        {children}
++      </main>
+ 
+       <footer className="border-t border-slate-200 bg-white">
+--- a/scripts/prerender-seo.mjs
++++ b/scripts/prerender-seo.mjs
+@@ -100,6 +100,23 @@ const ROUTES = [
+         "Full rig pressure washer calculator for hose loss, nozzle calibration, at-gun pressure, flow, and power requirement.",
+     },
+   },
++  {
++    path: "/target-performance-calculator",
++    title: "Target Pressure Washer Performance Calculator | PressureCal",
++    description:
++      "Enter the pressure and flow you need at the gun. Calculate the pump pressure, nozzle size, hose pressure loss and power required for your pressure washer setup.",
++    schema: {
++      "@context": "https://schema.org",
++      "@type": "WebApplication",
++      name: "Target Pressure Washer Performance Calculator",
++      url: `${SITE_URL}/target-performance-calculator`,
++      applicationCategory: "Calculator",
++      operatingSystem: "Web",
++      isAccessibleForFree: true,
++      description:
++        "Design a pressure washer setup around a required at-gun pressure and flow, including hose loss, pump pressure, nozzle size and power.",
++    },
++  },
+   {
+     path: "/nozzle-size-calculator",
+     title: "Pressure Washer Nozzle Size Calculator | PSI, LPM & GPM | PressureCal",
+--- a/public/sitemap.xml
++++ b/public/sitemap.xml
+@@ -8,6 +8,9 @@
+   <url>
+     <loc>https://www.pressurecal.com/calculator</loc>
+   </url>
++  <url>
++    <loc>https://www.pressurecal.com/target-performance-calculator</loc>
++  </url>
+   <url>
+     <loc>https://www.pressurecal.com/nozzle-size-calculator</loc>
+   </url>
