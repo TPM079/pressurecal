@@ -219,6 +219,21 @@ function SectionCard({
   );
 }
 
+function PrintChartBrand() {
+  return (
+    <div className="print-chart-brand" aria-hidden="true">
+      <img
+        src="/pressurecal-logo-primary.png"
+        alt=""
+        className="print-chart-brand__logo"
+      />
+      <span className="print-chart-brand__label">
+        Pressure Washer Nozzle Reference
+      </span>
+    </div>
+  );
+}
+
 function ReferenceTable({
   title,
   subtitle,
@@ -1319,6 +1334,7 @@ export default function NozzleSizeChartPage() {
             </div>
 
             <div id="standard-chart" className="mt-8 print:mt-0">
+              <PrintChartBrand />
               <ReferenceTable
                 title="Standard pressure washer nozzle size chart"
                 subtitle="Quick reference chart for standard single-nozzle pressure washer setups from 70 BAR to 350 BAR, with pressure shown as PSI (BAR) and flow shown as LPM (US GPM)."
@@ -1338,6 +1354,7 @@ export default function NozzleSizeChartPage() {
             </div>
 
             <div id="high-chart" className="mt-8 print:mt-6">
+              <PrintChartBrand />
               <ReferenceTable
                 title="High pressure / industrial nozzle size chart"
                 subtitle="Quick reference chart for higher-pressure single-nozzle setups from 360 BAR to 500 BAR, with pressure shown as PSI (BAR) and flow shown as LPM (US GPM)."

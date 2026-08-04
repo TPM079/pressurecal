@@ -1,6 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
 @keyframes pressurecalCellFlash {
   0% {
     box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7);
@@ -19,6 +20,7 @@
 .pressurecal-cell-flash {
   animation: pressurecalCellFlash 1.1s ease-out 1;
 }
+
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -27,4 +29,280 @@ input[type="number"]::-webkit-inner-spin-button {
 
 input[type="number"] {
   -moz-appearance: textfield;
+}
+
+.print-chart-brand {
+  display: none;
+}
+
+@page {
+  size: A4 landscape;
+  margin: 8mm;
+}
+
+@media print {
+  body:has(#standard-reference-table),
+  body:has(#high-reference-table) {
+    background: #ffffff !important;
+    color: #111827 !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  body:has(#standard-reference-table) header,
+  body:has(#standard-reference-table) footer,
+  body:has(#standard-reference-table) [role="dialog"],
+  body:has(#standard-reference-table) .fixed,
+  body:has(#high-reference-table) header,
+  body:has(#high-reference-table) footer,
+  body:has(#high-reference-table) [role="dialog"],
+  body:has(#high-reference-table) .fixed {
+    display: none !important;
+  }
+
+  body:has(#standard-reference-table) #root,
+  body:has(#standard-reference-table) #root > div,
+  body:has(#standard-reference-table) #root > div > main,
+  body:has(#standard-reference-table) #root > div > main > main,
+  body:has(#high-reference-table) #root,
+  body:has(#high-reference-table) #root > div,
+  body:has(#high-reference-table) #root > div > main,
+  body:has(#high-reference-table) #root > div > main > main {
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+
+  #standard-chart,
+  #high-chart {
+    position: relative;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  #high-chart {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  .print-chart-brand {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4mm;
+    margin: 0 0 1.5mm;
+    padding: 0 0 1.2mm;
+    border-bottom: 0.35mm solid #111827;
+  }
+
+  .print-chart-brand__logo {
+    display: block !important;
+    width: auto !important;
+    height: 7.5mm !important;
+    max-width: 38mm !important;
+    object-fit: contain;
+  }
+
+  .print-chart-brand__label {
+    color: #053855 !important;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 9pt;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+
+  #standard-reference-table,
+  #high-reference-table {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  #standard-reference-table > div:first-child,
+  #high-reference-table > div:first-child {
+    margin: 0 !important;
+    padding: 0 0 1.6mm !important;
+    border: 0 !important;
+  }
+
+  #standard-reference-table > div:first-child > div,
+  #high-reference-table > div:first-child > div {
+    display: block !important;
+  }
+
+  #standard-reference-table
+    > div:first-child
+    > div
+    > div:first-child
+    > div:first-child,
+  #high-reference-table
+    > div:first-child
+    > div
+    > div:first-child
+    > div:first-child {
+    display: none !important;
+  }
+
+  #standard-reference-table h2,
+  #high-reference-table h2 {
+    margin: 0 !important;
+    color: #111827 !important;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 12pt !important;
+    font-weight: 700 !important;
+    line-height: 1.1 !important;
+  }
+
+  #standard-reference-table h2 + p,
+  #high-reference-table h2 + p {
+    max-width: none !important;
+    margin: 1mm 0 0 !important;
+    color: #374151 !important;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 7pt !important;
+    line-height: 1.2 !important;
+  }
+
+  #standard-reference-table > div:nth-child(2),
+  #high-reference-table > div:nth-child(2) {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  #standard-reference-table table,
+  #high-reference-table table {
+    width: 100% !important;
+    min-width: 0 !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 7pt !important;
+    line-height: 1 !important;
+  }
+
+  #standard-reference-table thead,
+  #high-reference-table thead {
+    display: table-header-group;
+  }
+
+  #standard-reference-table tr,
+  #high-reference-table tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  #standard-reference-table th,
+  #standard-reference-table td,
+  #high-reference-table th,
+  #high-reference-table td {
+    position: static !important;
+    z-index: auto !important;
+    min-width: 0 !important;
+    height: auto !important;
+    padding: 0.85mm 0.35mm !important;
+    overflow: hidden !important;
+    border: 0.2mm solid #6b7280 !important;
+    border-radius: 0 !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    color: #111827 !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+    white-space: nowrap !important;
+  }
+
+  #standard-reference-table th,
+  #high-reference-table th {
+    font-weight: 700 !important;
+  }
+
+  #standard-reference-table th:first-child,
+  #standard-reference-table td:first-child,
+  #high-reference-table th:first-child,
+  #high-reference-table td:first-child {
+    width: 19mm !important;
+    text-align: left !important;
+  }
+
+  #standard-reference-table th:not(:first-child) > div:first-child,
+  #high-reference-table th:not(:first-child) > div:first-child {
+    display: none !important;
+  }
+
+  #standard-reference-table th:not(:first-child) > div:nth-child(2),
+  #standard-reference-table th:not(:first-child) > div:nth-child(3),
+  #high-reference-table th:not(:first-child) > div:nth-child(2),
+  #high-reference-table th:not(:first-child) > div:nth-child(3),
+  #standard-reference-table td:first-child > div,
+  #high-reference-table td:first-child > div {
+    display: inline !important;
+    margin: 0 !important;
+    color: #111827 !important;
+    font-size: 7pt !important;
+    line-height: 1 !important;
+  }
+
+  #standard-reference-table th:not(:first-child) > div:nth-child(3),
+  #high-reference-table th:not(:first-child) > div:nth-child(3),
+  #standard-reference-table td:first-child > div:nth-child(2),
+  #high-reference-table td:first-child > div:nth-child(2) {
+    margin-left: 0.45mm !important;
+  }
+
+  #standard-reference-table td button,
+  #high-reference-table td button {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    color: #111827 !important;
+    font: inherit !important;
+    line-height: 1 !important;
+    text-align: center !important;
+    appearance: none !important;
+  }
+
+  #standard-reference-table > div:last-child,
+  #high-reference-table > div:last-child {
+    margin: 1.5mm 0 0 !important;
+    padding: 1.3mm 0 0 !important;
+    border-top: 0.25mm solid #6b7280 !important;
+    background: #ffffff !important;
+  }
+
+  #standard-reference-table > div:last-child > div,
+  #high-reference-table > div:last-child > div {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 4mm !important;
+    color: #374151 !important;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 7pt !important;
+    line-height: 1.2 !important;
+  }
+
+  #standard-reference-table > div:last-child p,
+  #high-reference-table > div:last-child p {
+    margin: 0 !important;
+  }
+
+  #standard-reference-table *,
+  #high-reference-table * {
+    text-shadow: none !important;
+  }
 }
