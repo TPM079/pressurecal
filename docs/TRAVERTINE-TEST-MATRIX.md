@@ -30,3 +30,14 @@
 - Jointing sand: calculation may proceed, but warns about sand displacement
 - Surface cleaner: calculation may proceed, but warns that lance guidance does not transfer directly because the jets operate closer to the stone
 - Pressure below the editorial range is treated as conservative rather than as exceeding the surface limit; the result warns that cleaning effectiveness may be reduced
+
+
+## Numeric-range standard-nozzle selection
+
+For a sensitive Travertine variant at 600 PSI with 21 LPM, two nozzles and 15° tips:
+
+- Exact requirement: approximately size 7.16 per nozzle
+- Recommended standard setup: **2 × 15070**, approximately 628 PSI
+- Adjacent larger — gentler: **2 × 15075**, approximately 547 PSI
+- The 547 PSI option must be labelled **Below working range** and must not be the primary recommendation
+- Changing the angle to 40° changes the codes to 40070 and 40075 without changing pressure

@@ -94,7 +94,9 @@ function optionClass(option: PressureCleaningNozzleOption) {
   ) {
     return "border-red-200 bg-red-50";
   }
-  if (option.status === "review") return "border-amber-200 bg-amber-50";
+  if (option.status === "review" || option.status === "below-working-range") {
+    return "border-amber-200 bg-amber-50";
+  }
   return "border-emerald-200 bg-emerald-50";
 }
 
@@ -887,6 +889,7 @@ export default function PressureCleaningTaskGuidePage() {
                 <div className="mt-6 grid gap-4">
                   {result.recommendedOption ? <OptionCard option={result.recommendedOption} prominent /> : null}
                   {result.exactOption ? <OptionCard option={result.exactOption} /> : null}
+                  {result.adjacentLargerGentler ? <OptionCard option={result.adjacentLargerGentler} /> : null}
                   {result.smallerAggressive ? <OptionCard option={result.smallerAggressive} /> : null}
                   {result.currentNozzleOption ? <OptionCard option={result.currentNozzleOption} /> : null}
                 </div>

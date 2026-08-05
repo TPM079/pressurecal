@@ -106,6 +106,7 @@ export type PressureCleaningNozzleOption = {
   label:
     | "Recommended standard setup"
     | "Exact calculated requirement"
+    | "Adjacent larger - gentler"
     | "Adjacent smaller - more aggressive"
     | "Current setup";
   nozzleSize: number;
@@ -119,7 +120,12 @@ export type PressureCleaningNozzleOption = {
   requiredPumpPressurePsi: number;
   isWithinSurfaceGuidance: boolean;
   isWithinMachineRating: boolean;
-  status: "compatible" | "review" | "exceeds-task-limit" | "well-above-task-limit";
+  status:
+    | "compatible"
+    | "below-working-range"
+    | "review"
+    | "exceeds-task-limit"
+    | "well-above-task-limit";
   statusLabel: string;
   note: string;
 };
@@ -155,6 +161,7 @@ export type PressureCleaningTaskGuideResult = {
   exactTotalNozzleSize?: number;
   recommendedOption?: PressureCleaningNozzleOption;
   exactOption?: PressureCleaningNozzleOption;
+  adjacentLargerGentler?: PressureCleaningNozzleOption | null;
   smallerAggressive?: PressureCleaningNozzleOption | null;
   currentNozzleOption?: PressureCleaningNozzleOption | null;
   currentNozzleParse?: ParsedNozzleSize;
@@ -218,6 +225,73 @@ function standardAtOrAbove(exactNozzleSize: number) {
 
 function standardBelow(exactNozzleSize: number) {
   return [...STANDARD_NOZZLE_SIZES].reverse().find((size) => size < exactNozzleSize) ?? null;
+}
+
+type StandardNozzleSelection = {
+  recommendedSize: number | null;
+  adjacentLargerSize: number | null;
+  adjacentSmallerSize: number | null;
+};
+
+function isInsideEditorialRange(pressurePsi: number, guidance: PressureGuidance) {
+  if (guidance.mode !== "numeric-range") return false;
+  const minimum = guidance.editorialRangeMinPsi;
+  const maximum = guidance.editorialRangeMaxPsi;
+  if (minimum === undefined || maximum === undefined) return false;
+  return pressurePsi >= minimum && pressurePsi <= maximum;
+}
+
+function selectStandardNozzleSizes(args: {
+  exactNozzleSize: number;
+  flowPerNozzleGpm: number;
+  targetPressurePsi: number;
+  guidance: PressureGuidance;
+}): StandardNozzleSelection {
+  const largerSize = standardAtOrAbove(args.exactNozzleSize);
+  const smallerSize = standardBelow(args.exactNozzleSize);
+
+  if (args.guidance.mode !== "numeric-range") {
+    return {
+      recommendedSize: largerSize,
+      adjacentLargerSize: null,
+      adjacentSmallerSize: smallerSize,
+    };
+  }
+
+  const candidates = [largerSize, smallerSize]
+    .filter((size): size is number => size !== null)
+    .map((size) => ({
+      size,
+      pressurePsi: pressureForNozzleAtFlowPsi(args.flowPerNozzleGpm, size),
+    }))
+    .filter(
+      (candidate): candidate is { size: number; pressurePsi: number } =>
+        candidate.pressurePsi !== undefined
+    );
+
+  if (candidates.length === 0) {
+    return { recommendedSize: null, adjacentLargerSize: null, adjacentSmallerSize: null };
+  }
+
+  const inRange = candidates.filter((candidate) =>
+    isInsideEditorialRange(candidate.pressurePsi, args.guidance)
+  );
+  const pool = inRange.length > 0 ? inRange : candidates;
+  const recommended = [...pool].sort((a, b) => {
+    const distanceA = Math.abs(a.pressurePsi - args.targetPressurePsi);
+    const distanceB = Math.abs(b.pressurePsi - args.targetPressurePsi);
+    if (Math.abs(distanceA - distanceB) > 1e-9) return distanceA - distanceB;
+    // Equal distance: prefer the larger orifice as the gentler option.
+    return b.size - a.size;
+  })[0];
+
+  return {
+    recommendedSize: recommended.size,
+    adjacentLargerSize:
+      largerSize !== null && largerSize !== recommended.size ? largerSize : null,
+    adjacentSmallerSize:
+      smallerSize !== null && smallerSize !== recommended.size ? smallerSize : null,
+  };
 }
 
 function taskHardMax(guidance: PressureGuidance) {
@@ -313,6 +387,7 @@ export function pressureCleaningStatusLabel(
   status: PressureCleaningNozzleOption["status"]
 ) {
   if (status === "compatible") return "COMPATIBLE";
+  if (status === "below-working-range") return "BELOW WORKING RANGE";
   if (status === "exceeds-task-limit") return "EXCEEDS TASK LIMIT";
   if (status === "well-above-task-limit") return "WELL ABOVE TASK LIMIT";
   return "REVIEW MACHINE RATING";
@@ -345,6 +420,9 @@ function overallRecommendationStatus(args: {
     return "exceeds-task-limit";
   }
   if (args.recommendedOption?.status === "review") return "outside-equipment-rating";
+  if (args.recommendedOption?.status === "below-working-range") {
+    return "compatible-with-caution";
+  }
   if (
     args.guidance.mode === "manufacturer-confirmation-required" ||
     args.guidance.mode === "specialist-only" ||
@@ -401,11 +479,15 @@ function buildOption(args: {
     args.guidance.mode === "numeric-range" &&
     args.guidance.editorialRangeMinPsi !== undefined &&
     expectedGunPressurePsi < args.guidance.editorialRangeMinPsi;
-  const status = statusForPressure({
+  const baseStatus = statusForPressure({
     pressurePsi: expectedGunPressurePsi,
     guidance: args.guidance,
     machinePasses: isWithinMachineRating,
   });
+  const status =
+    belowEditorialRange && isWithinMachineRating
+      ? "below-working-range"
+      : baseStatus;
   const fanNozzleCode =
     args.label === "Exact calculated requirement"
       ? undefined
@@ -440,9 +522,11 @@ function buildOption(args: {
     note:
       args.exactNote ??
       (belowEditorialRange
-        ? "Expected pressure is below the editorial working range. This is conservative for the surface but may reduce cleaning effectiveness."
+        ? "This setup is below the editorial working range. It may be gentler but may reduce cleaning effectiveness."
         : isWithinSurfaceGuidance
-          ? "Expected pressure is inside the task guidance."
+          ? args.guidance.mode === "numeric-range"
+            ? "Expected pressure is inside the editorial working range."
+            : "Expected pressure is inside the task guidance."
           : "This calculated operating pressure is outside the task guidance and should not be recommended for this surface."),
   };
 }
@@ -1118,8 +1202,13 @@ export function calculatePressureCleaningTaskGuide(
 
   const flowPerNozzleGpm = machineFlowGpm / nozzleCount;
   const exactNozzleSize = flowPerNozzleGpm / Math.sqrt(targetPressurePsi / 4000);
-  const recommendedSize = standardAtOrAbove(exactNozzleSize);
-  const smallerSize = standardBelow(exactNozzleSize);
+  const standardSelection = selectStandardNozzleSizes({
+    exactNozzleSize,
+    flowPerNozzleGpm,
+    targetPressurePsi,
+    guidance: effectiveGuidance,
+  });
+  const { recommendedSize, adjacentLargerSize, adjacentSmallerSize } = standardSelection;
 
   if (!recommendedSize || !Number.isFinite(exactNozzleSize)) {
     validationMessages.push("No valid nozzle recommendation could be calculated.");
@@ -1168,10 +1257,23 @@ export function calculatePressureCleaningTaskGuide(
     guidance: effectiveGuidance,
     exactNote: "Exact calculated size may not correspond to a commercially available nozzle.",
   });
-  const smallerAggressive = smallerSize
+  const adjacentLargerGentler = adjacentLargerSize
+    ? buildOption({
+        label: "Adjacent larger - gentler",
+        nozzleSize: adjacentLargerSize,
+        nozzleCount,
+        sprayAngleDeg: input.nozzleSprayAngleDeg,
+        flowPerNozzleGpm,
+        hoseLossPsi: hose.lossPsi,
+        componentLossAllowancePsi,
+        maxMachinePressurePsi,
+        guidance: effectiveGuidance,
+      })
+    : null;
+  const smallerAggressive = adjacentSmallerSize
     ? buildOption({
         label: "Adjacent smaller - more aggressive",
-        nozzleSize: smallerSize,
+        nozzleSize: adjacentSmallerSize,
         nozzleCount,
         sprayAngleDeg: input.nozzleSprayAngleDeg,
         flowPerNozzleGpm,
@@ -1214,7 +1316,7 @@ export function calculatePressureCleaningTaskGuide(
     canCalculate: true,
     validationMessages,
     hydraulicCompatibility:
-      recommendedOption?.status === "compatible" ? "compatible" : "outside-equipment-rating",
+      recommendedOption?.isWithinMachineRating ? "compatible" : "outside-equipment-rating",
     taskMethodCompatibility:
       overlapStatus === "no-validated-overlap"
         ? "no-validated-overlap"
@@ -1232,6 +1334,7 @@ export function calculatePressureCleaningTaskGuide(
     exactTotalNozzleSize: exactNozzleSize * nozzleCount,
     recommendedOption: recommendedOption ?? undefined,
     exactOption: exactOption ?? undefined,
+    adjacentLargerGentler,
     smallerAggressive,
     currentNozzleOption,
     currentNozzleParse,

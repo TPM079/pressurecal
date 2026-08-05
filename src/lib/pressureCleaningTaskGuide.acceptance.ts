@@ -190,6 +190,10 @@ export function runPressureCleaningTaskGuideAcceptanceChecks() {
   assert(tennis.preferredSprayAngleDeg === 25, "Tennis-court surface-cleaner mode defaults to 25 degrees.");
   assert(tennisResult.recommendedOption?.setupCode === "2 × 25050", "Recommended setup is 2 × 25050.");
   assert(
+    tennisResult.adjacentLargerGentler == null,
+    "Maximum-only tennis-court guidance keeps conservative upward rounding without an adjacent-larger card."
+  );
+  assert(
     tennisResult.recommendedOption?.accessibleLabel === "Two 25-degree size 5.0 nozzles, code 25050.",
     "Accessible labels use the same canonical selected 25-degree angle."
   );
@@ -363,6 +367,56 @@ export function runPressureCleaningTaskGuideAcceptanceChecks() {
   assert(
     confirmedSensitiveTravertine.overallRecommendationStatus === "compatible-with-caution",
     "Confirmed sensitive Travertine remains a caution-only recommendation."
+  );
+
+  const sensitiveSurfaceCleanerTravertine = calculatePressureCleaningTaskGuide(travertine, {
+    ...baseInput,
+    taskSlug: "travertine-pavers",
+    attachmentType: "surfaceCleaner",
+    nozzleCount: 2,
+    nozzleSprayAngleDeg: 15,
+    currentNozzleText: "030",
+    jobDetails: {
+      materialFinish: "honed",
+      filledStatus: "partially-filled",
+      sealedStatus: "unsealed",
+      jointCondition: "jointing-sand",
+      installationArea: "outdoor",
+      confirmsSoundSurface: true,
+    },
+  });
+  assert(
+    sensitiveSurfaceCleanerTravertine.recommendedOption?.setupCode === "2 × 15070",
+    "The 600 PSI Travertine example recommends the in-range 2 × 15070 setup."
+  );
+  assert(
+    near(sensitiveSurfaceCleanerTravertine.recommendedOption?.expectedGunPressurePsi, 628, 5),
+    "Two size-7.0 nozzles produce approximately 628 PSI."
+  );
+  assert(
+    sensitiveSurfaceCleanerTravertine.adjacentLargerGentler?.setupCode === "2 × 15075",
+    "The size-7.5 option is shown as the adjacent larger, gentler setup."
+  );
+  assert(
+    near(sensitiveSurfaceCleanerTravertine.adjacentLargerGentler?.expectedGunPressurePsi, 547, 5),
+    "Two size-7.5 nozzles produce approximately 547 PSI."
+  );
+  assert(
+    sensitiveSurfaceCleanerTravertine.adjacentLargerGentler?.statusLabel ===
+      "BELOW WORKING RANGE",
+    "The 547 PSI option is labelled below the editorial working range."
+  );
+  assert(
+    Boolean(
+      sensitiveSurfaceCleanerTravertine.adjacentLargerGentler?.note.includes(
+        "may reduce cleaning effectiveness"
+      )
+    ),
+    "The gentler option explains the possible loss of cleaning effectiveness."
+  );
+  assert(
+    sensitiveSurfaceCleanerTravertine.smallerAggressive === null,
+    "The in-range smaller standard size becomes the recommendation rather than a secondary option."
   );
   assert(
     Boolean(confirmedSensitiveTravertine.taskVariantLabel?.includes("honed")) &&
