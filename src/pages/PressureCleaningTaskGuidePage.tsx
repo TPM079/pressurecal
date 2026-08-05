@@ -18,7 +18,7 @@ import {
   parsePressureCleaningTaskGuideSearchParams,
   SURFACE_CLEANER_MIN_NOZZLE_COUNT,
   TASK_GUIDE_FAN_ANGLES,
-  travertineRequiresSoundSurfaceConfirmation,
+  travertineCanShowSoundSurfaceConfirmation,
   type PressureCleaningNozzleOption,
   type PressureCleaningTaskGuideInput,
   type PressureCleaningTaskGuideResult,
@@ -100,10 +100,6 @@ function optionClass(option: PressureCleaningNozzleOption) {
   return "border-emerald-200 bg-emerald-50";
 }
 
-function hasSuitableStartingSetup(result: ReturnType<typeof calculatePressureCleaningTaskGuide>) {
-  return result.overallRecommendationStatus === "suitable-starting-setup";
-}
-
 function hydraulicLabel(result: ReturnType<typeof calculatePressureCleaningTaskGuide>) {
   if (result.hydraulicCompatibility === "compatible") return "Hydraulically compatible";
   if (result.hydraulicCompatibility === "outside-equipment-rating") return "Outside equipment rating";
@@ -113,6 +109,7 @@ function hydraulicLabel(result: ReturnType<typeof calculatePressureCleaningTaskG
 function taskMethodLabel(result: ReturnType<typeof calculatePressureCleaningTaskGuide>) {
   if (result.taskMethodCompatibility === "suitable") return "Task method suitable";
   if (result.taskMethodCompatibility === "caution") return "Compatible with caution";
+  if (result.taskMethodCompatibility === "avoid-pressure") return "Avoid pressure cleaning";
   if (result.taskMethodCompatibility === "no-validated-overlap") return "No validated overlap";
   if (result.taskMethodCompatibility === "prohibited") return "Prohibited";
   return "Confirmation required";
@@ -126,6 +123,37 @@ function guidanceModeLabel(mode: PressureCleaningTaskGuideResult["effectiveGuida
   if (mode === "specialist-only") return "Specialist guidance";
   if (mode === "prohibited") return "Prohibited";
   return "Qualitative guidance";
+}
+
+function pressureSummary(value?: number) {
+  return value !== undefined && Number.isFinite(value) ? `${fmt(value)} PSI` : "—";
+}
+
+function overlapLabel(status: PressureCleaningTaskGuideResult["overlapStatus"]) {
+  if (status === "validated-overlap") return "Validated overlap";
+  if (status === "no-validated-overlap") return "No validated overlap";
+  return "Not applicable";
+}
+
+function overallStatusClass(result: PressureCleaningTaskGuideResult) {
+  if (result.overallRecommendationStatus === "suitable-starting-setup") {
+    return "bg-emerald-50 text-emerald-700";
+  }
+  if (
+    result.overallRecommendationStatus === "pressure-cleaning-not-recommended" ||
+    result.overallRecommendationStatus === "prohibited" ||
+    result.overallRecommendationStatus === "exceeds-task-limit"
+  ) {
+    return "bg-red-50 text-red-700";
+  }
+  return "bg-amber-50 text-amber-800";
+}
+
+function validationPanelClass(result: PressureCleaningTaskGuideResult) {
+  return result.overallRecommendationStatus === "pressure-cleaning-not-recommended" ||
+    result.overallRecommendationStatus === "prohibited"
+    ? "border-red-200 bg-red-50 text-red-950"
+    : "border-amber-200 bg-amber-50 text-amber-950";
 }
 
 function attachmentInputState(
@@ -241,7 +269,7 @@ export default function PressureCleaningTaskGuidePage() {
   const result = useMemo(() => calculatePressureCleaningTaskGuide(task, input), [input, task]);
   const travertineNeedsSoundConfirmation =
     task.slug === "travertine-pavers" &&
-    travertineRequiresSoundSurfaceConfirmation(input.jobDetails);
+    travertineCanShowSoundSurfaceConfirmation(input.jobDetails);
   const installationAreaOptions =
     task.slug === "travertine-pavers"
       ? [
@@ -385,7 +413,7 @@ export default function PressureCleaningTaskGuidePage() {
             Pressure Cleaning Task Guide
           </h1>
           <p className="mt-3 max-w-4xl text-base leading-7 text-slate-600">
-            Choose the task, describe the job and equipment, then calculate a recommendation using PressureCal nozzle, flow and hose-loss logic.
+            Choose a task and enter your equipment to get a calculated pressure and nozzle recommendation.
           </p>
         </section>
 
@@ -836,7 +864,7 @@ export default function PressureCleaningTaskGuidePage() {
                     </p>
                   ) : null}
                 </div>
-                <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase ${hasSuitableStartingSetup(result) ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800"}`}>
+                <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase ${overallStatusClass(result)}`}>
                   {result.overallRecommendationLabel}
                 </span>
               </div>
@@ -844,13 +872,13 @@ export default function PressureCleaningTaskGuidePage() {
               <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <p className="text-xs font-bold uppercase text-slate-500">Task target</p>
-                  <p className="mt-2 text-2xl font-black text-slate-950">{fmt(result.targetPressurePsi)} PSI</p>
+                  <p className="mt-2 text-2xl font-black text-slate-950">{pressureSummary(result.targetPressurePsi)}</p>
                   <p className="text-sm text-slate-500">{guidanceModeLabel(result.effectiveGuidance.mode)}</p>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <p className="text-xs font-bold uppercase text-slate-500">Expected pressure</p>
-                  <p className="mt-2 text-2xl font-black text-slate-950">{fmt(result.recommendedOption?.expectedGunPressurePsi)} PSI</p>
-                  <p className="text-sm text-slate-500">recommended setup</p>
+                  <p className="mt-2 text-2xl font-black text-slate-950">{pressureSummary(result.recommendedOption?.expectedGunPressurePsi)}</p>
+                  <p className="text-sm text-slate-500">{result.canCalculate ? "recommended setup" : "no setup provided"}</p>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <p className="text-xs font-bold uppercase text-slate-500">Compatibility</p>
@@ -865,7 +893,7 @@ export default function PressureCleaningTaskGuidePage() {
               </div>
 
               {result.validationMessages.length > 0 ? (
-                <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
+                <div className={`mt-5 rounded-2xl border p-4 text-sm leading-6 ${validationPanelClass(result)}`}>
                   {result.validationMessages.map((message) => <p key={message}>{message}</p>)}
                 </div>
               ) : null}
@@ -881,7 +909,7 @@ export default function PressureCleaningTaskGuidePage() {
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-white p-4">
                   <p className="text-xs font-bold uppercase text-slate-500">Validated overlap</p>
-                  <p className="mt-2 text-sm font-bold text-slate-950">{result.overlapStatus}</p>
+                  <p className="mt-2 text-sm font-bold text-slate-950">{overlapLabel(result.overlapStatus)}</p>
                 </div>
               </div>
 

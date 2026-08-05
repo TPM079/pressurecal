@@ -14,6 +14,7 @@ import {
   normalisePressureCleaningTaskGuideInput,
   parseCurrentNozzleSize,
   parsePressureCleaningTaskGuideSearchParams,
+  travertineCanShowSoundSurfaceConfirmation,
   type PressureCleaningTaskGuideInput,
 } from "./pressureCleaningTaskGuide";
 
@@ -296,7 +297,7 @@ export function runPressureCleaningTaskGuideAcceptanceChecks() {
     "Travertine editorial values are labelled as PressureCal guidance."
   );
 
-  const polishedTravertine = calculatePressureCleaningTaskGuide(travertine, {
+  const polishedTravertineInput: PressureCleaningTaskGuideInput = {
     ...baseInput,
     taskSlug: "travertine-pavers",
     attachmentType: "wand",
@@ -309,8 +310,42 @@ export function runPressureCleaningTaskGuideAcceptanceChecks() {
       jointCondition: "sound-grout",
       installationArea: "outdoor",
     },
-  });
+  };
+  const polishedTravertine = calculatePressureCleaningTaskGuide(
+    travertine,
+    polishedTravertineInput
+  );
   assert(!polishedTravertine.canCalculate, "Polished travertine does not generate a nozzle recommendation.");
+  assert(
+    polishedTravertine.overallRecommendationStatus === "pressure-cleaning-not-recommended",
+    "Polished travertine is classified as pressure cleaning not recommended."
+  );
+  assert(
+    polishedTravertine.taskMethodCompatibility === "avoid-pressure",
+    "Polished travertine task method says to avoid pressure cleaning."
+  );
+  assert(
+    polishedTravertine.overlapStatus === "not-applicable",
+    "Polished travertine does not report a validated pressure overlap."
+  );
+  assert(
+    polishedTravertine.targetPressurePsi === undefined &&
+      polishedTravertine.recommendedOption === undefined,
+    "Polished travertine exposes no target pressure or nozzle setup."
+  );
+  assert(
+    polishedTravertine.effectiveGuidance.mode === "avoid-pressure",
+    "Polished travertine uses avoid-pressure guidance."
+  );
+  assert(
+    polishedTravertine.guidanceNotes.length === 1 &&
+      !polishedTravertine.guidanceNotes.some((note) => note.includes("600-1000")),
+    "Polished travertine hides the generic numeric Travertine range."
+  );
+  assert(
+    !travertineCanShowSoundSurfaceConfirmation(polishedTravertineInput.jobDetails),
+    "Polished travertine does not show the sound-surface confirmation checkbox."
+  );
 
   const unknownTravertine = calculatePressureCleaningTaskGuide(travertine, {
     ...baseInput,
