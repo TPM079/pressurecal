@@ -34,6 +34,7 @@ import EquipmentLibraryPage from "./pages/EquipmentLibraryPage";
 import CookieConsentBanner from "./components/CookieConsentBanner";
 import { trackPageView } from "./lib/analytics";
 import TargetPerformanceCalculatorPage from "./pages/TargetPerformanceCalculatorPage";
+import PressureCleaningTaskGuidePage from "./pages/PressureCleaningTaskGuidePage";
 function PageTransition({ children }: { children: ReactNode }) {
   return (
     <motion.div
@@ -111,6 +112,8 @@ export default function App() {
           <Route path="/reset-password" element={<PageTransition><UpdatePasswordPage /></PageTransition>} />
           <Route path="/saved-setups" element={<PageTransition><SavedSetupsPage /></PageTransition>} />
           <Route path="/equipment-library" element={<PageTransition><EquipmentLibraryPage /></PageTransition>} />
+          <Route path="/pressure-cleaning-task-guide" element={<PageTransition><PressureCleaningTaskGuidePage /></PageTransition>} />
+          <Route path="/pressure-cleaning-task-guide/:slug" element={<PageTransition><PressureCleaningTaskGuidePage /></PageTransition>} />
           <Route path="/saved-setups/:setupId/report" element={<PageTransition><SavedSetupReportPage /></PageTransition>} />
           <Route path="/compare-setups" element={<PageTransition><CompareSetupsPage /></PageTransition>} />
           <Route path="/nozzle-size-calculator" element={<PageTransition><NozzleCalculator /></PageTransition>} />

@@ -187,6 +187,93 @@ const LPM_GPM_SCHEMA = {
   ],
 };
 
+const PRESSURE_CLEANING_TASK_GUIDE_PATH = "/pressure-cleaning-task-guide";
+const PRESSURE_CLEANING_TASK_GUIDE_TITLE =
+  "Pressure Cleaning Task Guide | Nozzle and Pressure Recommendations | PressureCal";
+const PRESSURE_CLEANING_TASK_GUIDE_DESCRIPTION =
+  "Choose a pressure cleaning task, enter machine, attachment, nozzle and hose details, then calculate task-backed nozzle and pressure recommendations.";
+const PRESSURE_CLEANING_TASKS = [
+  {
+    slug: "painted-acrylic-hard-tennis-court",
+    title: "Painted acrylic hard tennis court",
+    description:
+      "Pressure cleaning task guide for painted acrylic hard tennis courts, including surface-cleaner nozzle sizing and validated pressure overlap checks.",
+  },
+  {
+    slug: "trex-composite-decking",
+    title: "Trex composite decking",
+    description:
+      "Pressure cleaning task guide for Trex composite decking with low-pressure nozzle recommendations and compatibility checks.",
+  },
+  {
+    slug: "generic-timber-deck",
+    title: "Generic timber deck",
+    description:
+      "Pressure cleaning task guide for timber decks with conservative pressure limits, nozzle sizing and machine checks.",
+  },
+  {
+    slug: "sound-uncoated-concrete",
+    title: "Sound uncoated concrete",
+    description:
+      "Pressure cleaning task guide for sound uncoated concrete with surface-cleaner nozzle sizing, hose loss and machine rating checks.",
+  },
+  {
+    slug: "painted-or-coated-surface",
+    title: "Painted or coated surface",
+    description:
+      "Pressure cleaning task guide for painted or coated surfaces with exclusive maximum pressure handling and source-backed recommendations.",
+  },
+  {
+    slug: "travertine-pavers",
+    title: "Travertine pavers",
+    description:
+      "Pressure cleaning task guide for travertine pavers with finish, filler, sealer, joint-condition and advisory-ceiling checks.",
+  },
+  {
+    slug: "suspected-or-confirmed-asbestos",
+    title: "Suspected or confirmed asbestos",
+    description:
+      "Pressure cleaning blocker for suspected or confirmed asbestos-containing material with SafeWork guidance.",
+  },
+];
+
+function pressureCleaningTaskSchema(pathname, name, description) {
+  const url = `${SITE_URL}${pathname}`;
+
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebPage",
+        "@id": `${url}#webpage`,
+        url,
+        name,
+        description,
+        isPartOf: {
+          "@type": "WebSite",
+          name: "PressureCal",
+          url: SITE_URL,
+        },
+      },
+      {
+        "@type": "WebApplication",
+        "@id": `${url}#app`,
+        name: "Pressure Cleaning Task Guide",
+        url,
+        applicationCategory: "Calculator",
+        operatingSystem: "Web",
+        isAccessibleForFree: true,
+        description,
+        offers: {
+          "@type": "Offer",
+          price: "0",
+          priceCurrency: "AUD",
+        },
+      },
+    ],
+  };
+}
+
 const ROUTES = [
   {
     path: "/",
@@ -284,6 +371,27 @@ const ROUTES = [
         "Pressure washer nozzle size chart for matching machine pressure and flow to the correct nozzle / tip code.",
     },
   },
+  {
+    path: PRESSURE_CLEANING_TASK_GUIDE_PATH,
+    title: PRESSURE_CLEANING_TASK_GUIDE_TITLE,
+    description: PRESSURE_CLEANING_TASK_GUIDE_DESCRIPTION,
+    schema: pressureCleaningTaskSchema(
+      PRESSURE_CLEANING_TASK_GUIDE_PATH,
+      PRESSURE_CLEANING_TASK_GUIDE_TITLE,
+      PRESSURE_CLEANING_TASK_GUIDE_DESCRIPTION
+    ),
+  },
+  ...PRESSURE_CLEANING_TASKS.map((task) => {
+    const path = `${PRESSURE_CLEANING_TASK_GUIDE_PATH}/${task.slug}`;
+    const title = `${task.title} Pressure Cleaning Task Guide | PressureCal`;
+
+    return {
+      path,
+      title,
+      description: task.description,
+      schema: pressureCleaningTaskSchema(path, title, task.description),
+    };
+  }),
 ];
 
 function escapeHtml(value) {

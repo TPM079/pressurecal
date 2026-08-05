@@ -24,7 +24,9 @@ export type PressureCalEventName =
   | "saved_setup_created"
   | "target_calculator_viewed"
   | "target_calculation_completed"
-  | "target_setup_shared";
+  | "target_setup_shared"
+  | "task_guide_calculation_completed"
+  | "task_guide_saved_setup_loaded";
 
 export type PressureCalEventParams = Record<string, string | number | boolean | null | undefined>;
 

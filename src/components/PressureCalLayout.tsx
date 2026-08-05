@@ -13,6 +13,7 @@ type PressureCalLayoutProps = {
 };
 
 const toolLinks = [
+  { to: "/pressure-cleaning-task-guide", label: "Pressure Cleaning Task Guide" },
   { to: "/target-performance-calculator", label: "Target Performance Calculator" },
   { to: "/nozzle-size-calculator", label: "Nozzle Size Calculator" },
   { to: "/orifice-diameter-calculator", label: "Orifice Diameter Calculator" },
@@ -25,6 +26,7 @@ const toolLinks = [
 
 const footerQuickLinks = [
   { to: "/calculator", label: "Full Setup Calculator" },
+  { to: "/pressure-cleaning-task-guide", label: "Pressure Cleaning Task Guide" },
   { to: "/nozzle-size-calculator", label: "Nozzle Size Calculator" },
   { to: "/orifice-diameter-calculator", label: "Orifice Diameter Calculator" },
   { to: "/hose-pressure-loss-calculator", label: "Hose Pressure Loss Calculator" },
