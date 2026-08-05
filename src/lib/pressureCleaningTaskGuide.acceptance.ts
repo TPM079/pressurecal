@@ -356,6 +356,137 @@ export function runPressureCleaningTaskGuideAcceptanceChecks() {
     "A sensitive Travertine variant can proceed only after explicit sound-surface confirmation."
   );
   assert(
+    confirmedSensitiveTravertine.targetPressurePsi === 600 &&
+      confirmedSensitiveTravertine.effectiveGuidance.editorialRangeMaxPsi === 800,
+    "Confirmed sensitive Travertine uses the reduced 600 PSI start and 600-800 PSI editorial range."
+  );
+  assert(
+    confirmedSensitiveTravertine.overallRecommendationStatus === "compatible-with-caution",
+    "Confirmed sensitive Travertine remains a caution-only recommendation."
+  );
+  assert(
+    Boolean(confirmedSensitiveTravertine.taskVariantLabel?.includes("honed")) &&
+      Boolean(confirmedSensitiveTravertine.taskVariantLabel?.includes("sealed")),
+    "The resolved Travertine variant is visible in the result."
+  );
+
+  const baseTravertine = calculatePressureCleaningTaskGuide(travertine, {
+    ...baseInput,
+    taskSlug: "travertine-pavers",
+    attachmentType: "wand",
+    nozzleCount: 1,
+    nozzleSprayAngleDeg: 40,
+    currentNozzleText: "",
+    jobDetails: {
+      materialFinish: "tumbled",
+      filledStatus: "unfilled",
+      sealedStatus: "unsealed",
+      jointCondition: "sound-grout",
+      installationArea: "outdoor",
+    },
+  });
+  assert(
+    baseTravertine.canCalculate &&
+      baseTravertine.targetPressurePsi === 800 &&
+      baseTravertine.overallRecommendationStatus === "suitable-starting-setup",
+    "Sound exterior tumbled or unfilled Travertine uses the normal 800 PSI starting target."
+  );
+
+  const unconfirmedSensitiveTravertine = calculatePressureCleaningTaskGuide(travertine, {
+    ...baseInput,
+    taskSlug: "travertine-pavers",
+    attachmentType: "wand",
+    nozzleCount: 1,
+    currentNozzleText: "",
+    jobDetails: {
+      materialFinish: "honed",
+      filledStatus: "filled",
+      sealedStatus: "sealed",
+      jointCondition: "sound-grout",
+      installationArea: "outdoor",
+      confirmsSoundSurface: false,
+    },
+  });
+  assert(
+    !unconfirmedSensitiveTravertine.canCalculate,
+    "Sensitive Travertine remains blocked until sound-surface confirmation is supplied."
+  );
+
+  const poolTravertine = calculatePressureCleaningTaskGuide(travertine, {
+    ...baseInput,
+    taskSlug: "travertine-pavers",
+    attachmentType: "wand",
+    nozzleCount: 1,
+    currentNozzleText: "",
+    jobDetails: {
+      materialFinish: "tumbled",
+      filledStatus: "unfilled",
+      sealedStatus: "unsealed",
+      jointCondition: "sound-grout",
+      installationArea: "pool-surround",
+      confirmsSoundSurface: true,
+    },
+  });
+  assert(
+    poolTravertine.canCalculate &&
+      poolTravertine.targetPressurePsi === 600 &&
+      poolTravertine.overallRecommendationStatus === "compatible-with-caution",
+    "Confirmed pool-surround Travertine uses the reduced target and caution status."
+  );
+
+  const jointingSandTravertine = calculatePressureCleaningTaskGuide(travertine, {
+    ...baseInput,
+    taskSlug: "travertine-pavers",
+    attachmentType: "wand",
+    nozzleCount: 1,
+    currentNozzleText: "",
+    jobDetails: {
+      materialFinish: "tumbled",
+      filledStatus: "unfilled",
+      sealedStatus: "unsealed",
+      jointCondition: "jointing-sand",
+      installationArea: "outdoor",
+    },
+  });
+  assert(
+    jointingSandTravertine.canCalculate &&
+      jointingSandTravertine.overallRecommendationStatus === "compatible-with-caution" &&
+      jointingSandTravertine.compatibilityMessages.some((message) => message.includes("Jointing sand")),
+    "Travertine with jointing sand calculates only with a displacement caution."
+  );
+
+  const wallTravertine = calculatePressureCleaningTaskGuide(travertine, {
+    ...baseInput,
+    taskSlug: "travertine-pavers",
+    attachmentType: "wand",
+    nozzleCount: 1,
+    currentNozzleText: "",
+    jobDetails: {
+      materialFinish: "tumbled",
+      filledStatus: "unfilled",
+      sealedStatus: "unsealed",
+      jointCondition: "sound-mortar",
+      installationArea: "wall",
+    },
+  });
+  assert(!wallTravertine.canCalculate, "Travertine wall installations require product-specific guidance.");
+
+  const looseJointTravertine = calculatePressureCleaningTaskGuide(travertine, {
+    ...baseInput,
+    taskSlug: "travertine-pavers",
+    attachmentType: "wand",
+    nozzleCount: 1,
+    currentNozzleText: "",
+    jobDetails: {
+      materialFinish: "tumbled",
+      filledStatus: "unfilled",
+      sealedStatus: "unsealed",
+      jointCondition: "loose-or-missing",
+      installationArea: "outdoor",
+    },
+  });
+  assert(!looseJointTravertine.canCalculate, "Loose or missing Travertine joints block calculation.");
+  assert(
     task("limestone").sourceIds.includes("natural-stone-institute-care"),
     "Limestone has natural-stone care source."
   );

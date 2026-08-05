@@ -21,6 +21,7 @@ import {
   travertineRequiresSoundSurfaceConfirmation,
   type PressureCleaningNozzleOption,
   type PressureCleaningTaskGuideInput,
+  type PressureCleaningTaskGuideResult,
 } from "../lib/pressureCleaningTaskGuide";
 import {
   getPressureCleaningTaskBySlug,
@@ -109,10 +110,20 @@ function hydraulicLabel(result: ReturnType<typeof calculatePressureCleaningTaskG
 
 function taskMethodLabel(result: ReturnType<typeof calculatePressureCleaningTaskGuide>) {
   if (result.taskMethodCompatibility === "suitable") return "Task method suitable";
-  if (result.taskMethodCompatibility === "caution") return "Caution - narrow fan";
+  if (result.taskMethodCompatibility === "caution") return "Compatible with caution";
   if (result.taskMethodCompatibility === "no-validated-overlap") return "No validated overlap";
   if (result.taskMethodCompatibility === "prohibited") return "Prohibited";
   return "Confirmation required";
+}
+
+function guidanceModeLabel(mode: PressureCleaningTaskGuideResult["effectiveGuidance"]["mode"]) {
+  if (mode === "maximum-only") return "Maximum-only guidance";
+  if (mode === "numeric-range") return "Editorial working range";
+  if (mode === "manufacturer-confirmation-required") return "Manufacturer confirmation";
+  if (mode === "avoid-pressure") return "Avoid pressure washing";
+  if (mode === "specialist-only") return "Specialist guidance";
+  if (mode === "prohibited") return "Prohibited";
+  return "Qualitative guidance";
 }
 
 function attachmentInputState(
@@ -229,6 +240,21 @@ export default function PressureCleaningTaskGuidePage() {
   const travertineNeedsSoundConfirmation =
     task.slug === "travertine-pavers" &&
     travertineRequiresSoundSurfaceConfirmation(input.jobDetails);
+  const installationAreaOptions =
+    task.slug === "travertine-pavers"
+      ? [
+          ["outdoor", "Outdoor paving"],
+          ["indoor", "Indoor"],
+          ["pool-surround", "Pool surround"],
+          ["wall", "Wall installation"],
+        ]
+      : [
+          ["outdoor", "Outdoor"],
+          ["indoor", "Indoor"],
+          ["pool-surround", "Pool surround"],
+          ["wall", "Wall"],
+          ["roof", "Roof"],
+        ];
   const filteredTasks = useMemo(
     () => searchPressureCleaningTasks(visibleTasks, taskSearch),
     [taskSearch, visibleTasks]
@@ -260,10 +286,10 @@ export default function PressureCleaningTaskGuidePage() {
     trackEvent("task_guide_calculation_completed", {
       task_slug: task.slug,
       can_calculate: result.canCalculate,
-      guidance_mode: task.guidance.mode,
+      guidance_mode: result.effectiveGuidance.mode,
       recommended_setup: result.recommendedOption?.setupCode ?? null,
     });
-  }, [result.canCalculate, result.recommendedOption?.setupCode, task.guidance.mode, task.slug]);
+  }, [result.canCalculate, result.effectiveGuidance.mode, result.recommendedOption?.setupCode, task.slug]);
 
   if (params.slug && !routeTask) return <Navigate to="/pressure-cleaning-task-guide" replace />;
 
@@ -288,6 +314,22 @@ export default function PressureCleaningTaskGuidePage() {
     setInput((current) => ({
       ...current,
       jobDetails: { ...current.jobDetails, [key]: value },
+    }));
+  }
+
+  function updateTravertineDetail<
+    K extends "materialFinish" | "filledStatus" | "sealedStatus" | "jointCondition" | "installationArea"
+  >(
+    key: K,
+    value: PressureCleaningTaskGuideInput["jobDetails"][K]
+  ) {
+    setInput((current) => ({
+      ...current,
+      jobDetails: {
+        ...current.jobDetails,
+        [key]: value,
+        confirmsSoundSurface: false,
+      },
     }));
   }
 
@@ -553,7 +595,7 @@ export default function PressureCleaningTaskGuidePage() {
                   Material finish
                   <select
                     value={input.jobDetails.materialFinish ?? "unknown"}
-                    onChange={(event) => updateJobDetail("materialFinish", event.target.value as PressureCleaningTaskGuideInput["jobDetails"]["materialFinish"])}
+                    onChange={(event) => updateTravertineDetail("materialFinish", event.target.value as PressureCleaningTaskGuideInput["jobDetails"]["materialFinish"])}
                     className="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
                   >
                     {["polished", "honed", "tumbled", "sandblasted", "textured", "smooth", "unknown"].map((item) => <option key={item} value={item}>{item}</option>)}
@@ -566,7 +608,7 @@ export default function PressureCleaningTaskGuidePage() {
                   Filled status
                   <select
                     value={input.jobDetails.filledStatus ?? "unknown"}
-                    onChange={(event) => updateJobDetail("filledStatus", event.target.value as PressureCleaningTaskGuideInput["jobDetails"]["filledStatus"])}
+                    onChange={(event) => updateTravertineDetail("filledStatus", event.target.value as PressureCleaningTaskGuideInput["jobDetails"]["filledStatus"])}
                     className="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
                   >
                     {["filled", "unfilled", "partially-filled", "unknown"].map((item) => <option key={item} value={item}>{item}</option>)}
@@ -579,7 +621,7 @@ export default function PressureCleaningTaskGuidePage() {
                   Sealed status
                   <select
                     value={input.jobDetails.sealedStatus ?? "unknown"}
-                    onChange={(event) => updateJobDetail("sealedStatus", event.target.value as PressureCleaningTaskGuideInput["jobDetails"]["sealedStatus"])}
+                    onChange={(event) => updateTravertineDetail("sealedStatus", event.target.value as PressureCleaningTaskGuideInput["jobDetails"]["sealedStatus"])}
                     className="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
                   >
                     {["sealed", "unsealed", "unknown"].map((item) => <option key={item} value={item}>{item}</option>)}
@@ -592,7 +634,7 @@ export default function PressureCleaningTaskGuidePage() {
                   Joint condition
                   <select
                     value={input.jobDetails.jointCondition ?? "unknown"}
-                    onChange={(event) => updateJobDetail("jointCondition", event.target.value as PressureCleaningTaskGuideInput["jobDetails"]["jointCondition"])}
+                    onChange={(event) => updateTravertineDetail("jointCondition", event.target.value as PressureCleaningTaskGuideInput["jobDetails"]["jointCondition"])}
                     className="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
                   >
                     {["sound-grout", "sound-mortar", "jointing-sand", "loose-or-missing", "unknown"].map((item) => <option key={item} value={item}>{item}</option>)}
@@ -606,18 +648,16 @@ export default function PressureCleaningTaskGuidePage() {
                   <select
                     value={input.jobDetails.installationArea ?? "outdoor"}
                     onChange={(event) =>
-                      updateJobDetail(
+                      updateTravertineDetail(
                         "installationArea",
                         event.target.value as PressureCleaningTaskGuideInput["jobDetails"]["installationArea"]
                       )
                     }
                     className="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
                   >
-                    <option value="outdoor">Outdoor</option>
-                    <option value="indoor">Indoor</option>
-                    <option value="pool-surround">Pool surround</option>
-                    <option value="wall">Wall</option>
-                    <option value="roof">Roof</option>
+                    {installationAreaOptions.map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
                   </select>
                 </label>
               ) : null}
@@ -644,7 +684,7 @@ export default function PressureCleaningTaskGuidePage() {
                     className="mt-1"
                   />
                   <span>
-                    I have confirmed that the travertine, filler, sealer and joints are sound.
+                    I have inspected and confirmed that the travertine, filler, sealer and joints are sound, and that product instructions do not prohibit pressure cleaning.
                   </span>
                 </label>
               ) : null}
@@ -788,6 +828,11 @@ export default function PressureCleaningTaskGuidePage() {
                   <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">3. Calculate and show the recommendation</p>
                   <h2 className="mt-2 text-2xl font-bold text-slate-950">{task.title}</h2>
                   <p className="mt-2 text-sm leading-6 text-slate-600">{task.summary}</p>
+                  {result.taskVariantLabel ? (
+                    <p className="mt-2 inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">
+                      {result.taskVariantLabel}
+                    </p>
+                  ) : null}
                 </div>
                 <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase ${hasSuitableStartingSetup(result) ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800"}`}>
                   {result.overallRecommendationLabel}
@@ -798,7 +843,7 @@ export default function PressureCleaningTaskGuidePage() {
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <p className="text-xs font-bold uppercase text-slate-500">Task target</p>
                   <p className="mt-2 text-2xl font-black text-slate-950">{fmt(result.targetPressurePsi)} PSI</p>
-                  <p className="text-sm text-slate-500">{task.guidance.mode}</p>
+                  <p className="text-sm text-slate-500">{guidanceModeLabel(result.effectiveGuidance.mode)}</p>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <p className="text-xs font-bold uppercase text-slate-500">Expected pressure</p>

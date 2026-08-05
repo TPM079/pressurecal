@@ -377,10 +377,11 @@ export const pressureCleaningTaskRecords: PressureCleaningTaskRecord[] = [
       "Use a pH-neutral stone cleaner; do not use acid cleaners on travertine.",
       "Stop if stone, filler, grout, sealer or jointing material lifts.",
       "Loose or missing joints prevent a normal travertine recommendation.",
-      "Polished, sealed, honed, filled, pool-surround or unknown travertine requires confirmation before numeric pressure guidance.",
+      "Polished, indoor, wall, roof or unknown travertine does not receive a normal pressure-washer setup.",
+      "Confirmed honed, filled, sealed or pool-surround variants use a more conservative PressureCal target and remain caution-only.",
     ],
     preparation: [
-      "Confirm finish, filler, sealer, joints, and installation area.",
+      "Confirm finish, filler, sealer, joints, installation area and any available supplier or sealer instructions.",
       "Require sound stone and joints and complete a test area.",
     ],
     method: [
