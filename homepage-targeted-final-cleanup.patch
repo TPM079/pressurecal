@@ -1,0 +1,11 @@
+--- /mnt/data/pressurecal-homepage-targeted-final-cleanup/HomePage.before.tsx	2026-08-08 13:18:31.773328441 +0000
++++ /mnt/data/pressurecal-homepage-targeted-final-cleanup/HomePage.tsx	2026-08-08 13:18:32.209135025 +0000
+@@ -70,7 +70,7 @@
+   "Save common machines, hoses, nozzles and surface cleaners",
+   "Compare setup changes before swapping parts",
+   "Share setup links with customers, staff or support",
+-  "Generate printable setup reports",
++  "Generate printable setup reports for quoting, records and support",
+ ];
+ 
+ const proofPoints = [

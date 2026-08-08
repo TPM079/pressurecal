@@ -70,7 +70,7 @@ const proFeatures = [
   "Save common machines, hoses, nozzles and surface cleaners",
   "Compare setup changes before swapping parts",
   "Share setup links with customers, staff or support",
-  "Generate printable setup reports",
+  "Generate printable setup reports for quoting, records and support",
 ];
 
 const proofPoints = [
