@@ -129,6 +129,44 @@ function pressureSummary(value?: number) {
   return value !== undefined && Number.isFinite(value) ? `${fmt(value)} PSI` : "—";
 }
 
+function taskLimitSummary(
+  guidance: PressureCleaningTaskGuideResult["effectiveGuidance"]
+) {
+  if (
+    guidance.hardMaximumPsi !== undefined &&
+    Number.isFinite(guidance.hardMaximumPsi)
+  ) {
+    return `${guidance.hardMaximumExclusive ? "< " : "≤ "}${fmt(
+      guidance.hardMaximumPsi
+    )} PSI`;
+  }
+
+  if (
+    guidance.editorialRangeMaxPsi !== undefined &&
+    Number.isFinite(guidance.editorialRangeMaxPsi)
+  ) {
+    return `≤ ${fmt(guidance.editorialRangeMaxPsi)} PSI`;
+  }
+
+  return "—";
+}
+
+function taskLimitDescription(
+  guidance: PressureCleaningTaskGuideResult["effectiveGuidance"]
+) {
+  if (guidance.hardMaximumPsi !== undefined) {
+    return guidance.hardMaximumExclusive
+      ? "exclusive task maximum"
+      : "task maximum";
+  }
+
+  if (guidance.editorialRangeMaxPsi !== undefined) {
+    return "working range ceiling";
+  }
+
+  return "no numeric limit published";
+}
+
 function overlapLabel(status: PressureCleaningTaskGuideResult["overlapStatus"]) {
   if (status === "validated-overlap") return "Validated overlap";
   if (status === "no-validated-overlap") return "No validated overlap";
@@ -519,8 +557,11 @@ export default function PressureCleaningTaskGuidePage() {
                   </div>
                 ) : null}
               </div>
-              <Link className="mt-3 inline-flex text-sm font-semibold text-cyan-700" to={taskPath(task)}>
-                Open task detail URL
+              <Link
+                className="mt-3 inline-flex text-sm font-semibold text-cyan-700 transition hover:text-cyan-800"
+                to={taskPath(task)}
+              >
+                View full task guide
               </Link>
             </div>
 
@@ -608,16 +649,20 @@ export default function PressureCleaningTaskGuidePage() {
                   </select>
                 </label>
                 <label className="text-sm font-semibold text-slate-700">
-                  Current orifice size per nozzle
+                  Current nozzle size
                   <input
                     value={input.currentNozzleText}
                     onChange={(event) => update("currentNozzleText", event.target.value)}
                     className="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                    placeholder="e.g. 030 or 3.0"
                   />
                 </label>
               </div>
               <p className="mt-2 text-xs leading-5 text-slate-500">
-                Enter an orifice size such as 3.0 or a nozzle code such as 030. Spray angle changes spray pattern and impact, not hydraulic pressure. Surface-cleaner diameter is recorded for reference and does not alter the hydraulic nozzle-pressure calculation.
+                Enter a nozzle size such as 3.0 or a tip code such as 030. Spray angle changes
+                spray pattern and impact, not hydraulic pressure. Surface-cleaner diameter is
+                recorded for reference and does not alter the hydraulic nozzle-pressure
+                calculation.
               </p>
 
               {hasField(task, "materialFinish") ? (
@@ -869,11 +914,20 @@ export default function PressureCleaningTaskGuidePage() {
                 </span>
               </div>
 
-              <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <p className="text-xs font-bold uppercase text-slate-500">Task target</p>
                   <p className="mt-2 text-2xl font-black text-slate-950">{pressureSummary(result.targetPressurePsi)}</p>
                   <p className="text-sm text-slate-500">{guidanceModeLabel(result.effectiveGuidance.mode)}</p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-xs font-bold uppercase text-slate-500">Task limit</p>
+                  <p className="mt-2 text-2xl font-black text-slate-950">
+                    {taskLimitSummary(result.effectiveGuidance)}
+                  </p>
+                  <p className="text-sm text-slate-500">
+                    {taskLimitDescription(result.effectiveGuidance)}
+                  </p>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <p className="text-xs font-bold uppercase text-slate-500">Expected pressure</p>
@@ -886,9 +940,15 @@ export default function PressureCleaningTaskGuidePage() {
                   <p className="text-sm text-slate-500">overall status</p>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-xs font-bold uppercase text-slate-500">Machine max</p>
-                  <p className="mt-2 text-2xl font-black text-slate-950">{fmt(result.maxMachinePressurePsi)} PSI</p>
-                  <p className="text-sm text-slate-500">rated unless overridden</p>
+                  <p className="text-xs font-bold uppercase text-slate-500">
+                    Machine rating
+                  </p>
+                  <p className="mt-2 text-2xl font-black text-slate-950">
+                    {fmt(result.maxMachinePressurePsi)} PSI
+                  </p>
+                  <p className="text-sm text-slate-500">
+                    machine limit, not task target
+                  </p>
                 </div>
               </div>
 
