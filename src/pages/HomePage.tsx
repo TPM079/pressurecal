@@ -66,11 +66,11 @@ const toolCards: ToolCard[] = [
 ];
 
 const proFeatures = [
-  "Open the Full Setup Calculator for hose ID, nozzle mode, maximum pressure, engine power and deeper setup limits",
-  "Save common machines, hoses, nozzles, and surface cleaners",
+  "Model hose ID, nozzle mode, maximum pressure and engine power",
+  "Save common machines, hoses, nozzles and surface cleaners",
   "Compare setup changes before swapping parts",
-  "Share setup links with customers, staff, or support",
-  "Generate printable setup reports for quoting, records, and support",
+  "Share setup links with customers, staff or support",
+  "Generate printable setup reports",
 ];
 
 const proofPoints = [
@@ -102,15 +102,12 @@ const converterLinks = [
   {
     href: "/psi-bar-calculator",
     title: "PSI ↔ BAR Converter",
-    description: "Quick pressure conversion when you just need the numbers.",
   },
   {
     href: "/lpm-gpm-calculator",
     title: "LPM ↔ GPM (US) Converter",
-    description: "Quick flow conversion using US gallons per minute for specs, nozzle checks, and setup work.",
   },
 ];
-
 
 const useCaseCards = [
   {
@@ -339,38 +336,32 @@ export default function HomePage() {
   const performanceCards = [
     {
       label: "At-gun pressure",
-      primary:
+      value:
         inputs.pumpPressureUnit === "psi"
-          ? `${fmt(solved.gunPressurePsi, 0)} PSI`
-          : `${fmt(gunBar, 1)} BAR`,
-      secondary:
-        inputs.pumpPressureUnit === "psi"
-          ? `${fmt(gunBar, 1)} BAR`
-          : `${fmt(solved.gunPressurePsi, 0)} PSI`,
+          ? `${fmt(solved.gunPressurePsi, 0)} PSI · ${fmt(gunBar, 1)} BAR`
+          : `${fmt(gunBar, 1)} BAR · ${fmt(solved.gunPressurePsi, 0)} PSI`,
     },
     {
       label: "Hose loss",
-      primary:
+      value:
         inputs.pumpPressureUnit === "psi"
-          ? `${fmt(solved.hoseLossPsi, 0)} PSI`
-          : `${fmt(lossBar, 1)} BAR`,
-      secondary: efficiencyTier,
+          ? `${fmt(solved.hoseLossPsi, 0)} PSI · ${fmt(lossBar, 1)} BAR`
+          : `${fmt(lossBar, 1)} BAR · ${fmt(solved.hoseLossPsi, 0)} PSI`,
+      note: `${efficiencyTier} · ${efficiencyNote}`,
+      showHoseLink: true,
     },
     {
       label: "Gun flow",
-      primary:
+      value:
         inputs.pumpFlowUnit === "lpm"
-          ? `${fmt(gunLpm, 0)} LPM`
-          : `${fmt(solved.gunFlowGpm, 2)} GPM`,
-      secondary:
-        inputs.pumpFlowUnit === "lpm"
-          ? `${fmt(solved.gunFlowGpm, 2)} GPM`
-          : `${fmt(gunLpm, 0)} LPM`,
+          ? `${fmt(gunLpm, 0)} LPM · ${fmt(solved.gunFlowGpm, 2)} GPM`
+          : `${fmt(solved.gunFlowGpm, 2)} GPM · ${fmt(gunLpm, 0)} LPM`,
     },
     {
       label: "Nozzle status",
-      primary: systemBadge.text,
-      secondary: `Nozzle / tip code ${recommendedTip}`,
+      value: solved.isPressureLimited
+        ? `${systemBadge.text} · ${statusBadge.text} · tip code ${recommendedTip}`
+        : `${statusBadge.text} · tip code ${recommendedTip}`,
     },
   ];
 
@@ -519,7 +510,7 @@ export default function HomePage() {
 </Helmet>
 
       <section className="-mx-4 -mt-8 overflow-hidden border-b border-slate-200 bg-white px-4 sm:-mt-10">
-        <div className="mx-auto max-w-6xl py-9 sm:py-12 lg:py-14">
+        <div className="mx-auto max-w-6xl py-8 sm:py-11 lg:py-12">
           <div className="max-w-4xl">
             <h1 className="max-w-3xl text-3xl font-bold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
               Pressure Washer Calculator for Real-World Pressure
@@ -533,7 +524,7 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={scrollToCalculator}
-                className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
+                className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2"
               >
                 Check My Setup
               </button>
@@ -546,7 +537,7 @@ export default function HomePage() {
                     location: "hero",
                   })
                 }
-                className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-950"
+                className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2"
               >
                 Full Calculator
               </Link>
@@ -555,13 +546,16 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="calculator" className="-mx-4 border-b border-slate-200 bg-slate-50/70 px-4">
-        <div className="mx-auto max-w-6xl py-8 sm:py-12 lg:py-12">
+      <section
+        id="calculator"
+        className="-mx-4 scroll-mt-20 border-b border-slate-200 bg-slate-50/70 px-4"
+      >
+        <div className="mx-auto max-w-6xl py-7 sm:py-10 lg:py-11">
           <div className="max-w-3xl">
             <h2 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-4xl">
               Quick Setup Check
             </h2>
-            <p className="mt-3 text-base leading-7 text-slate-600 sm:text-lg">
+            <p className="mt-2 text-base leading-7 text-slate-600 sm:mt-3 sm:text-lg">
               Enter your pressure washer specs. Takes about 10 seconds.
             </p>
             {loadedFromLink ? (
@@ -571,13 +565,11 @@ export default function HomePage() {
             ) : null}
           </div>
 
-          <div className="mt-6 grid gap-5 lg:grid-cols-[1.05fr_0.95fr]">
+          <div className="mt-5 grid gap-4 lg:grid-cols-[1.05fr_0.95fr] lg:gap-5">
             <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
-              <div>
-                <h3 className="text-xl font-semibold text-slate-950 sm:text-2xl">Your setup</h3>
-              </div>
+              <h3 className="text-xl font-semibold text-slate-950 sm:text-2xl">Your setup</h3>
 
-              <div className="mt-5 grid gap-4 sm:mt-7 sm:gap-5">
+              <div className="mt-5 grid gap-4 sm:mt-6 sm:gap-5">
                 <div>
                   <label className="block text-sm font-medium text-slate-700">
                     Pump pressure ({inputs.pumpPressureUnit.toUpperCase()})
@@ -751,214 +743,197 @@ export default function HomePage() {
                   </div>
                 </div>
               </div>
-
-              <div className="mt-6 rounded-3xl border border-slate-200 bg-slate-50 p-5 text-center sm:mt-8 sm:p-6">
-                <p className="text-sm font-medium text-slate-600">Recommended nozzle / tip code</p>
-                <p className="mt-3 text-5xl font-semibold tracking-tight text-slate-950 sm:text-6xl">
-                  {recommendedTip}
-                </p>
-                <p className="mt-3 text-sm text-slate-600">
-                  Rated flow{" "}
-                  <span className="font-semibold text-slate-900">{fmt(flowLpm, 0)} LPM</span>
-                  {" · "}
-                  Estimated hose loss{" "}
-                  <span className="font-semibold text-slate-900">
-                    {fmt(solved.hoseLossPsi, 0)} PSI
-                  </span>
-                </p>
-
-                <CalculationExplainer
-                  className="mt-6"
-                  formula={
-                    <div className="space-y-2">
-                      <p>
-                        PressureCal converts the entered flow to US GPM, converts pressure to PSI,
-                        estimates the matching nozzle / tip code using the 4000 PSI nozzle convention,
-                        then estimates hose loss and likely at-gun pressure.
-                      </p>
-                      <p className="font-mono text-xs text-slate-600">
-                        Pressure at gun = Pump pressure - Estimated hose loss
-                      </p>
-                    </div>
-                  }
-                  inputs={[
-                    {
-                      label: "Pump pressure",
-                      value: `${fmt(Number(inputs.pumpPressure || 0), inputs.pumpPressureUnit === "psi" ? 0 : 1)} ${
-                        inputs.pumpPressureUnit === "psi" ? "PSI" : "BAR"
-                      }`,
-                      note: `${fmt(pressurePsi, 0)} PSI used internally.`,
-                    },
-                    {
-                      label: "Pump flow",
-                      value:
-                        inputs.pumpFlowUnit === "lpm"
-                          ? `${fmt(Number(inputs.pumpFlow || 0), 1)} LPM`
-                          : `${fmt(Number(inputs.pumpFlow || 0), 2)} GPM (US)`,
-                      note: `${fmt(flowLpm, 1)} LPM / ${fmt(flowGpm, 2)} US GPM after unit conversion.`,
-                    },
-                    {
-                      label: "Hose length",
-                      value: `${fmt(Number(inputs.hoseLength || 0), 1)} ${hoseLengthShortUnit}`,
-                      note: 'Quick setup check assumes 9.53 mm (3/8") hose ID.',
-                    },
-                    {
-                      label: "Reference pressure",
-                      value: "4000 PSI",
-                      note: "Pressure washer nozzle codes are commonly based on US GPM at 4000 PSI.",
-                    },
-                  ]}
-                  results={[
-                    {
-                      label: "Recommended nozzle / tip code",
-                      value: recommendedTip,
-                      note: "Rounded to the nearest practical pressure washer nozzle code.",
-                    },
-                    {
-                      label: "Estimated hose loss",
-                      value: `${fmt(solved.hoseLossPsi, 0)} PSI (${fmt(lossBar, 1)} BAR)`,
-                      note: efficiencyTier,
-                    },
-                    {
-                      label: "Estimated at-gun pressure",
-                      value: `${fmt(solved.gunPressurePsi, 0)} PSI (${fmt(gunBar, 1)} BAR)`,
-                    },
-                    {
-                      label: "Estimated gun flow",
-                      value: `${fmt(gunLpm, 1)} LPM (${fmt(solved.gunFlowGpm, 2)} GPM)`,
-                    },
-                  ]}
-                  explanation={
-                    <p>
-                      This quick setup check gives operators a practical starting point from the main
-                      pressure, flow, and hose length inputs. For deeper setup control, open the full setup
-                      calculator and check hose ID, nozzle mode, maximum pressure, engine HP, and other limits.
-                    </p>
-                  }
-                  disclaimer={
-                    <p>
-                      Use this as a setup estimate only. Always confirm with a pressure gauge and check pump,
-                      hose, reel, gun, lance, fittings, nozzle, surface cleaner, and manufacturer limits before
-                      making equipment decisions.
-                    </p>
-                  }
-                />
-
-                <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-                  <button
-                    type="button"
-                    onClick={copySetupLink}
-                    className="rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-                  >
-                    {copyMessage ? "Copied!" : "Copy link"}
-                  </button>
-
-                  <Link
-                    to={fullRigHref}
-                    onClick={() =>
-                      trackEvent("open_full_setup_calculator_clicked", {
-                        page: "home",
-                        location: "calculator_result",
-                      })
-                    }
-                    className="rounded-2xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-950"
-                  >
-                    Open Full Setup Calculator
-                  </Link>
-                </div>
-
-                {copyMessage ? (
-                  <p
-                    role="status"
-                    aria-live="polite"
-                    className="mt-3 text-center text-sm font-semibold text-green-700"
-                  >
-                    {copyMessage}
-                  </p>
-                ) : null}
-              </div>
             </div>
 
-            <div className="space-y-5 sm:space-y-6">
-              <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-                <div className="flex flex-wrap items-center gap-3">
-                  <span
-                    className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${systemBadge.cls}`}
-                  >
-                    {systemBadge.text}
-                  </span>
-                </div>
-
-                <h3 className="mt-5 text-xl font-semibold text-slate-950">
+            <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  Quick result
+                </p>
+                <h3 className="mt-1 text-xl font-semibold text-slate-950 sm:text-2xl">
                   Setup performance
                 </h3>
-
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  See nozzle match, hose loss, and at-gun pressure and flow in one place.
-                </p>
-
-                <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                  {performanceCards.map((card) => (
-                    <div
-                      key={card.label}
-                      className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
-                    >
-                      <p className="text-xs uppercase tracking-[0.14em] text-slate-500">
-                        {card.label}
-                      </p>
-                      <p className="mt-2 text-lg font-semibold text-slate-950">
-                        {card.primary}
-                      </p>
-                      <p className="mt-1 text-sm text-slate-600">{card.secondary}</p>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm font-semibold text-slate-900">What the loss means</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">{efficiencyNote}</p>
-                  <Link
-                    to="/hose-pressure-loss-calculator"
-                    onClick={() =>
-                      trackEvent("internal_link_clicked", {
-                        page: "home",
-                        destination: "hose_pressure_loss_calculator",
-                        location: "loss_meaning_card",
-                      })
-                    }
-                    className="mt-3 inline-flex text-sm font-semibold text-slate-950 underline decoration-slate-300 underline-offset-4 hover:decoration-slate-700"
-                  >
-                    Check hose pressure drop in detail →
-                  </Link>
-                </div>
               </div>
+
+              <div className="mt-4 flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <p className="text-sm font-medium text-slate-600">Recommended nozzle / tip code</p>
+                <p className="shrink-0 text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
+                  {recommendedTip}
+                </p>
+              </div>
+
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                {performanceCards.map((card) => (
+                  <div
+                    key={card.label}
+                    className="rounded-2xl border border-slate-200 bg-slate-50 p-3.5 sm:p-4"
+                  >
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.13em] text-slate-500">
+                      {card.label}
+                    </p>
+                    <p className="mt-1.5 text-base font-semibold leading-6 text-slate-950 sm:text-lg">
+                      {card.value}
+                    </p>
+                    {card.note ? (
+                      <p className="mt-1 text-xs leading-5 text-slate-600 sm:text-sm">
+                        {card.note}
+                      </p>
+                    ) : null}
+                    {card.showHoseLink ? (
+                      <Link
+                        to="/hose-pressure-loss-calculator"
+                        onClick={() =>
+                          trackEvent("internal_link_clicked", {
+                            page: "home",
+                            destination: "hose_pressure_loss_calculator",
+                            location: "loss_meaning_card",
+                          })
+                        }
+                        className="mt-2 inline-flex text-xs font-semibold text-slate-950 underline decoration-slate-300 underline-offset-4 hover:decoration-slate-700 sm:text-sm"
+                      >
+                        Check hose pressure drop in detail →
+                      </Link>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+
+              <CalculationExplainer
+                className="mt-4"
+                formula={
+                  <div className="space-y-2">
+                    <p>
+                      PressureCal converts the entered flow to US GPM, converts pressure to PSI,
+                      estimates the matching nozzle / tip code using the 4000 PSI nozzle convention,
+                      then estimates hose loss and likely at-gun pressure.
+                    </p>
+                    <p className="font-mono text-xs text-slate-600">
+                      Pressure at gun = Pump pressure - Estimated hose loss
+                    </p>
+                  </div>
+                }
+                inputs={[
+                  {
+                    label: "Pump pressure",
+                    value: `${fmt(Number(inputs.pumpPressure || 0), inputs.pumpPressureUnit === "psi" ? 0 : 1)} ${
+                      inputs.pumpPressureUnit === "psi" ? "PSI" : "BAR"
+                    }`,
+                    note: `${fmt(pressurePsi, 0)} PSI used internally.`,
+                  },
+                  {
+                    label: "Pump flow",
+                    value:
+                      inputs.pumpFlowUnit === "lpm"
+                        ? `${fmt(Number(inputs.pumpFlow || 0), 1)} LPM`
+                        : `${fmt(Number(inputs.pumpFlow || 0), 2)} GPM (US)`,
+                    note: `${fmt(flowLpm, 1)} LPM / ${fmt(flowGpm, 2)} US GPM after unit conversion.`,
+                  },
+                  {
+                    label: "Hose length",
+                    value: `${fmt(Number(inputs.hoseLength || 0), 1)} ${hoseLengthShortUnit}`,
+                    note: 'Quick setup check assumes 9.53 mm (3/8") hose ID.',
+                  },
+                  {
+                    label: "Reference pressure",
+                    value: "4000 PSI",
+                    note: "Pressure washer nozzle codes are commonly based on US GPM at 4000 PSI.",
+                  },
+                ]}
+                results={[
+                  {
+                    label: "Recommended nozzle / tip code",
+                    value: recommendedTip,
+                    note: "Rounded to the nearest practical pressure washer nozzle code.",
+                  },
+                  {
+                    label: "Estimated hose loss",
+                    value: `${fmt(solved.hoseLossPsi, 0)} PSI (${fmt(lossBar, 1)} BAR)`,
+                    note: efficiencyTier,
+                  },
+                  {
+                    label: "Estimated at-gun pressure",
+                    value: `${fmt(solved.gunPressurePsi, 0)} PSI (${fmt(gunBar, 1)} BAR)`,
+                  },
+                  {
+                    label: "Estimated gun flow",
+                    value: `${fmt(gunLpm, 1)} LPM (${fmt(solved.gunFlowGpm, 2)} GPM)`,
+                  },
+                ]}
+                explanation={
+                  <p>
+                    This quick setup check gives operators a practical starting point from the main
+                    pressure, flow, and hose length inputs. For deeper setup control, open the full setup
+                    calculator and check hose ID, nozzle mode, maximum pressure, engine HP, and other limits.
+                  </p>
+                }
+                disclaimer={
+                  <p>
+                    Use this as a setup estimate only. Always confirm with a pressure gauge and check pump,
+                    hose, reel, gun, lance, fittings, nozzle, surface cleaner, and manufacturer limits before
+                    making equipment decisions.
+                  </p>
+                }
+              />
+
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={copySetupLink}
+                  className="inline-flex min-h-11 items-center justify-center rounded-2xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2"
+                >
+                  {copyMessage ? "Copied!" : "Copy link"}
+                </button>
+
+                <Link
+                  to={fullRigHref}
+                  onClick={() =>
+                    trackEvent("open_full_setup_calculator_clicked", {
+                      page: "home",
+                      location: "calculator_result",
+                    })
+                  }
+                  className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-center text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2"
+                >
+                  Full Calculator
+                </Link>
+              </div>
+
+              {copyMessage ? (
+                <p
+                  role="status"
+                  aria-live="polite"
+                  className="mt-2 text-center text-sm font-semibold text-green-700"
+                >
+                  {copyMessage}
+                </p>
+              ) : null}
             </div>
           </div>
         </div>
       </section>
 
       <section className="border-b border-slate-200 bg-white">
-        <div className="mx-auto max-w-6xl px-4 py-10 sm:py-14">
+        <div className="mx-auto max-w-6xl px-4 py-8 sm:py-10 lg:py-11">
           <div className="max-w-4xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 sm:text-sm">
               Why does this matter?
             </p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
+            <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 sm:mt-3 sm:text-4xl">
               Your machine’s rated PSI isn’t necessarily what reaches the gun.
             </h2>
-            <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600 sm:text-lg sm:leading-8">
+            <p className="mt-3 max-w-3xl text-base leading-7 text-slate-600 sm:mt-4 sm:text-lg sm:leading-8">
               PressureCal connects the pressure, flow, hose and nozzle so you can see what the setup is likely doing in the real world and spot mismatches before changing parts.
             </p>
           </div>
 
-          <div className="mt-7 grid gap-4 sm:grid-cols-2">
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 sm:gap-4">
             {proofPoints.map((item) => (
               <div
                 key={item.title}
-                className="rounded-3xl border border-slate-200 bg-slate-50 p-5 shadow-sm sm:p-6"
+                className="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm sm:p-5"
               >
-                <h3 className="text-lg font-semibold text-slate-950">{item.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
+                <h3 className="text-base font-semibold text-slate-950 sm:text-lg">{item.title}</h3>
+                <p className="mt-1.5 text-sm leading-6 text-slate-600">{item.description}</p>
               </div>
             ))}
           </div>
@@ -966,20 +941,20 @@ export default function HomePage() {
       </section>
 
       <section className="border-b border-slate-200 bg-slate-950 text-white">
-        <div className="mx-auto max-w-6xl px-4 py-10 sm:py-14">
-          <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+        <div className="mx-auto max-w-6xl px-4 py-8 sm:py-10 lg:py-11">
+          <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
             <div className="max-w-2xl">
-              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-300">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-300 sm:text-sm">
                 Full calculator + PressureCal Pro
               </p>
-              <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+              <h2 className="mt-2 text-2xl font-bold tracking-tight sm:mt-3 sm:text-4xl">
                 Go further when a quick check isn’t enough
               </h2>
-              <p className="mt-4 text-base leading-7 text-slate-300 sm:text-lg">
+              <p className="mt-3 text-base leading-7 text-slate-300 sm:mt-4 sm:text-lg">
                 Use the full calculator for deeper setup modelling, then save, compare and share repeat setups with PressureCal Pro.
               </p>
 
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-5 flex flex-col gap-3 sm:flex-row">
                 <Link
                   to={fullRigHref}
                   onClick={() =>
@@ -988,7 +963,7 @@ export default function HomePage() {
                       location: "features_section",
                     })
                   }
-                  className="inline-flex items-center justify-center rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-200"
+                  className="inline-flex min-h-11 items-center justify-center rounded-2xl bg-white px-6 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
                 >
                   Full Calculator
                 </Link>
@@ -1001,44 +976,47 @@ export default function HomePage() {
                       location: "features_section",
                     })
                   }
-                  className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+                  className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
                 >
                   See Pro Plans
                 </Link>
               </div>
             </div>
 
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-5 sm:p-6">
-              <div className="grid gap-3">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5">
+              <ul className="grid gap-x-6 gap-y-2.5 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
                 {proFeatures.map((feature) => (
-                  <div
-                    key={feature}
-                    className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-100 sm:py-4"
-                  >
-                    {feature}
-                  </div>
+                  <li key={feature} className="flex gap-2.5 text-sm leading-5 text-slate-100">
+                    <span
+                      aria-hidden="true"
+                      className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-xs font-bold"
+                    >
+                      ✓
+                    </span>
+                    <span>{feature}</span>
+                  </li>
                 ))}
-              </div>
+              </ul>
             </div>
           </div>
         </div>
       </section>
 
       <section className="border-b border-slate-200 bg-white">
-        <div className="mx-auto max-w-6xl px-4 py-10 sm:py-14">
+        <div className="mx-auto max-w-6xl px-4 py-8 sm:py-10 lg:py-11">
           <div className="max-w-4xl">
-            <h2 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
+            <h2 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-4xl">
               Pressure washer calculator tools and guides
             </h2>
-            <p className="mt-4 text-base leading-7 text-slate-600 sm:text-lg sm:leading-8">
+            <p className="mt-3 text-base leading-7 text-slate-600 sm:mt-4 sm:text-lg sm:leading-8">
               Use a dedicated tool when you only need one answer, or open the full setup calculator when pressure, flow, hose and nozzle choice need to be checked together.
             </p>
           </div>
 
-          <div className="mt-8">
-            <h3 className="text-xl font-semibold text-slate-950">Pressure washer calculator tools</h3>
+          <div className="mt-6">
+            <h3 className="text-lg font-semibold text-slate-950 sm:text-xl">Pressure washer calculator tools</h3>
 
-            <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
               {supportingToolCards.map((item, index) => (
                 <Link
                   key={item.title}
@@ -1049,47 +1027,33 @@ export default function HomePage() {
                       tool: item.title,
                     })
                   }
-                  className={`${index > 1 ? "hidden md:block " : ""}rounded-3xl border border-slate-200 bg-slate-50 p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-white hover:shadow-md sm:p-6`}
+                  className={`${index > 1 ? "hidden md:block " : ""}rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-white hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 sm:p-5`}
                 >
-                  <h4 className="text-lg font-semibold text-slate-950 sm:text-xl">{item.title}</h4>
-                  <p className="mt-3 text-sm leading-6 text-slate-600">{item.description}</p>
-                  <p className="mt-5 text-sm font-semibold text-slate-950">{item.cta}</p>
+                  <h4 className="text-base font-semibold leading-6 text-slate-950 sm:text-lg">{item.title}</h4>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
+                  <p className="mt-3 text-sm font-semibold text-slate-950">{item.cta}</p>
                 </Link>
               ))}
             </div>
-            <p className="mt-4 text-sm text-slate-500 md:hidden">
+            <p className="mt-3 text-sm text-slate-500 md:hidden">
               More tools are available from the Tools menu.
             </p>
           </div>
 
-          <div className="mt-10 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+          <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
               Quick unit tools
             </p>
 
-            <div className="mt-4 grid gap-3 sm:hidden">
+            <div className="grid flex-1 gap-2 sm:grid-cols-2 sm:gap-3 lg:max-w-2xl">
               {converterLinks.map((item) => (
                 <Link
                   key={item.title}
                   to={item.href}
-                  className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 transition hover:border-slate-300"
+                  className="flex min-h-11 items-center justify-between rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-950 transition hover:border-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2"
                 >
-                  <span className="text-sm font-semibold text-slate-950">{item.title}</span>
-                  <span className="text-sm font-semibold text-slate-950">Open tool →</span>
-                </Link>
-              ))}
-            </div>
-
-            <div className="mt-4 hidden gap-4 md:grid md:grid-cols-2">
-              {converterLinks.map((item) => (
-                <Link
-                  key={item.title}
-                  to={item.href}
-                  className="rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-slate-300"
-                >
-                  <p className="text-sm font-semibold text-slate-950">{item.title}</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
-                  <p className="mt-4 text-sm font-semibold text-slate-950">Open {item.title} →</p>
+                  <span>{item.title}</span>
+                  <span aria-hidden="true">→</span>
                 </Link>
               ))}
             </div>
@@ -1098,26 +1062,26 @@ export default function HomePage() {
       </section>
 
       <section className="border-b border-slate-200 bg-white">
-        <div className="mx-auto max-w-6xl px-4 py-10 sm:py-14">
+        <div className="mx-auto max-w-6xl px-4 py-8 sm:py-10 lg:py-11">
           <div className="max-w-3xl">
-            <h2 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
+            <h2 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-4xl">
               Common pressure washer setup problems to check
             </h2>
-            <p className="mt-4 text-lg leading-8 text-slate-600">
+            <p className="mt-3 text-base leading-7 text-slate-600 sm:mt-4 sm:text-lg sm:leading-8">
               These are common signs that hose loss, nozzle sizing or the overall setup should be checked before blaming the machine.
             </p>
           </div>
 
-          <div className="mt-7 grid gap-4 md:grid-cols-2 md:gap-5">
-            {useCaseCards.map((item, index) => (
+          <div className="mt-5 grid gap-3 md:grid-cols-2 md:gap-4">
+            {useCaseCards.map((item) => (
               <div
                 key={item.title}
-                className={`${index > 1 ? "hidden md:block " : ""}rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6`}
+                className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5"
               >
-                <h3 className="text-lg font-semibold text-slate-950">
+                <h3 className="text-base font-semibold leading-6 text-slate-950 sm:text-lg">
                   {item.title}
                 </h3>
-                <p className="mt-3 text-sm leading-7 text-slate-600">
+                <p className="mt-2 text-sm leading-6 text-slate-600">
                   {item.description}
                 </p>
 
@@ -1131,42 +1095,13 @@ export default function HomePage() {
                         location: "use_case_hose_length",
                       })
                     }
-                    className="mt-4 inline-flex text-sm font-semibold text-slate-950 underline decoration-slate-300 underline-offset-4 hover:decoration-slate-700"
+                    className="mt-3 inline-flex text-sm font-semibold text-slate-950 underline decoration-slate-300 underline-offset-4 hover:decoration-slate-700"
                   >
                     Estimate pressure loss through your hose →
                   </Link>
                 ) : null}
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-slate-950 text-white">
-        <div className="mx-auto grid max-w-6xl gap-8 px-4 py-14 sm:py-16 lg:grid-cols-[1fr_auto] lg:items-end">
-          <div className="max-w-3xl">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Open the full setup calculator and check the whole setup properly
-            </h2>
-            <p className="mt-4 text-base leading-7 text-slate-300">
-              Load in your pressure, flow, hose, and nozzle and get a clearer read on
-              nozzle match, hose loss, and what the setup is likely doing at the gun.
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Link
-              to={fullRigHref}
-              onClick={() =>
-                trackEvent("open_full_setup_calculator_clicked", {
-                  page: "home",
-                  location: "final_cta",
-                })
-              }
-              className="inline-flex items-center justify-center rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-200"
-            >
-              Open Full Setup Calculator
-            </Link>
           </div>
         </div>
       </section>

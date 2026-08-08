@@ -38,7 +38,7 @@ const OPEN_FEEDBACK_EVENT = "pressurecal:open-feedback";
 
 function navLinkClass(isActive: boolean) {
   return [
-    "text-sm font-medium transition",
+    "whitespace-nowrap text-sm font-medium transition",
     isActive ? "text-slate-950" : "text-slate-600 hover:text-slate-900",
   ].join(" ");
 }
@@ -100,11 +100,11 @@ export default function PressureCalLayout({
             <img
               src="/pressurecal-logo-primary.png"
               alt="PressureCal"
-              className="block h-auto w-[170px] shrink-0 sm:w-[250px] lg:w-[270px]"
+              className="block h-auto w-[170px] shrink-0 sm:w-[220px] lg:w-[220px] xl:w-[250px]"
             />
           </Link>
 
-          <nav className="hidden items-center gap-5 md:flex">
+          <nav className="hidden items-center gap-3 lg:flex xl:gap-4">
             <Link to={proLinkTo} className={navLinkClass(location.pathname === "/pricing")}>
               PressureCal Pro
             </Link>
@@ -114,7 +114,7 @@ export default function PressureCalLayout({
                 type="button"
                 onClick={() => setToolsOpen((current) => !current)}
                 className={[
-                  "inline-flex items-center gap-1 text-sm font-medium transition",
+                  "inline-flex items-center gap-1 whitespace-nowrap text-sm font-medium transition",
                   toolsOpen ? "text-slate-950" : "text-slate-600 hover:text-slate-900",
                 ].join(" ")}
                 aria-expanded={toolsOpen}
@@ -153,15 +153,15 @@ export default function PressureCalLayout({
             </Link>
 
             {isCalculatorPage ? (
-              <span className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-500">
+              <span className="inline-flex items-center justify-center whitespace-nowrap rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-500 xl:px-4">
                 Full Setup Calculator
               </span>
             ) : (
               <Link
                 to="/calculator"
-                className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 xl:px-4"
               >
-                Open Full Setup Calculator
+                Full Setup Calculator
               </Link>
             )}
 
@@ -175,7 +175,7 @@ export default function PressureCalLayout({
                   type="button"
                   onClick={handleSignOut}
                   disabled={signingOut}
-                  className="inline-flex items-center justify-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex items-center justify-center whitespace-nowrap rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 xl:px-4"
                 >
                   {signingOut ? "Signing out..." : "Sign out"}
                 </button>
@@ -183,14 +183,14 @@ export default function PressureCalLayout({
             ) : (
               <Link
                 to="/account"
-                className="inline-flex items-center justify-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 xl:px-4"
               >
                 Sign in
               </Link>
             )}
           </nav>
 
-          <div className="flex items-center gap-2 md:hidden">
+          <div className="flex items-center gap-2 lg:hidden">
             {!isCalculatorPage ? (
               <Link
                 to="/calculator"
@@ -213,7 +213,7 @@ export default function PressureCalLayout({
         </div>
 
         {mobileMenuOpen ? (
-          <div className="border-t border-slate-100 bg-white md:hidden">
+          <div className="border-t border-slate-100 bg-white lg:hidden">
             <div className="mx-auto max-w-6xl px-4 py-4">
               <div className="grid gap-2">
                 <Link
