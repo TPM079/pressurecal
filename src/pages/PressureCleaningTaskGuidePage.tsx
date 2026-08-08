@@ -822,7 +822,7 @@ export default function PressureCleaningTaskGuidePage() {
                 <div id="task-guide-advanced-controls" className="mt-4 space-y-4">
                   <div className="grid gap-3 sm:grid-cols-2">
                     <label className="text-sm font-semibold text-slate-700">
-                      Lower maximum-pressure override
+                      Machine pressure limit override
                       <input type="number" value={valueText(input.maxPressure)} onChange={(event) => update("maxPressure", optionalNum(event.target.value))} className="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
                     </label>
                     <label className="text-sm font-semibold text-slate-700">
@@ -863,17 +863,35 @@ export default function PressureCleaningTaskGuidePage() {
                         <option value="mm">mm</option><option value="in">inch</option>
                       </select>
                     </label>
-                    {[
-                      ["hoseLength", "Hose length"],
-                      ["hoseId", "Hose ID"],
-                      ["mainHoseLength", "Main hose length"],
-                      ["mainHoseId", "Main hose ID"],
-                      ["leaderHoseLength", "Leader length"],
-                      ["leaderHoseId", "Leader ID"],
-                    ].map(([key, label]) => (
+                    {(input.hose.hoseSetupMode === "single"
+                      ? [
+                          ["hoseLength", "Hose length"],
+                          ["hoseId", "Hose ID"],
+                        ]
+                      : [
+                          ["mainHoseLength", "Main hose length"],
+                          ["mainHoseId", "Main hose ID"],
+                          ["leaderHoseLength", "Leader length"],
+                          ["leaderHoseId", "Leader ID"],
+                        ]
+                    ).map(([key, label]) => (
                       <label key={key} className="text-sm font-semibold text-slate-700">
                         {label}
-                        <input type="number" value={valueText(input.hose[key as keyof PressureCleaningTaskGuideInput["hose"]] as number | undefined)} onChange={(event) => updateHose(key as keyof PressureCleaningTaskGuideInput["hose"], optionalNum(event.target.value) as never)} className="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+                        <input
+                          type="number"
+                          value={valueText(
+                            input.hose[
+                              key as keyof PressureCleaningTaskGuideInput["hose"]
+                            ] as number | undefined
+                          )}
+                          onChange={(event) =>
+                            updateHose(
+                              key as keyof PressureCleaningTaskGuideInput["hose"],
+                              optionalNum(event.target.value) as never
+                            )
+                          }
+                          className="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                        />
                       </label>
                     ))}
                   </div>
