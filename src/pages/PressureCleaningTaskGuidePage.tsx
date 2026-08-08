@@ -261,6 +261,26 @@ function hasField(task: PressureCleaningTaskRecord, field: ConditionalField) {
   return task.requiredFields?.includes(field) ?? false;
 }
 
+function HelpTip({ text }: { text: string }) {
+  return (
+    <span className="group relative ml-1 inline-flex align-middle">
+      <span
+        tabIndex={0}
+        aria-label={text}
+        className="inline-flex h-4 w-4 cursor-help items-center justify-center rounded-full border border-slate-300 bg-white text-[10px] font-bold leading-none text-slate-500 outline-none transition hover:border-cyan-400 hover:text-cyan-700 focus:border-cyan-500 focus:text-cyan-700"
+      >
+        ?
+      </span>
+      <span
+        role="tooltip"
+        className="pointer-events-none absolute bottom-full left-1/2 z-40 mb-2 hidden w-64 -translate-x-1/2 rounded-lg bg-slate-950 px-3 py-2 text-left text-[11px] font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block"
+      >
+        {text}
+      </span>
+    </span>
+  );
+}
+
 export default function PressureCleaningTaskGuidePage() {
   const params = useParams();
   const allowDraftPreview = import.meta.env.DEV;
@@ -820,80 +840,243 @@ export default function PressureCleaningTaskGuidePage() {
               </button>
               {advancedOpen ? (
                 <div id="task-guide-advanced-controls" className="mt-4 space-y-4">
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <p className="text-xs leading-5 text-slate-500">
+                    Optional — add manufacturer limits and hose details for more accurate compatibility and
+                    pressure-loss checks. Leave anything you don't know blank.
+                  </p>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
                     <label className="text-sm font-semibold text-slate-700">
-                      Machine pressure limit override
-                      <input type="number" value={valueText(input.maxPressure)} onChange={(event) => update("maxPressure", optionalNum(event.target.value))} className="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+                      <span className="inline-flex items-center">
+                        Machine pressure limit override
+                        <HelpTip text="Use only when the machine is intentionally limited below its rated pressure." />
+                      </span>
+                      <input
+                        type="number"
+                        value={valueText(input.maxPressure)}
+                        onChange={(event) => update("maxPressure", optionalNum(event.target.value))}
+                        className="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                      />
+                      <span className="mt-1 block text-[11px] font-normal leading-4 text-slate-500">
+                        Optional. Enter only if the machine is intentionally limited below its rated pressure.
+                      </span>
                     </label>
+
                     <label className="text-sm font-semibold text-slate-700">
-                      Component-loss allowance
-                      <input type="number" value={valueText(input.componentLossAllowancePsi)} onChange={(event) => update("componentLossAllowancePsi", optionalNum(event.target.value))} className="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+                      <span className="inline-flex items-center">
+                        Component-loss allowance
+                        <HelpTip text="Extra PSI allowance for pressure loss through guns, swivels, fittings, valves or other components not modelled separately." />
+                      </span>
+                      <input
+                        type="number"
+                        value={valueText(input.componentLossAllowancePsi)}
+                        onChange={(event) => update("componentLossAllowancePsi", optionalNum(event.target.value))}
+                        className="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                      />
+                      <span className="mt-1 block text-[11px] font-normal leading-4 text-slate-500">
+                        Optional extra PSI allowance for guns, swivels, fittings or other unmodelled losses.
+                      </span>
                     </label>
+
                     {[
-                      ["attachmentMinPressurePsi", "Attachment minimum pressure"],
-                      ["attachmentMaxPressurePsi", "Attachment maximum pressure"],
-                      ["attachmentMinFlowLpm", "Attachment minimum flow"],
-                      ["attachmentMaxFlowLpm", "Attachment maximum flow"],
-                    ].map(([key, label]) => (
+                      [
+                        "attachmentMinPressurePsi",
+                        "Attachment minimum pressure (PSI)",
+                        "",
+                        "Enter the attachment manufacturer's minimum operating pressure in PSI.",
+                      ],
+                      [
+                        "attachmentMaxPressurePsi",
+                        "Attachment maximum pressure (PSI)",
+                        "",
+                        "Enter the attachment manufacturer's maximum operating pressure in PSI.",
+                      ],
+                      [
+                        "attachmentMinFlowLpm",
+                        "Attachment minimum flow (L/min)",
+                        "",
+                        "Enter the attachment manufacturer's minimum required flow in litres per minute.",
+                      ],
+                      [
+                        "attachmentMaxFlowLpm",
+                        "Attachment maximum flow (L/min)",
+                        "",
+                        "Enter the attachment manufacturer's maximum permitted flow in litres per minute.",
+                      ],
+                    ].map(([key, label, helper, tooltip]) => (
                       <label key={key} className="text-sm font-semibold text-slate-700">
-                        {label}
+                        <span className="inline-flex items-center">
+                          {label}
+                          <HelpTip text={tooltip} />
+                        </span>
                         <input
                           type="number"
                           value={valueText(input[key as keyof PressureCleaningTaskGuideInput] as number | undefined)}
-                          onChange={(event) => update(key as keyof PressureCleaningTaskGuideInput, optionalNum(event.target.value) as never)}
-                          className="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
-                        />
-                      </label>
-                    ))}
-                  </div>
-                  <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-                    <input type="checkbox" checked={input.attachmentMaxPressureExclusive} onChange={(event) => update("attachmentMaxPressureExclusive", event.target.checked)} />
-                    Treat attachment max pressure as exclusive
-                  </label>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <label className="text-sm font-semibold text-slate-700">
-                      Hose setup
-                      <select value={input.hose.hoseSetupMode} onChange={(event) => updateHose("hoseSetupMode", event.target.value === "mainLeader" ? "mainLeader" : "single")} className="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
-                        <option value="single">Single hose</option><option value="mainLeader">Main plus leader</option>
-                      </select>
-                    </label>
-                    <label className="text-sm font-semibold text-slate-700">
-                      Hose ID unit
-                      <select value={input.hose.hoseIdUnit} onChange={(event) => updateHose("hoseIdUnit", event.target.value === "in" ? "in" : "mm")} className="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
-                        <option value="mm">mm</option><option value="in">inch</option>
-                      </select>
-                    </label>
-                    {(input.hose.hoseSetupMode === "single"
-                      ? [
-                          ["hoseLength", "Hose length"],
-                          ["hoseId", "Hose ID"],
-                        ]
-                      : [
-                          ["mainHoseLength", "Main hose length"],
-                          ["mainHoseId", "Main hose ID"],
-                          ["leaderHoseLength", "Leader length"],
-                          ["leaderHoseId", "Leader ID"],
-                        ]
-                    ).map(([key, label]) => (
-                      <label key={key} className="text-sm font-semibold text-slate-700">
-                        {label}
-                        <input
-                          type="number"
-                          value={valueText(
-                            input.hose[
-                              key as keyof PressureCleaningTaskGuideInput["hose"]
-                            ] as number | undefined
-                          )}
                           onChange={(event) =>
-                            updateHose(
-                              key as keyof PressureCleaningTaskGuideInput["hose"],
+                            update(
+                              key as keyof PressureCleaningTaskGuideInput,
                               optionalNum(event.target.value) as never
                             )
                           }
                           className="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
                         />
+                        {helper ? (
+                          <span className="mt-1 block text-[11px] font-normal leading-4 text-slate-500">
+                            {helper}
+                          </span>
+                        ) : null}
                       </label>
                     ))}
+                  </div>
+
+                  <div>
+                    <label className="flex items-start gap-2 text-sm font-semibold text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={input.attachmentMaxPressureExclusive}
+                        onChange={(event) => update("attachmentMaxPressureExclusive", event.target.checked)}
+                        className="mt-0.5"
+                      />
+                      <span>
+                        <span className="inline-flex items-center">
+                          Maximum is exclusive
+                          <HelpTip text="Tick this only when the stated maximum must not be reached. PressureCal will treat the limit as less-than rather than less-than-or-equal-to." />
+                        </span>
+                      </span>
+                    </label>
+                  </div>
+
+                  <div className="space-y-4">
+                    <label className="block text-sm font-semibold text-slate-700">
+                      <span className="inline-flex items-center">
+                        Hose setup
+                        <HelpTip text="Choose the pressure-hose arrangement between the machine and the attachment." />
+                      </span>
+                      <select
+                        value={input.hose.hoseSetupMode}
+                        onChange={(event) =>
+                          updateHose(
+                            "hoseSetupMode",
+                            event.target.value === "mainLeader" ? "mainLeader" : "single"
+                          )
+                        }
+                        className="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                      >
+                        <option value="single">Single hose</option>
+                        <option value="mainLeader">Main plus leader</option>
+                      </select>
+                    </label>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <label className="text-sm font-semibold text-slate-700">
+                        <span className="inline-flex items-center">
+                          Length unit
+                          <HelpTip text="Choose the unit used for all hose-length entries in this section." />
+                        </span>
+                        <select
+                          value={input.hose.hoseLengthUnit}
+                          onChange={(event) =>
+                            updateHose(
+                              "hoseLengthUnit",
+                              event.target.value === "ft" ? "ft" : "m"
+                            )
+                          }
+                          className="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                        >
+                          <option value="m">m</option>
+                          <option value="ft">ft</option>
+                        </select>
+                      </label>
+
+                      <label className="text-sm font-semibold text-slate-700">
+                        <span className="inline-flex items-center">
+                          Hose ID unit
+                          <HelpTip text="ID means internal diameter, not outside diameter. Choose the unit used for your hose specification." />
+                        </span>
+                        <select
+                          value={input.hose.hoseIdUnit}
+                          onChange={(event) =>
+                            updateHose("hoseIdUnit", event.target.value === "in" ? "in" : "mm")
+                          }
+                          className="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                        >
+                          <option value="mm">mm</option>
+                          <option value="in">inch</option>
+                        </select>
+                      </label>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {(input.hose.hoseSetupMode === "single"
+                        ? [
+                            [
+                              "hoseLength",
+                              "Hose length",
+                              "",
+                              "Enter the total pressure-hose length between the machine and the attachment.",
+                            ],
+                            [
+                              "hoseId",
+                              "Hose ID",
+                              "Internal diameter of the pressure hose.",
+                              "Enter the hose internal diameter, not the outside diameter.",
+                            ],
+                          ]
+                        : [
+                            [
+                              "mainHoseLength",
+                              "Main hose length",
+                              "",
+                              "Enter the length of the main pressure-hose section.",
+                            ],
+                            [
+                              "mainHoseId",
+                              "Main hose ID",
+                              "Internal diameter of the main pressure hose.",
+                              "Enter the internal diameter of the main hose, not its outside diameter.",
+                            ],
+                            [
+                              "leaderHoseLength",
+                              "Leader length",
+                              "",
+                              "Enter the length of the shorter leader-hose section nearest the attachment.",
+                            ],
+                            [
+                              "leaderHoseId",
+                              "Leader ID",
+                              "Internal diameter of the leader hose.",
+                              "Enter the internal diameter of the leader hose, not its outside diameter.",
+                            ],
+                          ]
+                      ).map(([key, label, helper, tooltip]) => (
+                        <label key={key} className="text-sm font-semibold text-slate-700">
+                          <span className="inline-flex items-center">
+                            {label}
+                            <HelpTip text={tooltip} />
+                          </span>
+                          <input
+                            type="number"
+                            value={valueText(
+                              input.hose[
+                                key as keyof PressureCleaningTaskGuideInput["hose"]
+                              ] as number | undefined
+                            )}
+                            onChange={(event) =>
+                              updateHose(
+                                key as keyof PressureCleaningTaskGuideInput["hose"],
+                                optionalNum(event.target.value) as never
+                              )
+                            }
+                            className="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                          />
+                          {helper ? (
+                            <span className="mt-1 block text-[11px] font-normal leading-4 text-slate-500">
+                              {helper}
+                            </span>
+                          ) : null}
+                        </label>
+                      ))}
+                    </div>
                   </div>
                 </div>
               ) : null}
