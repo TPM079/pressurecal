@@ -519,7 +519,6 @@ export default function FullRigCalculatorPage() {
   const [comparePanelOpen, setComparePanelOpen] = useState(false);
   const [compareTargetSetupId, setCompareTargetSetupId] = useState("");
   const [mobileMoreActionsOpen, setMobileMoreActionsOpen] = useState(false);
-  const [mobileSystemDetailsOpen, setMobileSystemDetailsOpen] = useState(false);
   const [saveGateVariant, setSaveGateVariant] = useState<"signed_out" | "pro_required" | null>(null);
   const maxWasManuallyEditedRef = useRef(false);
   const sharePanelRef = useRef<HTMLDivElement | null>(null);
@@ -663,23 +662,17 @@ export default function FullRigCalculatorPage() {
     .filter(Boolean)
     .join(" · ");
   const pressureVariancePct = ratedPsi > 0 ? ((r.gunPressurePsi - ratedPsi) / ratedPsi) * 100 : 0;
-  const lossPctAbs = Math.abs(r.hoseLossPct);
+  const lossPctAbs = Math.abs(pressureVariancePct);
   const efficiencyTier =
-    lossPctAbs < 5
-      ? "Low hose loss"
-      : lossPctAbs < 10
-        ? "Moderate hose loss"
-        : lossPctAbs < 20
-          ? "High hose loss"
-          : "Severe hose loss";
+    lossPctAbs < 5 ? "Optimal" : lossPctAbs < 10 ? "Moderate loss" : lossPctAbs < 20 ? "High loss" : "Severe loss";
   const efficiencyNote =
     lossPctAbs < 5
-      ? "Low hose pressure loss for this setup."
+      ? "Very close to rated performance."
       : lossPctAbs < 10
-        ? "Some hose pressure loss — typically acceptable."
+        ? "Some pressure drop — typically acceptable."
         : lossPctAbs < 20
-          ? "Noticeable hose pressure loss — consider shorter hose length or larger hose ID."
-          : "Large hose pressure loss — hose length or ID is significantly reducing at-gun pressure.";
+          ? "Noticeable drop — consider hose length or diameter."
+          : "Large drop — hose length or ID is significantly reducing performance.";
   const badge = statusBadge(r.status);
   const systemBadge = r.isPressureLimited
     ? { text: "Bypass active", cls: "bg-red-50 text-red-800 border-red-200" }
@@ -713,36 +706,6 @@ export default function FullRigCalculatorPage() {
   const leaderHoseLengthDisplay = Number(inputs.leaderHoseLength || 0);
   const splitHoseTotalLengthDisplay = mainHoseLengthDisplay + leaderHoseLengthDisplay;
   const hoseSetupDisplay = buildHoseSetupSummaryText(inputs);
-
-  const liveSetupItems = [
-    {
-      label: "Pressure",
-      value: `${fmt(Number(inputs.pumpPressure || 0), 0)} ${inputs.pumpPressureUnit === "psi" ? "PSI" : "BAR"}`,
-    },
-    {
-      label: "Flow",
-      value: `${fmt(ratedLpm, 1)} LPM (${fmt(ratedGpm, 2)} GPM)`,
-    },
-    {
-      label: isMainLeaderHose ? "Total hose length" : "Hose length",
-      value: `${fmt(isMainLeaderHose ? totalHoseLengthDisplay : Number(inputs.hoseLength || 0), 1)} ${inputs.hoseLengthUnit}`,
-    },
-    {
-      label: "Hose setup",
-      value: hoseSetupDisplay,
-    },
-    {
-      label: inputs.sprayMode === "surfaceCleaner" ? "Nozzle / tip code per nozzle" : "Nozzle / tip code",
-      value:
-        inputs.sprayMode === "surfaceCleaner"
-          ? `${inputs.nozzleSizeText || "—"} × ${inputs.nozzleCount}`
-          : inputs.nozzleSizeText || "—",
-    },
-    {
-      label: "Engine",
-      value: inputs.engineHp === "" ? "Optional" : formatEnginePowerFromHp(engineHpValue),
-    },
-  ];
 
   const shareUrl = useMemo(() => buildFullSetupShareUrl(inputs), [inputs]);
 
@@ -875,7 +838,7 @@ export default function FullRigCalculatorPage() {
       value: inputs.sprayMode === "surfaceCleaner" ? "Surface cleaner" : "Wand",
     },
     {
-      label: inputs.sprayMode === "surfaceCleaner" ? "Nozzle / tip code per nozzle" : "Nozzle / tip code",
+      label: "Nozzle",
       value: inputs.nozzleSizeText || "—",
     },
   ];
@@ -1075,9 +1038,9 @@ export default function FullRigCalculatorPage() {
       const detailItemGap = 10;
       const stackedDetailGap = 24;
 
-      const selectedDetailText = `Selected nozzle / tip code: ${selectedDisplayTipCode}${nozzleDisplaySuffix}`;
-      const recommendedDetailText = `Recommended nozzle / tip code (pump specs): ${calibratedDisplayTipCode}${nozzleDisplaySuffix} · Recommended nozzle / tip code (actual setup): ${calibratedWithHoseLossDisplayTipCode}${nozzleDisplaySuffix}`;
-      const pressureGuideText = `Hose pressure loss guide: ${efficiencyTier}`;
+      const selectedDetailText = `Selected nozzle / tip code ${selectedDisplayTipCode}${nozzleDisplaySuffix}`;
+      const recommendedDetailText = `Recommended nozzle / tip code (rated pump specs): ${calibratedDisplayTipCode}${nozzleDisplaySuffix} · Recommended nozzle / tip code (modelled setup): ${calibratedWithHoseLossDisplayTipCode}${nozzleDisplaySuffix}`;
+      const pressureGuideText = `Pressure loss guide: ${efficiencyTier}`;
 
       measureCtx.font = `700 24px ${EXPORT_CARD.fontFamily}`;
       const selectedDetailLines = wrapCanvasText(measureCtx, selectedDetailText, detailTextWidth);
@@ -1402,6 +1365,15 @@ export default function FullRigCalculatorPage() {
   const calculatedNozzleLabel = `${calibratedDisplayTipCode}${nozzleDisplaySuffix}`;
   const calculatedNozzleWithHoseLossLabel = `${calibratedWithHoseLossDisplayTipCode}${nozzleDisplaySuffix}`;
   const selectedNozzleLabel = `${selectedDisplayTipCode}${nozzleDisplaySuffix}`;
+  const compactSetupSummary = [
+    `${fmt(Number(inputs.pumpPressure || 0), 0)} ${inputs.pumpPressureUnit.toUpperCase()}`,
+    `${fmt(Number(inputs.pumpFlow || 0), inputs.pumpFlowUnit === "gpm" ? 2 : 1)} ${inputs.pumpFlowUnit.toUpperCase()}`,
+    hoseSetupDisplay,
+    inputs.sprayMode === "surfaceCleaner"
+      ? `Surface cleaner · nozzle / tip code ${inputs.nozzleSizeText || "—"} × ${inputs.nozzleCount}`
+      : `Wand · nozzle / tip code ${inputs.nozzleSizeText || "—"}`,
+    inputs.engineHp === "" ? "Engine power optional" : `Engine ${formatEnginePowerFromHp(engineHpValue)}`,
+  ].join(" · ");
   const sprayModeLabel =
     inputs.sprayMode === "surfaceCleaner"
       ? `Surface cleaner (${inputs.nozzleCount} nozzles)`
@@ -1471,7 +1443,7 @@ export default function FullRigCalculatorPage() {
     {
       label: "Nozzle match",
       value: `${badge.text}: selected nozzle / tip code ${selectedNozzleLabel}`,
-      note: `Recommended nozzle / tip code (pump specs): ${calculatedNozzleLabel}. Recommended nozzle / tip code (actual setup): ${calculatedNozzleWithHoseLossLabel}. ${r.statusMessage}`,
+      note: `Recommended nozzle / tip code (rated pump specs): ${calculatedNozzleLabel}. Recommended nozzle / tip code (modelled setup): ${calculatedNozzleWithHoseLossLabel}. ${r.statusMessage}`,
     },
     {
       label: "Required power",
@@ -1499,9 +1471,9 @@ export default function FullRigCalculatorPage() {
         <link rel="canonical" href="https://www.pressurecal.com/calculator" />
       </Helmet>
 
-      <section className="-mx-4 bg-slate-100 px-4 pb-8 pt-6 sm:pb-10 sm:pt-12">
+      <section className="-mx-4 bg-slate-100 px-4 pb-6 pt-4 sm:pb-10 sm:pt-10">
         <div className="mx-auto max-w-6xl">
-          <div className="mb-5 max-w-3xl sm:mb-8">
+          <div className="mb-4 max-w-3xl sm:mb-6">
             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
               Full setup calculator
             </div>
@@ -1509,106 +1481,618 @@ export default function FullRigCalculatorPage() {
               Pressure Washer Setup Calculator
             </h1>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              Model a complete pressure washer setup from pump specs through hose and nozzle. Estimate hose pressure loss, nozzle match, at-gun pressure, flow and required power in HP or kW in one working view.
+              Model your pump, hose and nozzle to estimate pressure loss, nozzle match, at-gun pressure, flow and required power.
             </p>
-
-            <div className="mt-5 flex flex-wrap gap-3">
-              <Link
-                to="/nozzle-size-calculator"
-                className="rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-950"
-              >
-                Only need a nozzle / tip code? Use the pressure washer nozzle size calculator
-              </Link>
-              <Link
-                to="/target-pressure-nozzle-calculator"
-                className="rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-950"
-              >
-                Trying to lower PSI? Use the target pressure nozzle calculator
-              </Link>
-            </div>
           </div>
 
+          <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+            <section
+              className={`rounded-2xl border bg-white shadow-sm transition-all duration-700 ${
+                highlightSetup ? "border-blue-300 shadow-lg" : "border-slate-200"
+              }`}
+            >
+              <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3.5 sm:px-5 sm:py-4">
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Setup inputs</div>
+                {loadedFromLink ? (
+                  <span className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700">
+                    Shared setup loaded
+                  </span>
+                ) : null}
+              </div>
+
+              <div className="grid gap-4 px-4 py-4 sm:px-5 sm:py-5 lg:grid-cols-2">
+                <div className="border-b border-slate-200 pb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 lg:col-span-2">
+                  Pump
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-800">Rated pressure</label>
+                  <div className="mt-2 flex gap-3">
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      value={inputs.pumpPressure}
+                      onFocus={selectAllOnFocus}
+                      onChange={(event) => {
+                        const nextValue = event.target.value === "" ? "" : Number(event.target.value);
+                        updateInput("pumpPressure", nextValue as Inputs["pumpPressure"]);
+                        if (!maxWasManuallyEditedRef.current) {
+                          updateInput("maxPressure", nextValue as Inputs["maxPressure"]);
+                        }
+                      }}
+                      className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                    />
+                    <select
+                      value={inputs.pumpPressureUnit}
+                      onChange={(event) => {
+                        const nextUnit = event.target.value as PressureUnit;
+                        const currentPressurePsi = toPsi(Number(inputs.pumpPressure || 0), inputs.pumpPressureUnit);
+                        const currentMaxPsi = toPsi(Number(inputs.maxPressure || 0), inputs.maxPressureUnit);
+                        updateInput("pumpPressureUnit", nextUnit);
+                        updateInput("pumpPressure", roundForUnit(fromPsi(currentPressurePsi, nextUnit), nextUnit === "psi" ? 0 : 1));
+                        updateInput("maxPressureUnit", nextUnit);
+                        updateInput("maxPressure", roundForUnit(fromPsi(currentMaxPsi, nextUnit), nextUnit === "psi" ? 0 : 1));
+                      }}
+                      className="rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                    >
+                      <option value="psi">PSI</option>
+                      <option value="bar">BAR</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-800">Rated flow</label>
+                  <div className="mt-2 flex gap-3">
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      value={inputs.pumpFlow}
+                      onFocus={selectAllOnFocus}
+                      onChange={(event) =>
+                        updateInput("pumpFlow", (event.target.value === "" ? "" : Number(event.target.value)) as Inputs["pumpFlow"])
+                      }
+                      className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                    />
+                    <select
+                      value={inputs.pumpFlowUnit}
+                      onChange={(event) => {
+                        const nextUnit = event.target.value as FlowUnit;
+                        const currentFlowGpm = toGpm(Number(inputs.pumpFlow || 0), inputs.pumpFlowUnit);
+                        updateInput("pumpFlowUnit", nextUnit);
+                        updateInput("pumpFlow", roundForUnit(fromGpm(currentFlowGpm, nextUnit), nextUnit === "gpm" ? 2 : 1));
+                      }}
+                      className="rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                    >
+                      <option value="lpm">LPM</option>
+                      <option value="gpm">GPM (US)</option>
+                    </select>
+                  </div>
+                  <p className="mt-2 text-xs leading-5 text-slate-500">GPM uses US gallons.</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-800">Max pressure</label>
+                  <div className="mt-2 flex gap-3">
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      value={inputs.maxPressure}
+                      onFocus={selectAllOnFocus}
+                      onChange={(event) => {
+                        maxWasManuallyEditedRef.current = true;
+                        updateInput("maxPressure", (event.target.value === "" ? "" : Number(event.target.value)) as Inputs["maxPressure"]);
+                      }}
+                      className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                    />
+                    <select
+                      value={inputs.maxPressureUnit}
+                      onChange={(event) => {
+                        const nextUnit = event.target.value as PressureUnit;
+                        const currentMaxPsi = toPsi(Number(inputs.maxPressure || 0), inputs.maxPressureUnit);
+                        updateInput("maxPressureUnit", nextUnit);
+                        updateInput("maxPressure", roundForUnit(fromPsi(currentMaxPsi, nextUnit), nextUnit === "psi" ? 0 : 1));
+                      }}
+                      className="rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                    >
+                      <option value="psi">PSI</option>
+                      <option value="bar">BAR</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-800">
+                    Engine power <span className="font-normal text-slate-500">(optional)</span>
+                  </label>
+                  <div className="mt-2 flex gap-3">
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      value={enginePowerInputValue}
+                      onFocus={selectAllOnFocus}
+                      onChange={(event) => updateEnginePowerFromDisplay(event.target.value)}
+                      placeholder="Optional"
+                      className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                    />
+                    <select
+                      value={enginePowerUnit}
+                      onChange={(event) => setEnginePowerUnit(event.target.value as EnginePowerUnit)}
+                      className="rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                    >
+                      <option value="hp">HP</option>
+                      <option value="kw">kW</option>
+                    </select>
+                  </div>
+                  <p className="mt-2 text-xs leading-5 text-slate-500">Used only for the power/headroom check.</p>
+                </div>
+
+                <div className="mt-2 border-b border-slate-200 pb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 lg:col-span-2">
+                  Hose
+                </div>
+
+                <div className="lg:col-span-2">
+                  <label className="block text-sm font-semibold text-slate-800">Hose setup</label>
+                  <select
+                    value={hoseSetupMode}
+                    onChange={(event) => updateHoseSetupMode(event.target.value as HoseSetupMode)}
+                    className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                  >
+                    <option value="single">Single hose</option>
+                    <option value="mainLeader">Main + Leader Hose</option>
+                  </select>
+                  <p className="mt-2 text-xs leading-5 text-slate-500">Use Main + Leader for whip, reel or extension hose setups.</p>
+                </div>
+
+                {!isMainLeaderHose ? (
+                  <>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-800">Hose length</label>
+                      <div className="mt-2 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+                        <input
+                          type="number"
+                          inputMode="decimal"
+                          min={0}
+                          value={inputs.hoseLength}
+                          onFocus={selectAllOnFocus}
+                          onChange={(event) =>
+                            updateInput("hoseLength", (event.target.value === "" ? "" : Number(event.target.value)) as Inputs["hoseLength"])
+                          }
+                          className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                        />
+                        <select
+                          value={inputs.hoseLengthUnit}
+                          onChange={(event) => updateHoseLengthUnit(event.target.value as LengthUnit)}
+                          className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950 sm:w-auto"
+                        >
+                          <option value="m">m</option>
+                          <option value="ft">ft</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-800">Hose ID</label>
+                      <div className="mt-2 flex gap-3">
+                        <select
+                          value={String(inputs.hoseId)}
+                          onChange={(event) => {
+                            updateInput("hoseId", Number(event.target.value) as Inputs["hoseId"]);
+                            updateInput("hoseIdUnit", "mm");
+                          }}
+                          className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                        >
+                          {hosePresets.map((preset) => (
+                            <option key={preset.label} value={preset.valueMm}>
+                              {preset.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="grid gap-5 md:grid-cols-2">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">Main hose</p>
+                        <label className="mt-3 block text-sm font-semibold text-slate-800">Length</label>
+                        <div className="mt-2 grid grid-cols-[minmax(0,1fr)_5rem] gap-3">
+                          <input
+                            type="number"
+                            inputMode="decimal"
+                            min={0}
+                            value={inputs.mainHoseLength ?? ""}
+                            onFocus={selectAllOnFocus}
+                            onChange={(event) =>
+                              updateInput("mainHoseLength", (event.target.value === "" ? "" : Number(event.target.value)) as Inputs["mainHoseLength"])
+                            }
+                            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                          />
+                          <select
+                            value={inputs.hoseLengthUnit}
+                            onChange={(event) => updateHoseLengthUnit(event.target.value as LengthUnit)}
+                            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                          >
+                            <option value="m">m</option>
+                            <option value="ft">ft</option>
+                          </select>
+                        </div>
+
+                        <label className="mt-3 block text-sm font-semibold text-slate-800">Internal diameter</label>
+                        <select
+                          value={String(inputs.mainHoseId ?? inputs.hoseId)}
+                          onChange={(event) => {
+                            updateInput("mainHoseId", Number(event.target.value) as Inputs["mainHoseId"]);
+                            updateInput("hoseIdUnit", "mm");
+                          }}
+                          className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                        >
+                          {hosePresets.map((preset) => (
+                            <option key={preset.label} value={preset.valueMm}>
+                              {preset.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">Leader hose / whip hose</p>
+                        <label className="mt-3 block text-sm font-semibold text-slate-800">Length</label>
+                        <div className="mt-2 grid grid-cols-[minmax(0,1fr)_5rem] gap-3">
+                          <input
+                            type="number"
+                            inputMode="decimal"
+                            min={0}
+                            value={inputs.leaderHoseLength ?? ""}
+                            onFocus={selectAllOnFocus}
+                            onChange={(event) =>
+                              updateInput("leaderHoseLength", (event.target.value === "" ? "" : Number(event.target.value)) as Inputs["leaderHoseLength"])
+                            }
+                            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                          />
+                          <select
+                            value={inputs.hoseLengthUnit}
+                            onChange={(event) => updateHoseLengthUnit(event.target.value as LengthUnit)}
+                            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                          >
+                            <option value="m">m</option>
+                            <option value="ft">ft</option>
+                          </select>
+                        </div>
+
+                        <label className="mt-3 block text-sm font-semibold text-slate-800">Internal diameter</label>
+                        <select
+                          value={String(inputs.leaderHoseId ?? inputs.hoseId)}
+                          onChange={(event) => {
+                            updateInput("leaderHoseId", Number(event.target.value) as Inputs["leaderHoseId"]);
+                            updateInput("hoseIdUnit", "mm");
+                          }}
+                          className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                        >
+                          {hosePresets.map((preset) => (
+                            <option key={preset.label} value={preset.valueMm}>
+                              {preset.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+                      <p>
+                        <span className="font-semibold text-slate-900">Total hose length:</span>{" "}
+                        {fmt(splitHoseTotalLengthDisplay, 1)} {inputs.hoseLengthUnit}
+                      </p>
+                      <p className="mt-1 flex flex-col gap-1 sm:block">
+                        <span>
+                          <span className="font-semibold text-slate-900">Main hose:</span>{" "}
+                          {fmt(mainHoseLengthDisplay, 1)} {inputs.hoseLengthUnit}
+                        </span>
+                        <span className="hidden sm:inline"> · </span>
+                        <span>
+                          <span className="font-semibold text-slate-900">Leader hose:</span>{" "}
+                          {fmt(leaderHoseLengthDisplay, 1)} {inputs.hoseLengthUnit}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-2 border-b border-slate-200 pb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 lg:col-span-2">
+                  Outlet
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-800">Spray mode</label>
+                  <select
+                    value={inputs.sprayMode}
+                    onChange={(event) => {
+                      const nextMode = event.target.value as Inputs["sprayMode"];
+                      updateInput("sprayMode", nextMode);
+                      if (nextMode === "wand") {
+                        updateInput("nozzleCount", 1);
+                      } else if (Number(inputs.nozzleCount || 1) < 2) {
+                        updateInput("nozzleCount", 2);
+                      }
+                    }}
+                    className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                  >
+                    <option value="wand">Wand</option>
+                    <option value="surfaceCleaner">Surface cleaner</option>
+                  </select>
+                </div>
+
+                {inputs.sprayMode === "surfaceCleaner" ? (
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-800">Nozzle count</label>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {[2, 3, 4].map((count) => (
+                        <button
+                          key={count}
+                          type="button"
+                          onClick={() => updateInput("nozzleCount", count as Inputs["nozzleCount"])}
+                          className={`inline-flex min-w-[64px] items-center justify-center rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
+                            inputs.nozzleCount === count
+                              ? "border-slate-950 bg-slate-950 text-white"
+                              : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
+                          }`}
+                        >
+                          {count}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="mt-2 text-xs text-slate-500">
+                      Surface cleaner mode uses 2 or more nozzles. Wand mode stays fixed at 1.
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="lg:col-span-2">
+                  <label className="block text-sm font-semibold text-slate-800">
+                    {inputs.sprayMode === "surfaceCleaner" ? "Nozzle / tip code per nozzle" : "Nozzle / tip code"}
+                  </label>
+                  <input
+                    type="text"
+                    value={inputs.nozzleSizeText}
+                    onChange={(event) => updateInput("nozzleSizeText", event.target.value as Inputs["nozzleSizeText"])}
+                    className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+                  />
+                  {inputs.sprayMode === "surfaceCleaner" ? (
+                    <p className="mt-2 text-xs leading-5 text-slate-500">
+                      Enter the nozzle / tip code for each individual nozzle.
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            </section>
+
+            <section className="space-y-4 sm:space-y-6">
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+                {!r.isPressureLimited || (engineHpValue > 0 && usableEngineHp >= requiredEngineHp * 1.1) ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    {!r.isPressureLimited ? (
+                      <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${systemBadge.cls}`}>
+                        {systemBadge.text}
+                      </span>
+                    ) : null}
+                    {engineHpValue > 0 && usableEngineHp >= requiredEngineHp * 1.1 ? (
+                      <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${enginePowerBadge.cls}`}>
+                        {enginePowerBadge.text}
+                      </span>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {r.isPressureLimited || (engineHpValue > 0 && usableEngineHp < requiredEngineHp * 1.1) ? (
+                  <div className="grid gap-2">
+                    {r.isPressureLimited ? (
+                      <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-950">
+                        <p className="font-semibold">Bypass active</p>
+                        <p className="mt-0.5 leading-5 text-red-900">
+                          This setup is pressure-limited. Check max pressure and the selected nozzle / tip code.
+                        </p>
+                      </div>
+                    ) : null}
+
+                    {engineHpValue > 0 && usableEngineHp < requiredEngineHp ? (
+                      <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-950">
+                        <p className="font-semibold">Engine undersized</p>
+                        <p className="mt-0.5 leading-5 text-red-900">
+                          Entered {formatEnginePowerFromHp(engineHpValue)} · Required {formatEnginePowerFromHp(requiredEngineHp)}. More power is required for this setup.
+                        </p>
+                      </div>
+                    ) : engineHpValue > 0 && usableEngineHp < requiredEngineHp * 1.1 ? (
+                      <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
+                        <p className="font-semibold">Operating near engine limit</p>
+                        <p className="mt-0.5 leading-5 text-amber-900">
+                          Entered {formatEnginePowerFromHp(engineHpValue)} · Required {formatEnginePowerFromHp(requiredEngineHp)}.
+                        </p>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                <h2 className="mt-3 text-2xl font-semibold text-slate-900">Setup performance</h2>
+
+                <div className="mt-3 grid gap-2.5 sm:gap-3 md:grid-cols-2">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
+                    <div className="text-xs uppercase tracking-[0.14em] text-slate-500">At-gun pressure</div>
+                    <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                      <span className="text-xl font-semibold text-slate-950 sm:text-2xl">{fmt(r.gunPressurePsi, 0)} PSI</span>
+                      <span className="text-sm text-slate-600">· {fmt(gunBar, 1)} bar</span>
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
+                    <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Flow</div>
+                    <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                      <span className="text-xl font-semibold text-slate-950 sm:text-2xl">{fmt(gunLpm, 1)} L/min</span>
+                      <span className="text-sm text-slate-600">· {fmt(r.gunFlowGpm, 2)} GPM</span>
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
+                    <div className="text-xs uppercase tracking-[0.14em] text-slate-500">{hoseLossLabel}</div>
+                    <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                      <span className="text-xl font-semibold text-slate-950 sm:text-2xl">{fmt(r.hoseLossPsi, 0)} PSI</span>
+                      <span className="text-sm text-slate-600">· {fmt(lossBar, 1)} bar · {efficiencyTier}</span>
+                    </div>
+                    {isMainLeaderHose ? (
+                      <div className="mt-1 text-xs font-medium text-slate-500">Combined from main + leader hose</div>
+                    ) : null}
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:p-4 md:col-span-2">
+                    <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Nozzle recommendation</div>
+                    <div className="mt-2 divide-y divide-slate-200 sm:grid sm:grid-cols-3 sm:divide-y-0 sm:gap-3">
+                      <div className="flex items-center justify-between gap-3 py-2 sm:block sm:py-0">
+                        <div className="text-xs font-medium text-slate-500">Based on rated pump specs</div>
+                        <div className="text-lg font-semibold text-slate-950 sm:mt-1 sm:text-xl">{calibratedDisplayTipCode}{nozzleDisplaySuffix}</div>
+                      </div>
+                      <div className="flex items-center justify-between gap-3 py-2 sm:block sm:py-0">
+                        <div className="text-xs font-medium text-slate-500">Based on this modelled setup</div>
+                        <div className="text-lg font-semibold text-slate-950 sm:mt-1 sm:text-xl">{calibratedWithHoseLossDisplayTipCode}{nozzleDisplaySuffix}</div>
+                      </div>
+                      <div className="flex items-center justify-between gap-3 py-2 sm:block sm:py-0">
+                        <div className="text-xs font-medium text-slate-500">Currently selected</div>
+                        <div className="text-lg font-semibold text-slate-950 sm:mt-1 sm:text-xl">{selectedDisplayTipCode}{nozzleDisplaySuffix}</div>
+                      </div>
+                    </div>
+                    <p className="mt-2 text-xs leading-5 text-slate-500">
+                      The modelled recommendation accounts for estimated hose pressure loss at rated flow.
+                    </p>
+                  </div>
+                </div>
+
+                {isMainLeaderHose ? (
+                  <details className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 sm:mt-5 sm:p-4">
+                    <summary className="cursor-pointer text-sm font-semibold text-slate-900">
+                      Hose loss breakdown
+                    </summary>
+
+                    <div className="mt-3 grid gap-2.5 sm:mt-4 sm:gap-3 md:grid-cols-3">
+                      <div className="rounded-xl border border-slate-200 bg-white p-3">
+                        <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Total hose length</div>
+                        <div className="mt-2 text-lg font-semibold text-slate-950">
+                          {fmt(totalHoseLengthDisplay, 1)} {inputs.hoseLengthUnit}
+                        </div>
+                      </div>
+
+                      <div className="rounded-xl border border-slate-200 bg-white p-3">
+                        <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Main hose pressure loss</div>
+                        <div className="mt-2 text-lg font-semibold text-slate-950">{fmt(r.mainHoseLossPsi, 0)} PSI</div>
+                        <div className="mt-1 text-sm text-slate-600">{fmt(mainHoseLossBar, 1)} bar</div>
+                      </div>
+
+                      <div className="rounded-xl border border-slate-200 bg-white p-3">
+                        <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Leader hose pressure loss</div>
+                        <div className="mt-2 text-lg font-semibold text-slate-950">{fmt(r.leaderHoseLossPsi, 0)} PSI</div>
+                        <div className="mt-1 text-sm text-slate-600">{fmt(leaderHoseLossBar, 1)} bar</div>
+                      </div>
+                    </div>
+                  </details>
+                ) : null}
+
+
+
+
+              </div>
+
+              <details className="group rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 marker:hidden sm:px-5 sm:py-4">
+                  <div>
+                    <h2 className="text-lg font-semibold text-slate-900 sm:text-xl">System details</h2>
+                    <p className="mt-1 hidden text-sm text-slate-600 sm:block">
+                      Required power, pressure variance, and P × Q reference.
+                    </p>
+                  </div>
+                  <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-600 transition group-open:rotate-180 sm:h-8 sm:w-8">
+                    ↓
+                  </span>
+                </summary>
+
+                <div className="border-t border-slate-200 px-4 py-3 sm:px-5 sm:py-4">
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
+                      <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Required power</div>
+                      <div className="mt-1.5 text-xl font-semibold text-slate-950">{formatEnginePowerFromHp(requiredEngineHp)}</div>
+                      <div className="mt-1 text-sm text-slate-600">
+                        Usable engine power {usableEngineHp > 0 ? formatEnginePowerFromHp(usableEngineHp) : "—"}
+                      </div>
+                    </div>
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
+                      <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Pressure variance</div>
+                      <div className="mt-1.5 text-xl font-semibold text-slate-950">{fmt(pressureVariancePct, 1)}%</div>
+                      <div className="mt-1 text-sm text-slate-600">{r.statusMessage}</div>
+                    </div>
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
+                      <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Rated P × Q</div>
+                      <div className="mt-1.5 text-xl font-semibold text-slate-950">{fmt(pqRated, 0)} ({pqClassRated})</div>
+                      <div className="mt-1 text-sm text-slate-600">{fmt(ratedBar, 1)} BAR × {fmt(ratedLpm, 1)} LPM</div>
+                    </div>
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
+                      <div className="text-xs uppercase tracking-[0.14em] text-slate-500">At-gun P × Q</div>
+                      <div className="mt-1.5 text-xl font-semibold text-slate-950">{fmt(pqAtGun, 0)} ({pqClassGun})</div>
+                      <div className="mt-1 text-sm text-slate-600">{fmt(gunBar, 1)} BAR × {fmt(gunLpm, 1)} LPM</div>
+                    </div>
+                  </div>
+                </div>
+              </details>
+
+                <CalculationExplainer
+                  title="How PressureCal calculated this result"
+                  formula={
+                    <div className="space-y-2">
+                      <p>
+                        PressureCal models the setup by converting the rated pressure and flow into
+                        PSI/US GPM, applying the selected nozzle relationship, estimating hose loss,
+                        then subtracting that loss to estimate at-gun pressure.
+                      </p>
+                      <p>
+                        Hose loss is estimated from flow, hose length, hose ID, water properties,
+                        and roughness. Required power is estimated from pump-side outlet pressure and rated pump flow as: HP = (PSI × US GPM) ÷ (1714 × pump efficiency), then also shown in kW.
+                      </p>
+                      <p>
+                        In PressureCal, GPM means US gallons per minute unless otherwise stated.
+                      </p>
+                    </div>
+                  }
+                  inputs={fullSetupExplainerInputs}
+                  results={fullSetupExplainerResults}
+                  explanation={
+                    <p>
+                      This is intended to show what the complete pressure washer setup is likely
+                      doing from pump to gun. The nozzle controls the operating point, the hose
+                      removes pressure before the gun, and the engine power check helps flag whether
+                      the setup is likely to be short on usable power.
+                    </p>
+                  }
+                  disclaimer={
+                    <p>
+                      Use this as a setup estimate only. Always confirm with a pressure gauge and
+                      check pump, hose, gun, lance, surface cleaner, nozzle, unloader, and engine
+                      limits before changing equipment or operating pressure.
+                    </p>
+                  }
+                />
+            </section>
+          </div>
           <div
-            className={`mb-6 rounded-2xl border px-5 py-4 shadow-sm transition-all duration-700 ${
+            className={`mt-4 rounded-2xl border px-3 py-3 shadow-sm transition-all duration-700 sm:mt-6 sm:px-5 sm:py-4 ${
               highlightSetup ? "border-blue-300 bg-blue-50 shadow-lg" : "border-slate-200 bg-white"
             }`}
           >
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <div>
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-2">
                   <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    Current setup snapshot
+                    Setup summary
                   </div>
-                  <div className="mt-1 text-sm text-slate-600">
-                    A quick snapshot of the setup PressureCal is modelling, ready to share, save, or compare.
-                  </div>
-
-                  {loadedFromLink ? (
-                    <div className="mt-3 inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                      Shared setup loaded
-                    </div>
-                  ) : null}
-
                   {saveMessage ? (
-                    <div className="mt-3 inline-flex items-center rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
+                    <div className="inline-flex shrink-0 items-center rounded-full border border-green-200 bg-green-50 px-2.5 py-1 text-[11px] font-semibold text-green-700">
                       {saveMessage}
                     </div>
                   ) : null}
                 </div>
 
-                <div className="sm:hidden">
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={handleOpenSharePanel}
-                      className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-slate-800"
-                    >
-                      Share result
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={handleOpenSavePanel}
-                      disabled={proAccessLoading || (isAuthenticated && isPro && !savedSetupsReady)}
-                      className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      Save setup
-                    </button>
-                  </div>
-
-                  <div className="mt-2">
-                    <button
-                      type="button"
-                      onClick={() => setMobileMoreActionsOpen((current) => !current)}
-                      className="inline-flex w-full items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
-                    >
-                      {mobileMoreActionsOpen ? "Close more actions" : "More actions"}
-                    </button>
-
-                    {mobileMoreActionsOpen ? (
-                      <div className="mt-2 grid gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                        <button
-                          type="button"
-                          onClick={handleOpenComparePanel}
-                          disabled={proAccessLoading || (isAuthenticated && isPro && !savedSetupsReady)}
-                          className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          Compare to saved
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={copySetupLink}
-                          className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                        >
-                          {copyMessage ? "Copied ✓" : "Copy setup link"}
-                        </button>
-                      </div>
-                    ) : null}
-                  </div>
-                </div>
-
-                <div className="hidden flex-wrap gap-2 sm:flex">
+                <div className="hidden items-start gap-2 sm:flex">
                   <button
                     type="button"
                     onClick={handleOpenSharePanel}
@@ -1626,64 +2110,105 @@ export default function FullRigCalculatorPage() {
                     Save setup
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={handleOpenComparePanel}
-                    disabled={proAccessLoading || (isAuthenticated && isPro && !savedSetupsReady)}
-                    className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    Compare to saved
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={copySetupLink}
-                    className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
-                  >
-                    {copyMessage ? "Copied ✓" : "Copy setup link"}
-                  </button>
+                  <details className="group relative">
+                    <summary className="inline-flex cursor-pointer list-none items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50 marker:hidden">
+                      More actions
+                    </summary>
+                    <div className="absolute right-0 z-10 mt-2 grid min-w-52 gap-2 rounded-2xl border border-slate-200 bg-white p-3 shadow-xl">
+                      <button
+                        type="button"
+                        onClick={handleOpenComparePanel}
+                        disabled={proAccessLoading || (isAuthenticated && isPro && !savedSetupsReady)}
+                        className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Compare to saved
+                      </button>
+                      <button
+                        type="button"
+                        onClick={copySetupLink}
+                        className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                      >
+                        {copyMessage ? "Copied ✓" : "Copy setup link"}
+                      </button>
+                    </div>
+                  </details>
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-2">
-                {liveSetupItems.map((item) => (
-                  <div
-                    key={item.label}
-                    className={`rounded-full border px-3 py-1 text-sm transition ${
-                      highlightSetup
-                        ? "border-blue-300 bg-blue-100 text-slate-900"
-                        : "border-slate-200 bg-slate-50 text-slate-700"
-                    }`}
+              <p className="text-sm leading-5 text-slate-600">
+                <span className="font-semibold text-slate-900">Current setup:</span> {compactSetupSummary}
+              </p>
+
+              <div className="sm:hidden">
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={handleOpenSharePanel}
+                    aria-label="Share result"
+                    className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-2 py-2 text-xs font-semibold text-white shadow-md transition hover:bg-slate-800"
                   >
-                    <span className="font-medium text-slate-500">{item.label}:</span>{" "}
-                    <span className="font-semibold text-slate-900">{item.value}</span>
+                    Share
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleOpenSavePanel}
+                    aria-label="Save setup"
+                    disabled={proAccessLoading || (isAuthenticated && isPro && !savedSetupsReady)}
+                    className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-2 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Save
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setMobileMoreActionsOpen((current) => !current)}
+                    aria-expanded={mobileMoreActionsOpen}
+                    className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-2 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                  >
+                    {mobileMoreActionsOpen ? "Close" : "More"}
+                  </button>
+                </div>
+
+                {mobileMoreActionsOpen ? (
+                  <div className="mt-2 grid grid-cols-2 gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2.5">
+                        <button
+                          type="button"
+                          onClick={handleOpenComparePanel}
+                          disabled={proAccessLoading || (isAuthenticated && isPro && !savedSetupsReady)}
+                          className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          Compare to saved
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={copySetupLink}
+                          className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                        >
+                          {copyMessage ? "Copied ✓" : "Copy setup link"}
+                        </button>
                   </div>
-                ))}
+                ) : null}
               </div>
 
-              {!proAccessLoading && !isPro && !savePanelOpen ? (
-                <div className="rounded-2xl border border-slate-200 bg-white/70 px-4 py-3 text-sm leading-6 text-slate-700">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p className="font-semibold text-slate-950">Want to keep this setup?</p>
-                      <p className="mt-1">
-                        Save your machine, hose, nozzle, and pressure loss calculation with PressureCal Pro.
-                      </p>
-                    </div>
 
-                    <Link
-                      to="/pricing"
-                      onClick={() =>
-                        trackEvent("pro_bridge_clicked", {
-                          source: "save_setup_nudge",
-                          calculator: "full_setup",
-                        })
-                      }
-                      className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-xs font-semibold text-white transition hover:bg-slate-800"
-                    >
-                      Start saving setups
-                    </Link>
-                  </div>
+              {!proAccessLoading && !isPro && !savePanelOpen ? (
+                <div className="border-t border-slate-200 pt-2.5 text-xs leading-5 text-slate-600">
+                  Save, duplicate and compare repeat setups with{" "}
+                  <Link
+                    to="/pricing"
+                    onClick={() =>
+                      trackEvent("pro_bridge_clicked", {
+                        source: "save_setup_nudge",
+                        calculator: "full_setup",
+                      })
+                    }
+                    className="font-semibold text-slate-900 underline decoration-slate-300 underline-offset-2 hover:text-slate-700"
+                  >
+                    PressureCal Pro
+                  </Link>
+                  .
                 </div>
               ) : null}
             </div>
@@ -1851,74 +2376,48 @@ export default function FullRigCalculatorPage() {
           {sharePanelOpen ? (
             <div
               ref={sharePanelRef}
-              className="mb-6 scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+              className="mb-4 scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:mb-6 sm:p-5"
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                     Share result
                   </div>
-                  <h2 className="mt-2 text-2xl font-semibold text-slate-900">Share this PressureCal result</h2>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                    Copy a clean result summary, download a PNG card, or share a short branded link with the exact setup loaded.
+                  <h2 className="mt-1 text-xl font-semibold text-slate-900 sm:mt-2 sm:text-2xl">Share this PressureCal result</h2>
+                  <p className="mt-1 text-sm leading-5 text-slate-600 sm:mt-2 sm:leading-6">
+                    Share a link, PNG or compact result summary with this exact setup loaded.
                   </p>
                 </div>
 
                 <button
                   type="button"
                   onClick={handleCloseSharePanel}
-                  className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-100"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-100 sm:h-12 sm:w-12"
                 >
                   ×
                 </button>
               </div>
 
-              <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  Export card
-                </div>
-
-                <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-5">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="text-lg font-semibold text-slate-950">PressureCal result</p>
-                      <p className="mt-1 text-sm text-slate-600">{suggestedSetupName}</p>
-                    </div>
-
-                    <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${badge.cls}`}>
-                      {badge.text}
-                    </span>
+              <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:mt-5 sm:p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-950">{suggestedSetupName}</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-600">
+                      At-gun {fmt(r.gunPressurePsi, 0)} PSI · Flow {fmt(gunLpm, 1)} L/min · {hoseLossLabel} {fmt(r.hoseLossPsi, 0)} PSI
+                    </p>
                   </div>
-
-                  <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                      <p className="text-xs uppercase tracking-[0.14em] text-slate-500">At-gun pressure</p>
-                      <p className="mt-2 text-2xl font-semibold text-slate-950">{fmt(r.gunPressurePsi, 0)} PSI</p>
-                      <p className="mt-1 text-sm text-slate-600">{fmt(gunBar, 1)} bar</p>
-                    </div>
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                      <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Flow</p>
-                      <p className="mt-2 text-2xl font-semibold text-slate-950">{fmt(gunLpm, 1)} L/min</p>
-                      <p className="mt-1 text-sm text-slate-600">{fmt(r.gunFlowGpm, 2)} GPM</p>
-                    </div>
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                      <p className="text-xs uppercase tracking-[0.14em] text-slate-500">{hoseLossLabel}</p>
-                      <p className="mt-2 text-2xl font-semibold text-slate-950">{fmt(r.hoseLossPsi, 0)} PSI</p>
-                      {isMainLeaderHose ? (
-                        <p className="mt-1 text-xs font-medium text-slate-500">Combined from main + leader hose</p>
-                      ) : null}
-                      <p className="mt-1 text-sm text-slate-600">{fmt(lossBar, 1)} bar</p>
-                    </div>
-                  </div>
+                  <span className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${badge.cls}`}>
+                    {badge.text}
+                  </span>
                 </div>
               </div>
 
-              <div className="mt-5 flex flex-wrap gap-3">
+              <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-5 sm:flex sm:flex-wrap sm:gap-3">
                 <button
                   type="button"
                   onClick={handleNativeShareResult}
                   disabled={shareBusy || pngBusy}
-                  className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-3 py-2.5 text-xs sm:rounded-2xl sm:px-6 sm:py-3 sm:text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {shareBusy ? "Preparing share link..." : "Share result"}
                 </button>
@@ -1927,7 +2426,7 @@ export default function FullRigCalculatorPage() {
                   type="button"
                   onClick={handleDownloadPng}
                   disabled={pngBusy || shareBusy}
-                  className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs sm:rounded-2xl sm:px-6 sm:py-3 sm:text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {pngBusy ? "Preparing PNG..." : "Download PNG"}
                 </button>
@@ -1936,7 +2435,7 @@ export default function FullRigCalculatorPage() {
                   type="button"
                   onClick={handleCopyShareResultLink}
                   disabled={shareBusy || pngBusy}
-                  className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs sm:rounded-2xl sm:px-6 sm:py-3 sm:text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Copy share link
                 </button>
@@ -1945,7 +2444,7 @@ export default function FullRigCalculatorPage() {
                   type="button"
                   onClick={handleCopyResultSummary}
                   disabled={shareBusy || pngBusy}
-                  className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs sm:rounded-2xl sm:px-6 sm:py-3 sm:text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Copy result summary
                 </button>
@@ -1955,636 +2454,46 @@ export default function FullRigCalculatorPage() {
             </div>
           ) : null}
 
-          <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-            <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <div className="border-b border-slate-200 px-5 py-4">
-                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Setup inputs</div>
-              </div>
 
-              <div className="grid gap-5 px-5 py-5">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-800">Rated pressure</label>
-                  <div className="mt-2 flex gap-3">
-                    <input
-                      type="number"
-                      inputMode="decimal"
-                      value={inputs.pumpPressure}
-                      onFocus={selectAllOnFocus}
-                      onChange={(event) => {
-                        const nextValue = event.target.value === "" ? "" : Number(event.target.value);
-                        updateInput("pumpPressure", nextValue as Inputs["pumpPressure"]);
-                        if (!maxWasManuallyEditedRef.current) {
-                          updateInput("maxPressure", nextValue as Inputs["maxPressure"]);
-                        }
-                      }}
-                      className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
-                    />
-                    <select
-                      value={inputs.pumpPressureUnit}
-                      onChange={(event) => {
-                        const nextUnit = event.target.value as PressureUnit;
-                        const currentPressurePsi = toPsi(Number(inputs.pumpPressure || 0), inputs.pumpPressureUnit);
-                        const currentMaxPsi = toPsi(Number(inputs.maxPressure || 0), inputs.maxPressureUnit);
-                        updateInput("pumpPressureUnit", nextUnit);
-                        updateInput("pumpPressure", roundForUnit(fromPsi(currentPressurePsi, nextUnit), nextUnit === "psi" ? 0 : 1));
-                        updateInput("maxPressureUnit", nextUnit);
-                        updateInput("maxPressure", roundForUnit(fromPsi(currentMaxPsi, nextUnit), nextUnit === "psi" ? 0 : 1));
-                      }}
-                      className="rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
-                    >
-                      <option value="psi">PSI</option>
-                      <option value="bar">BAR</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-slate-800">Rated flow</label>
-                  <div className="mt-2 flex gap-3">
-                    <input
-                      type="number"
-                      inputMode="decimal"
-                      value={inputs.pumpFlow}
-                      onFocus={selectAllOnFocus}
-                      onChange={(event) =>
-                        updateInput("pumpFlow", (event.target.value === "" ? "" : Number(event.target.value)) as Inputs["pumpFlow"])
-                      }
-                      className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
-                    />
-                    <select
-                      value={inputs.pumpFlowUnit}
-                      onChange={(event) => {
-                        const nextUnit = event.target.value as FlowUnit;
-                        const currentFlowGpm = toGpm(Number(inputs.pumpFlow || 0), inputs.pumpFlowUnit);
-                        updateInput("pumpFlowUnit", nextUnit);
-                        updateInput("pumpFlow", roundForUnit(fromGpm(currentFlowGpm, nextUnit), nextUnit === "gpm" ? 2 : 1));
-                      }}
-                      className="rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
-                    >
-                      <option value="lpm">LPM</option>
-                      <option value="gpm">GPM (US)</option>
-                    </select>
-                  </div>
-                  <p className="mt-2 text-xs leading-5 text-slate-500">
-                    GPM in PressureCal means US gallons per minute, matching the convention used by most pressure washer nozzle charts and pump specifications.
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-slate-800">Max pressure</label>
-                  <div className="mt-2 flex gap-3">
-                    <input
-                      type="number"
-                      inputMode="decimal"
-                      value={inputs.maxPressure}
-                      onFocus={selectAllOnFocus}
-                      onChange={(event) => {
-                        maxWasManuallyEditedRef.current = true;
-                        updateInput("maxPressure", (event.target.value === "" ? "" : Number(event.target.value)) as Inputs["maxPressure"]);
-                      }}
-                      className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
-                    />
-                    <select
-                      value={inputs.maxPressureUnit}
-                      onChange={(event) => {
-                        const nextUnit = event.target.value as PressureUnit;
-                        const currentMaxPsi = toPsi(Number(inputs.maxPressure || 0), inputs.maxPressureUnit);
-                        updateInput("maxPressureUnit", nextUnit);
-                        updateInput("maxPressure", roundForUnit(fromPsi(currentMaxPsi, nextUnit), nextUnit === "psi" ? 0 : 1));
-                      }}
-                      className="rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
-                    >
-                      <option value="psi">PSI</option>
-                      <option value="bar">BAR</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-slate-800">
-                    Engine power ({enginePowerUnit === "hp" ? "HP" : "kW"})
-                  </label>
-                  <div className="mt-2 flex gap-3">
-                    <input
-                      type="number"
-                      inputMode="decimal"
-                      value={enginePowerInputValue}
-                      onFocus={selectAllOnFocus}
-                      onChange={(event) => updateEnginePowerFromDisplay(event.target.value)}
-                      placeholder="Optional"
-                      className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
-                    />
-                    <select
-                      value={enginePowerUnit}
-                      onChange={(event) => setEnginePowerUnit(event.target.value as EnginePowerUnit)}
-                      className="rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
-                    >
-                      <option value="hp">HP</option>
-                      <option value="kw">kW</option>
-                    </select>
-                  </div>
-                  <p className="mt-2 text-xs leading-5 text-slate-500">
-                    Optional. Enter engine power as horsepower or kilowatts. PressureCal stores this internally as HP for the power check.
-                  </p>
-                </div>
-
-                <div className="lg:col-span-2">
-                  <label className="block text-sm font-semibold text-slate-800">Hose setup</label>
-                  <select
-                    value={hoseSetupMode}
-                    onChange={(event) => updateHoseSetupMode(event.target.value as HoseSetupMode)}
-                    className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
-                  >
-                    <option value="single">Single hose</option>
-                    <option value="mainLeader">Main + Leader Hose</option>
-                  </select>
-                  <p className="mt-2 text-xs leading-5 text-slate-500">
-                    Use Main + Leader Hose when your setup has a main hose plus a leader hose, whip hose, reel hose or extension hose.
-                  </p>
-                </div>
-
-                {!isMainLeaderHose ? (
-                  <>
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-800">Hose length</label>
-                      <div className="mt-2 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
-                        <input
-                          type="number"
-                          inputMode="decimal"
-                          min={0}
-                          value={inputs.hoseLength}
-                          onFocus={selectAllOnFocus}
-                          onChange={(event) =>
-                            updateInput("hoseLength", (event.target.value === "" ? "" : Number(event.target.value)) as Inputs["hoseLength"])
-                          }
-                          className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
-                        />
-                        <select
-                          value={inputs.hoseLengthUnit}
-                          onChange={(event) => updateHoseLengthUnit(event.target.value as LengthUnit)}
-                          className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950 sm:w-auto"
-                        >
-                          <option value="m">m</option>
-                          <option value="ft">ft</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-800">Hose ID</label>
-                      <div className="mt-2 flex gap-3">
-                        <select
-                          value={String(inputs.hoseId)}
-                          onChange={(event) => {
-                            updateInput("hoseId", Number(event.target.value) as Inputs["hoseId"]);
-                            updateInput("hoseIdUnit", "mm");
-                          }}
-                          className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
-                        >
-                          {hosePresets.map((preset) => (
-                            <option key={preset.label} value={preset.valueMm}>
-                              {preset.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="grid gap-5 md:grid-cols-2">
-                      <div>
-                        <p className="text-sm font-semibold text-slate-900">Main hose</p>
-                        <label className="mt-3 block text-sm font-semibold text-slate-800">Length</label>
-                        <div className="mt-2 grid grid-cols-[minmax(0,1fr)_5rem] gap-3">
-                          <input
-                            type="number"
-                            inputMode="decimal"
-                            min={0}
-                            value={inputs.mainHoseLength ?? ""}
-                            onFocus={selectAllOnFocus}
-                            onChange={(event) =>
-                              updateInput("mainHoseLength", (event.target.value === "" ? "" : Number(event.target.value)) as Inputs["mainHoseLength"])
-                            }
-                            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
-                          />
-                          <select
-                            value={inputs.hoseLengthUnit}
-                            onChange={(event) => updateHoseLengthUnit(event.target.value as LengthUnit)}
-                            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
-                          >
-                            <option value="m">m</option>
-                            <option value="ft">ft</option>
-                          </select>
-                        </div>
-
-                        <label className="mt-3 block text-sm font-semibold text-slate-800">Internal diameter</label>
-                        <select
-                          value={String(inputs.mainHoseId ?? inputs.hoseId)}
-                          onChange={(event) => {
-                            updateInput("mainHoseId", Number(event.target.value) as Inputs["mainHoseId"]);
-                            updateInput("hoseIdUnit", "mm");
-                          }}
-                          className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
-                        >
-                          {hosePresets.map((preset) => (
-                            <option key={preset.label} value={preset.valueMm}>
-                              {preset.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div>
-                        <p className="text-sm font-semibold text-slate-900">Leader hose / whip hose</p>
-                        <label className="mt-3 block text-sm font-semibold text-slate-800">Length</label>
-                        <div className="mt-2 grid grid-cols-[minmax(0,1fr)_5rem] gap-3">
-                          <input
-                            type="number"
-                            inputMode="decimal"
-                            min={0}
-                            value={inputs.leaderHoseLength ?? ""}
-                            onFocus={selectAllOnFocus}
-                            onChange={(event) =>
-                              updateInput("leaderHoseLength", (event.target.value === "" ? "" : Number(event.target.value)) as Inputs["leaderHoseLength"])
-                            }
-                            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
-                          />
-                          <select
-                            value={inputs.hoseLengthUnit}
-                            onChange={(event) => updateHoseLengthUnit(event.target.value as LengthUnit)}
-                            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
-                          >
-                            <option value="m">m</option>
-                            <option value="ft">ft</option>
-                          </select>
-                        </div>
-
-                        <label className="mt-3 block text-sm font-semibold text-slate-800">Internal diameter</label>
-                        <select
-                          value={String(inputs.leaderHoseId ?? inputs.hoseId)}
-                          onChange={(event) => {
-                            updateInput("leaderHoseId", Number(event.target.value) as Inputs["leaderHoseId"]);
-                            updateInput("hoseIdUnit", "mm");
-                          }}
-                          className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
-                        >
-                          {hosePresets.map((preset) => (
-                            <option key={preset.label} value={preset.valueMm}>
-                              {preset.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
-                      <p>
-                        <span className="font-semibold text-slate-900">Total hose length:</span>{" "}
-                        {fmt(splitHoseTotalLengthDisplay, 1)} {inputs.hoseLengthUnit}
-                      </p>
-                      <p className="mt-1 flex flex-col gap-1 sm:block">
-                        <span>
-                          <span className="font-semibold text-slate-900">Main hose:</span>{" "}
-                          {fmt(mainHoseLengthDisplay, 1)} {inputs.hoseLengthUnit}
-                        </span>
-                        <span className="hidden sm:inline"> · </span>
-                        <span>
-                          <span className="font-semibold text-slate-900">Leader hose:</span>{" "}
-                          {fmt(leaderHoseLengthDisplay, 1)} {inputs.hoseLengthUnit}
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-sm font-semibold text-slate-800">Spray mode</label>
-                  <select
-                    value={inputs.sprayMode}
-                    onChange={(event) => {
-                      const nextMode = event.target.value as Inputs["sprayMode"];
-                      updateInput("sprayMode", nextMode);
-                      if (nextMode === "wand") {
-                        updateInput("nozzleCount", 1);
-                      } else if (Number(inputs.nozzleCount || 1) < 2) {
-                        updateInput("nozzleCount", 2);
-                      }
-                    }}
-                    className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
-                  >
-                    <option value="wand">Wand</option>
-                    <option value="surfaceCleaner">Surface cleaner</option>
-                  </select>
-                </div>
-
-                {inputs.sprayMode === "surfaceCleaner" ? (
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-800">Nozzle count</label>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {[2, 3, 4].map((count) => (
-                        <button
-                          key={count}
-                          type="button"
-                          onClick={() => updateInput("nozzleCount", count as Inputs["nozzleCount"])}
-                          className={`inline-flex min-w-[64px] items-center justify-center rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
-                            inputs.nozzleCount === count
-                              ? "border-slate-950 bg-slate-950 text-white"
-                              : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
-                          }`}
-                        >
-                          {count}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="mt-2 text-xs text-slate-500">
-                      Surface cleaner mode uses 2 or more nozzles. Wand mode stays fixed at 1.
-                    </div>
-                  </div>
-                ) : null}
-
-                <div className="lg:col-span-2">
-                  <label className="block text-sm font-semibold text-slate-800">
-                    {inputs.sprayMode === "surfaceCleaner" ? "Nozzle / tip code per nozzle" : "Nozzle / tip code"}
-                  </label>
-                  <input
-                    type="text"
-                    value={inputs.nozzleSizeText}
-                    onChange={(event) => updateInput("nozzleSizeText", event.target.value as Inputs["nozzleSizeText"])}
-                    className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
-                  />
-                  {inputs.sprayMode === "surfaceCleaner" ? (
-                    <p className="mt-2 text-xs leading-5 text-slate-500">
-                      Enter the nozzle / tip code for each individual nozzle. PressureCal applies it across the selected nozzle count.
-                    </p>
-                  ) : null}
-                </div>
-              </div>
-            </section>
-
-            <section className="space-y-6">
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${systemBadge.cls}`}>
-                    {systemBadge.text}
-                  </span>
-                  <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${enginePowerBadge.cls}`}>
-                    {enginePowerBadge.text}
-                  </span>
-                </div>
-
-                <h2 className="mt-4 text-2xl font-semibold text-slate-900">Setup performance</h2>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  See nozzle match, hose loss, and real at-gun performance in one place.
-                </p>
-
-                <div className="mt-5 grid gap-3 md:grid-cols-2">
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="text-xs uppercase tracking-[0.14em] text-slate-500">At-gun pressure</div>
-                    <div className="mt-2 text-2xl font-semibold text-slate-950">{fmt(r.gunPressurePsi, 0)} PSI</div>
-                    <div className="mt-1 text-sm text-slate-600">{fmt(gunBar, 1)} bar</div>
-                  </div>
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Flow</div>
-                    <div className="mt-2 text-2xl font-semibold text-slate-950">{fmt(gunLpm, 1)} L/min</div>
-                    <div className="mt-1 text-sm text-slate-600">{fmt(r.gunFlowGpm, 2)} GPM</div>
-                  </div>
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="text-xs uppercase tracking-[0.14em] text-slate-500">{hoseLossLabel}</div>
-                    <div className="mt-2 text-2xl font-semibold text-slate-950">{fmt(r.hoseLossPsi, 0)} PSI</div>
-                    {isMainLeaderHose ? (
-                      <div className="mt-1 text-xs font-medium text-slate-500">Combined from main + leader hose</div>
-                    ) : null}
-                    <div className="mt-1 text-sm text-slate-600">{fmt(lossBar, 1)} bar · {efficiencyTier}</div>
-                  </div>
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="text-xs tracking-[0.14em] text-slate-500">
-                      Recommended nozzle / tip code
-                    </div>
-
-                    <div className="mt-3 grid grid-cols-2 gap-4">
-                      <div>
-                        <div className="text-xs font-semibold tracking-[0.14em] text-slate-500">
-                          Pump specs
-                        </div>
-                        <div className="mt-1 text-2xl font-semibold text-slate-950">
-                          {calibratedDisplayTipCode}{nozzleDisplaySuffix}
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="text-xs font-semibold tracking-[0.14em] text-slate-500">
-                          Actual setup
-                        </div>
-                        <div className="mt-1 text-2xl font-semibold text-slate-950">
-                          {calibratedWithHoseLossDisplayTipCode}{nozzleDisplaySuffix}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-3 text-sm text-slate-600">
-                      Selected nozzle / tip code: {selectedDisplayTipCode}{nozzleDisplaySuffix}
-                    </div>
-
-                    <div className="mt-3 space-y-1 text-xs leading-5 text-slate-500">
-                      <p>Pump specs match standard manufacturer nozzle charts using rated pump pressure and flow.</p>
-                      <p>Actual setup accounts for estimated hose pressure loss at rated flow.</p>
-                    </div>
-                  </div>
-                </div>
-
-                {isMainLeaderHose ? (
-                  <details className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <summary className="cursor-pointer text-sm font-semibold text-slate-900">
-                      Hose loss breakdown
-                    </summary>
-
-                    <div className="mt-4 grid gap-3 md:grid-cols-3">
-                      <div className="rounded-xl border border-slate-200 bg-white p-3">
-                        <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Total hose length</div>
-                        <div className="mt-2 text-lg font-semibold text-slate-950">
-                          {fmt(totalHoseLengthDisplay, 1)} {inputs.hoseLengthUnit}
-                        </div>
-                      </div>
-
-                      <div className="rounded-xl border border-slate-200 bg-white p-3">
-                        <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Main hose pressure loss</div>
-                        <div className="mt-2 text-lg font-semibold text-slate-950">{fmt(r.mainHoseLossPsi, 0)} PSI</div>
-                        <div className="mt-1 text-sm text-slate-600">{fmt(mainHoseLossBar, 1)} bar</div>
-                      </div>
-
-                      <div className="rounded-xl border border-slate-200 bg-white p-3">
-                        <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Leader hose pressure loss</div>
-                        <div className="mt-2 text-lg font-semibold text-slate-950">{fmt(r.leaderHoseLossPsi, 0)} PSI</div>
-                        <div className="mt-1 text-sm text-slate-600">{fmt(leaderHoseLossBar, 1)} bar</div>
-                      </div>
-                    </div>
-                  </details>
-                ) : null}
-
-                <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm font-semibold text-slate-900">Hose pressure loss guide</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">{efficiencyNote}</p>
-                </div>
-
-                <div className="mt-5 rounded-2xl border border-blue-100 bg-blue-50/70 p-4">
-                  <p className="text-sm font-semibold text-slate-900">
-                    Save this setup when it becomes repeat work
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-slate-700">
-                    You’ve modelled this setup. With PressureCal Pro, you can save it, duplicate it,
-                    and build a working library of machine, hose, and nozzle combinations.
-                  </p>
-                </div>
-
-                <CalculationExplainer
-                  className="mt-5"
-                  formula={
-                    <div className="space-y-2">
-                      <p>
-                        PressureCal models the setup by converting the rated pressure and flow into
-                        PSI/US GPM, applying the selected nozzle relationship, estimating hose loss,
-                        then subtracting that loss to estimate at-gun pressure.
-                      </p>
-                      <p>
-                        Hose loss is estimated from flow, hose length, hose ID, water properties,
-                        and roughness. Required power is estimated from pump-side outlet pressure and rated pump flow as: HP = (PSI × US GPM) ÷ (1714 × pump efficiency), then also shown in kW.
-                      </p>
-                      <p>
-                        In PressureCal, GPM means US gallons per minute unless otherwise stated.
-                      </p>
-                    </div>
-                  }
-                  inputs={fullSetupExplainerInputs}
-                  results={fullSetupExplainerResults}
-                  explanation={
-                    <p>
-                      This is intended to show what the complete pressure washer setup is likely
-                      doing from pump to gun. The nozzle controls the operating point, the hose
-                      removes pressure before the gun, and the engine power check helps flag whether
-                      the setup is likely to be short on usable power.
-                    </p>
-                  }
-                  disclaimer={
-                    <p>
-                      Use this as a setup estimate only. Always confirm with a pressure gauge and
-                      check pump, hose, gun, lance, surface cleaner, nozzle, unloader, and engine
-                      limits before changing equipment or operating pressure.
-                    </p>
-                  }
-                />
-              </div>
-
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:hidden">
-                <button
-                  type="button"
-                  onClick={() => setMobileSystemDetailsOpen((current) => !current)}
-                  className="flex w-full items-center justify-between gap-3 text-left"
-                >
-                  <div>
-                    <h2 className="text-2xl font-semibold text-slate-900">System details</h2>
-                    <p className="mt-1 text-sm text-slate-600">
-                      Required power, pressure variance, and P × Q reference.
-                    </p>
-                  </div>
-                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-lg font-semibold text-slate-700">
-                    {mobileSystemDetailsOpen ? "−" : "+"}
-                  </span>
-                </button>
-
-                {mobileSystemDetailsOpen ? (
-                  <div className="mt-5 grid gap-3">
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                      <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Required power</div>
-                      <div className="mt-2 text-xl font-semibold text-slate-950">{formatEnginePowerFromHp(requiredEngineHp)}</div>
-                      <div className="mt-1 text-sm text-slate-600">
-                        Usable engine power {usableEngineHp > 0 ? formatEnginePowerFromHp(usableEngineHp) : "—"}
-                      </div>
-                    </div>
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                      <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Pressure variance</div>
-                      <div className="mt-2 text-xl font-semibold text-slate-950">{fmt(pressureVariancePct, 1)}%</div>
-                      <div className="mt-1 text-sm text-slate-600">{r.statusMessage}</div>
-                    </div>
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                      <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Rated P × Q</div>
-                      <div className="mt-2 text-xl font-semibold text-slate-950">{fmt(pqRated, 0)} ({pqClassRated})</div>
-                      <div className="mt-1 text-sm text-slate-600">{fmt(ratedBar, 1)} BAR × {fmt(ratedLpm, 1)} LPM</div>
-                    </div>
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                      <div className="text-xs uppercase tracking-[0.14em] text-slate-500">At-gun P × Q</div>
-                      <div className="mt-2 text-xl font-semibold text-slate-950">{fmt(pqAtGun, 0)} ({pqClassGun})</div>
-                      <div className="mt-1 text-sm text-slate-600">{fmt(gunBar, 1)} BAR × {fmt(gunLpm, 1)} LPM</div>
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-
-              <div className="hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:block">
-                <h2 className="text-2xl font-semibold text-slate-900">System details</h2>
-
-                <div className="mt-5 grid gap-3 md:grid-cols-2">
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Required power</div>
-                    <div className="mt-2 text-xl font-semibold text-slate-950">{formatEnginePowerFromHp(requiredEngineHp)}</div>
-                    <div className="mt-1 text-sm text-slate-600">
-                      Usable engine power {usableEngineHp > 0 ? formatEnginePowerFromHp(usableEngineHp) : "—"}
-                    </div>
-                  </div>
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Pressure variance</div>
-                    <div className="mt-2 text-xl font-semibold text-slate-950">{fmt(pressureVariancePct, 1)}%</div>
-                    <div className="mt-1 text-sm text-slate-600">{r.statusMessage}</div>
-                  </div>
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Rated P × Q</div>
-                    <div className="mt-2 text-xl font-semibold text-slate-950">{fmt(pqRated, 0)} ({pqClassRated})</div>
-                    <div className="mt-1 text-sm text-slate-600">{fmt(ratedBar, 1)} BAR × {fmt(ratedLpm, 1)} LPM</div>
-                  </div>
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="text-xs uppercase tracking-[0.14em] text-slate-500">At-gun P × Q</div>
-                    <div className="mt-2 text-xl font-semibold text-slate-950">{fmt(pqAtGun, 0)} ({pqClassGun})</div>
-                    <div className="mt-1 text-sm text-slate-600">{fmt(gunBar, 1)} BAR × {fmt(gunLpm, 1)} LPM</div>
-                  </div>
-                </div>
-              </div>
-            </section>
-          </div>
-          <section className="mt-6 rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
+          <section className="mt-4 rounded-2xl border border-slate-200 bg-white px-3 py-3 shadow-sm sm:mt-6 sm:px-5 sm:py-4">
             <div className="max-w-4xl">
-              <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-                What this full setup calculator checks
-              </h2>
-              <p className="mt-3 text-sm leading-7 text-slate-600">
-                This full setup calculator is for operators who want to check the whole
-                setup in one place, not just one number at a time. It combines machine
-                pressure, machine flow, hose length, hose internal diameter, nozzle size,
-                and optional engine power in HP or kW so you can estimate the real operating point at
-                the gun.
-              </p>
-              <p className="mt-4 text-sm leading-7 text-slate-600">
-                Use this page when a chart or simple converter is not enough — especially
-                when the machine feels weak at the gun, hose runs are long, surface cleaner
-                nozzle counts change the required nozzle size, or you want to compare rated
-                pump pressure with what you are likely to see while working.
-              </p>
-              <div className="mt-5 flex flex-wrap gap-3">
-                <Link to="/nozzle-size-calculator" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                Other PressureCal calculators
+              </div>
+              <div className="mt-2.5 grid grid-cols-2 gap-2 sm:mt-3 sm:grid-cols-3">
+                <Link to="/nozzle-size-calculator" className="rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs font-semibold leading-4 text-slate-700 transition hover:bg-slate-100 sm:text-sm">
                   Nozzle Size Calculator
                 </Link>
-                <Link to="/hose-pressure-loss-calculator" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+                <Link to="/target-pressure-nozzle-calculator" className="rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs font-semibold leading-4 text-slate-700 transition hover:bg-slate-100 sm:text-sm">
+                  Target Pressure Nozzle Calculator
+                </Link>
+                <Link to="/hose-pressure-loss-calculator" className="rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs font-semibold leading-4 text-slate-700 transition hover:bg-slate-100 sm:text-sm">
                   Hose Pressure Loss Calculator
                 </Link>
-                <Link to="/nozzle-size-chart" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+                <Link to="/nozzle-size-chart" className="rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs font-semibold leading-4 text-slate-700 transition hover:bg-slate-100 sm:text-sm">
                   Nozzle Size Chart
                 </Link>
-                <Link to="/psi-bar-calculator" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+                <Link to="/psi-bar-calculator" className="rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs font-semibold leading-4 text-slate-700 transition hover:bg-slate-100 sm:text-sm">
                   PSI ↔ BAR Converter
                 </Link>
-                <Link to="/lpm-gpm-calculator" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+                <Link to="/lpm-gpm-calculator" className="rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs font-semibold leading-4 text-slate-700 transition hover:bg-slate-100 sm:text-sm">
                   LPM ↔ GPM (US) Converter
                 </Link>
               </div>
+            </div>
+          </section>
+
+          <section className="mt-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm sm:mt-6 sm:px-5">
+            <div className="max-w-4xl">
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                About the full setup calculator
+              </div>
+              <h2 className="mt-1.5 text-xl font-semibold tracking-tight text-slate-900 sm:mt-2 sm:text-2xl">
+                What this full setup calculator checks
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600 sm:mt-3">
+                This pressure washer full setup calculator combines machine pressure and flow, hose length and internal diameter, nozzle / tip code, spray mode and optional engine power to estimate the operating point at the gun. Use it when a simple chart or converter is not enough—for example, when a machine feels weak at the gun, hose runs are long, surface cleaner nozzle counts change, or you want to compare rated pump performance with the modelled result.
+              </p>
             </div>
           </section>
 

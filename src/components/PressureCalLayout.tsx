@@ -13,10 +13,7 @@ type PressureCalLayoutProps = {
 };
 
 const toolLinks = [
-  { to: "/pressure-cleaning-task-guide", label: "Pressure Cleaning Task Guide" },
-  { to: "/target-performance-calculator", label: "Target Performance Calculator" },
   { to: "/nozzle-size-calculator", label: "Nozzle Size Calculator" },
-  { to: "/orifice-diameter-calculator", label: "Orifice Diameter Calculator" },
   { to: "/target-pressure-nozzle-calculator", label: "Target Pressure Nozzle Calculator" },
   { to: "/hose-pressure-loss-calculator", label: "Hose Pressure Loss Calculator" },
   { to: "/nozzle-size-chart", label: "Nozzle Size Chart" },
@@ -26,9 +23,7 @@ const toolLinks = [
 
 const footerQuickLinks = [
   { to: "/calculator", label: "Full Setup Calculator" },
-  { to: "/pressure-cleaning-task-guide", label: "Pressure Cleaning Task Guide" },
   { to: "/nozzle-size-calculator", label: "Nozzle Size Calculator" },
-  { to: "/orifice-diameter-calculator", label: "Orifice Diameter Calculator" },
   { to: "/hose-pressure-loss-calculator", label: "Hose Pressure Loss Calculator" },
   { to: "/pricing", label: "PressureCal Pro" },
 ];
@@ -203,11 +198,7 @@ export default function PressureCalLayout({
               >
                 Calculator
               </Link>
-            ) : (
-              <span className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-500">
-                Calculator
-              </span>
-            )}
+            ) : null}
 
             <button
               type="button"

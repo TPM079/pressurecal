@@ -1,0 +1,734 @@
+--- /mnt/data/pressurecal-source/HomePage(22).tsx	2026-08-08 04:32:40.282576156 +0000
++++ /mnt/data/PressureCal-HomePage-simplified.tsx	2026-08-08 04:33:55.773570930 +0000
+@@ -1,5 +1,4 @@
+ import { Helmet } from "react-helmet-async";
+-import { motion } from "framer-motion";
+ import { useEffect, useMemo, useRef, useState, type FocusEvent } from "react";
+ import { Link, useLocation, useNavigate } from "react-router-dom";
+ import BackToTopButton from "../components/BackToTopButton";
+@@ -67,27 +66,33 @@
+ ];
+ 
+ const proFeatures = [
++  "Open the Full Setup Calculator for hose ID, nozzle mode, maximum pressure, engine power and deeper setup limits",
+   "Save common machines, hoses, nozzles, and surface cleaners",
+-  "Build setup checks faster from saved equipment",
+-  "Save operator notes and calculated result snapshots",
+-  "Compare changes before swapping parts",
++  "Compare setup changes before swapping parts",
++  "Share setup links with customers, staff, or support",
+   "Generate printable setup reports for quoting, records, and support",
+ ];
+ 
+ const proofPoints = [
+   {
+-    title: "Nozzle match",
+-    description: "Check whether the nozzle is actually matched to the machine output.",
++    title: "At-gun pressure",
++    description:
++      "See the estimated pressure that remains after hose loss instead of relying only on the machine’s rated PSI.",
+   },
+   {
+-    title: "Hose loss",
++    title: "Hose pressure loss",
+     description:
+-      "See what hose length and hose size are taking away before the water hits the gun.",
++      "See what hose length and hose size are taking away before the water reaches the gun.",
+   },
+   {
+-    title: "At-gun pressure and flow",
++    title: "Flow and nozzle match",
+     description:
+-      "Get a clearer read on what pressure and flow you are likely working with at the gun.",
++      "Check whether the expected flow and nozzle / tip size suit the machine output and the way you want to run it.",
++  },
++  {
++    title: "Warnings and recommendations",
++    description:
++      "Highlights likely mismatches, pressure loss and setup conditions that deserve a closer look before you change equipment.",
+   },
+ ];
+ 
+@@ -106,11 +111,6 @@
+   },
+ ];
+ 
+-const fullCalculatorReasons = [
+-  "The setup feels weaker at the gun than the machine spec suggests.",
+-  "Hose length, hose size, and nozzle choice all changed and need checking together.",
+-  "You want a clearer read on at-gun pressure, flow, and likely setup behaviour.",
+-];
+ 
+ const useCaseCards = [
+   {
+@@ -335,31 +335,6 @@
+     [inputs, recommendedTip]
+   );
+ 
+-  const liveSetupItems: Array<{
+-    label: string;
+-    value: string;
+-    featured?: boolean;
+-  }> = [
+-    {
+-      label: "Rated pressure",
+-      value: `${fmt(Number(inputs.pumpPressure || 0), 0)} ${
+-        inputs.pumpPressureUnit === "psi" ? "PSI" : "BAR"
+-      }`,
+-    },
+-    {
+-      label: "Rated flow",
+-      value: `${fmt(flowLpm, 0)} LPM (${fmt(flowGpm, 2)} GPM)`,
+-    },
+-    {
+-      label: "Hose length",
+-      value: `${fmt(Number(inputs.hoseLength || 0), 0)} ${hoseLengthShortUnit}`,
+-    },
+-    {
+-      label: "Recommended nozzle / tip code",
+-      value: recommendedTip,
+-      featured: true,
+-    },
+-  ];
+ 
+   const performanceCards = [
+     {
+@@ -399,20 +374,6 @@
+     },
+   ];
+ 
+-  const heroProofItems = [
+-    {
+-      label: "At-gun",
+-      value: `${fmt(solved.gunPressurePsi, 0)} PSI`,
+-    },
+-    {
+-      label: "Hose loss",
+-      value: `${fmt(solved.hoseLossPsi, 0)} PSI`,
+-    },
+-    {
+-      label: "Tip",
+-      value: recommendedTip,
+-    },
+-  ];
+ 
+   function scrollToCalculator() {
+     const el = document.getElementById("calculator");
+@@ -558,354 +519,65 @@
+ </Helmet>
+ 
+       <section className="-mx-4 -mt-8 overflow-hidden border-b border-slate-200 bg-white px-4 sm:-mt-10">
+-        <div className="mx-auto grid max-w-6xl items-center gap-10 py-12 sm:py-16 lg:grid-cols-[1.05fr_0.95fr]">
+-          <div>
+-            <div className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm font-medium text-slate-600">
+-              Built for pressure washing operators
+-            </div>
+-
+-            <h1 className="mt-6 max-w-3xl text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
+-  Pressure washer calculator tools for real setups
+-</h1>
+-
+-<p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600 sm:text-xl">
+-  Choose the right PressureCal tool for nozzle size, target pressure, hose loss,
+-  unit conversion, or full pump-to-gun setup modelling.
+-</p>
+-
+-<p className="mt-4 max-w-2xl text-base leading-7 text-slate-500">
+-  Built for pressure washing operators, equipment builders, and contractors who need
+-  practical PSI, BAR, LPM, GPM, nozzle and hose calculations. If hose length is the
+-  first thing you want to check, use the{" "}
+-  <Link
+-    to="/hose-pressure-loss-calculator"
+-    onClick={() =>
+-      trackEvent("internal_link_clicked", {
+-        page: "home",
+-        destination: "hose_pressure_loss_calculator",
+-        location: "hero_intro",
+-      })
+-    }
+-    className="font-semibold text-slate-800 underline decoration-slate-300 underline-offset-4 hover:text-slate-950"
+-  >
+-    hose pressure loss calculator
+-  </Link>{" "}
+-  to estimate pressure drop through your pressure washer hose.
+-</p>
++        <div className="mx-auto max-w-6xl py-9 sm:py-12 lg:py-14">
++          <div className="max-w-4xl">
++            <h1 className="max-w-3xl text-3xl font-bold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
++              Pressure Washer Calculator for Real-World Pressure
++            </h1>
+ 
+-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+-              <Link
+-                to={fullRigHref}
+-                onClick={() =>
+-                  trackEvent("open_full_setup_calculator_clicked", {
+-                    page: "home",
+-                    location: "hero",
+-                  })
+-                }
+-                className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
+-              >
+-                Open Full Setup Calculator
+-              </Link>
++            <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg sm:leading-8">
++              See what actually reaches the gun after hose loss, flow and nozzle size are taken into account.
++            </p>
+ 
++            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+               <button
+                 type="button"
+                 onClick={scrollToCalculator}
+-                className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-950"
++                className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
+               >
+-                Quick Setup Check
++                Check My Setup
+               </button>
+-            </div>
+-
+-            <div className="mt-6 lg:hidden">
+-              <div className="grid grid-cols-3 gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
+-                {heroProofItems.map((item) => (
+-                  <div key={item.label} className="rounded-2xl border border-slate-200 bg-white px-3 py-3 text-center">
+-                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+-                      {item.label}
+-                    </p>
+-                    <p className="mt-2 text-base font-semibold text-slate-950">{item.value}</p>
+-                  </div>
+-                ))}
+-              </div>
+-              <p className="mt-3 text-xs font-medium text-slate-500">
+-                Live preview from the current inputs.
+-              </p>
+-            </div>
+-
+-            <div className="mt-8 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm font-medium text-slate-600">
+-              <span>Nozzle match</span>
+-              <span className="text-slate-300">•</span>
+-              <span>Hose loss</span>
+-              <span className="text-slate-300">•</span>
+-              <span>At-gun pressure and flow</span>
+-            </div>
+-          </div>
+-
+-          <div className="hidden lg:block lg:pl-4">
+-            <div className="mx-auto max-w-xl rounded-[2rem] border border-slate-800 bg-slate-950 p-6 text-white shadow-2xl">
+-              <div className="flex items-start justify-between gap-3">
+-                <div>
+-                  <h2 className="text-2xl font-semibold">Live setup preview</h2>
+-                  <div className="mt-3 inline-flex items-center rounded-full border border-green-400/20 bg-green-400/10 px-3 py-1 text-xs font-semibold text-green-200">
+-                    Updates as you type
+-                  </div>
+ 
+-                  {loadedFromLink ? (
+-                    <div className="mt-3 inline-flex items-center rounded-full border border-blue-300/20 bg-blue-400/10 px-3 py-1 text-xs font-semibold text-blue-100">
+-                      Loaded from shared link
+-                    </div>
+-                  ) : null}
+-                </div>
+-
+-                <button
+-                  type="button"
+-                  onClick={copySetupLink}
+-                  className="rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/15"
+-                >
+-                  {copyMessage ? "Copied!" : "Copy link"}
+-                </button>
+-              </div>
+-
+-              {copyMessage ? (
+-                <p role="status" aria-live="polite" className="mt-3 text-sm text-green-300">
+-                  {copyMessage}
+-                </p>
+-              ) : null}
+-
+-              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+-                {liveSetupItems.map((item) => (
+-                  <motion.div
+-                    key={`${item.label}-${item.value}`}
+-                    initial={{ opacity: 0.75, y: 4 }}
+-                    animate={{ opacity: 1, y: 0 }}
+-                    transition={{ duration: 0.18 }}
+-                    className={`rounded-2xl border p-5 ${
+-                      item.featured
+-                        ? "border-blue-300/30 bg-blue-400/10"
+-                        : "border-white/10 bg-white/5"
+-                    }`}
+-                  >
+-                    <p className="text-xs uppercase tracking-[0.14em] text-slate-300">
+-                      {item.label}
+-                    </p>
+-                    <p className="mt-3 text-2xl font-semibold text-white">{item.value}</p>
+-                  </motion.div>
+-                ))}
+-              </div>
+-
+-              <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4">
+-                <p className="text-xs uppercase tracking-[0.14em] text-slate-300">
+-                  Current operating snapshot
+-                </p>
+-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+-                  <div>
+-                    <p className="text-xs uppercase tracking-[0.14em] text-slate-400">
+-                      At-gun pressure
+-                    </p>
+-                    <p className="mt-2 text-lg font-semibold text-white">
+-                      {fmt(solved.gunPressurePsi, 0)} PSI
+-                    </p>
+-                  </div>
+-                  <div>
+-                    <p className="text-xs uppercase tracking-[0.14em] text-slate-400">
+-                      Hose loss
+-                    </p>
+-                    <p className="mt-2 text-lg font-semibold text-white">
+-                      {fmt(solved.hoseLossPsi, 0)} PSI
+-                    </p>
+-                  </div>
+-                </div>
+-              </div>
+-
+-              <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4">
+-                <p className="text-xs uppercase tracking-[0.14em] text-slate-300">
+-                  Why it matters
+-                </p>
+-                <p className="mt-2 text-sm leading-6 text-slate-300">
+-                  Small changes in hose, nozzle, and the rest of the setup can shift what
+-                  you actually get at the gun. PressureCal helps you check the setup before
+-                  you start changing parts in the field.
+-                </p>
+-              </div>
+-            </div>
+-          </div>
+-        </div>
+-      </section>
+-
+-      <section className="border-b border-slate-200 bg-white">
+-        <div className="mx-auto max-w-6xl px-4 py-12 sm:py-14">
+-          <div className="max-w-4xl">
+-            <h2 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
+-              More than one generic pressure washer calculator
+-            </h2>
+-            <p className="mt-4 text-lg leading-8 text-slate-600">
+-              Different jobs need different tools. Use the nozzle size calculator when
+-              you need a nozzle / tip code, the nozzle chart when you want a quick
+-              reference, the target pressure calculator when you want to lower PSI,
+-              the{" "}
+               <Link
+-                to="/hose-pressure-loss-calculator"
++                to={fullRigHref}
+                 onClick={() =>
+-                  trackEvent("internal_link_clicked", {
++                  trackEvent("open_full_setup_calculator_clicked", {
+                     page: "home",
+-                    destination: "hose_pressure_loss_calculator",
+-                    location: "tools_intro",
++                    location: "hero",
+                   })
+                 }
+-                className="font-semibold text-slate-800 underline decoration-slate-300 underline-offset-4 hover:text-slate-950"
+-              >
+-                pressure washer hose pressure loss calculator
+-              </Link>{" "}
+-              when hose length or hose ID needs checking, and the full setup calculator when
+-              hose, nozzle and pump performance all need to be checked together.
+-            </p>
+-          </div>
+-
+-          <div className="mt-8 grid gap-4 md:grid-cols-3">
+-            {proofPoints.map((item) => (
+-              <div
+-                key={item.title}
+-                className="rounded-3xl border border-slate-200 bg-slate-50 p-5 shadow-sm sm:p-6"
++                className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-950"
+               >
+-                <h3 className="text-lg font-semibold text-slate-950">{item.title}</h3>
+-                <p className="mt-3 text-sm leading-6 text-slate-600">{item.description}</p>
+-
+-                {item.title === "Hose loss" ? (
+-                  <Link
+-                    to="/hose-pressure-loss-calculator"
+-                    onClick={() =>
+-                      trackEvent("internal_link_clicked", {
+-                        page: "home",
+-                        destination: "hose_pressure_loss_calculator",
+-                        location: "proof_point_hose_loss",
+-                      })
+-                    }
+-                    className="mt-4 inline-flex text-sm font-semibold text-slate-950 underline decoration-slate-300 underline-offset-4 hover:decoration-slate-700"
+-                  >
+-                    Check hose pressure drop →
+-                  </Link>
+-                ) : null}
+-              </div>
+-            ))}
+-          </div>
+-
+-          <div className="mt-12">
+-            <h3 className="text-xl font-semibold text-slate-950">Pressure washer calculator tools</h3>
+-
+-            <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+-              {supportingToolCards.map((item, index) => (
+-                <Link
+-                  key={item.title}
+-                  to={item.href}
+-                  onClick={() =>
+-                    trackEvent("homepage_tool_clicked", {
+-                      page: "home",
+-                      tool: item.title,
+-                    })
+-                  }
+-                  className={`${index > 1 ? "hidden md:block " : ""}rounded-3xl border border-slate-200 bg-slate-50 p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-white hover:shadow-md sm:p-6`}
+-                >
+-                  <h4 className="text-lg font-semibold text-slate-950 sm:text-xl">{item.title}</h4>
+-                  <p className="mt-3 text-sm leading-6 text-slate-600">{item.description}</p>
+-                  <p className="mt-5 text-sm font-semibold text-slate-950">{item.cta}</p>
+-                </Link>
+-              ))}
+-            </div>
+-            <p className="mt-4 text-sm text-slate-500 md:hidden">
+-              More tools are available from the Tools menu.
+-            </p>
+-          </div>
+-
+-          <div className="mt-10 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+-              Quick unit tools
+-            </p>
+-
+-            <div className="mt-4 grid gap-3 sm:hidden">
+-              {converterLinks.map((item) => (
+-                <Link
+-                  key={item.title}
+-                  to={item.href}
+-                  className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 transition hover:border-slate-300"
+-                >
+-                  <span className="text-sm font-semibold text-slate-950">{item.title}</span>
+-                  <span className="text-sm font-semibold text-slate-950">Open tool →</span>
+-                </Link>
+-              ))}
+-            </div>
+-
+-            <div className="mt-4 hidden gap-4 md:grid md:grid-cols-2">
+-              {converterLinks.map((item) => (
+-                <Link
+-                  key={item.title}
+-                  to={item.href}
+-                  className="rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-slate-300"
+-                >
+-                  <p className="text-sm font-semibold text-slate-950">{item.title}</p>
+-                  <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
+-                  <p className="mt-4 text-sm font-semibold text-slate-950">Open {item.title} →</p>
+-                </Link>
+-              ))}
++                Full Calculator
++              </Link>
+             </div>
+           </div>
+         </div>
+       </section>
+ 
+       <section id="calculator" className="-mx-4 border-b border-slate-200 bg-slate-50/70 px-4">
+-        <div className="mx-auto max-w-6xl py-10 sm:py-12 lg:py-12">
++        <div className="mx-auto max-w-6xl py-8 sm:py-12 lg:py-12">
+           <div className="max-w-3xl">
+-            <h2 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
+-              Quick full setup preview
++            <h2 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-4xl">
++              Quick Setup Check
+             </h2>
+-            <p className="mt-4 text-lg leading-8 text-slate-600">
+-              Enter pressure, flow and hose length for a fast preview of nozzle match,
+-              estimated hose loss and likely at-gun pressure. For a dedicated hose check,
+-              use the{" "}
+-              <Link
+-                to="/hose-pressure-loss-calculator"
+-                onClick={() =>
+-                  trackEvent("internal_link_clicked", {
+-                    page: "home",
+-                    destination: "hose_pressure_loss_calculator",
+-                    location: "quick_setup_intro",
+-                  })
+-                }
+-                className="font-semibold text-slate-800 underline decoration-slate-300 underline-offset-4 hover:text-slate-950"
+-              >
+-                hose pressure loss calculator
+-              </Link>{" "}
+-              to see how hose length affects at-gun pressure. Open the full pressure
+-              washer setup calculator when you want deeper control.
++            <p className="mt-3 text-base leading-7 text-slate-600 sm:text-lg">
++              Enter your pressure washer specs. Takes about 10 seconds.
+             </p>
++            {loadedFromLink ? (
++              <div className="mt-3 inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800">
++                Loaded from shared link
++              </div>
++            ) : null}
+           </div>
+ 
+-          <div className="mt-8 grid gap-5 lg:grid-cols-[1.05fr_0.95fr]">
+-            <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+-              <div className="flex items-center justify-between gap-3">
+-                <div>
+-                  <h3 className="text-2xl font-semibold text-slate-950">Core inputs</h3>
+-                </div>
+-
+-                <Link
+-                  to={fullRigHref}
+-                  onClick={() =>
+-                    trackEvent("open_full_setup_calculator_clicked", {
+-                      page: "home",
+-                      location: "calculator_card",
+-                    })
+-                  }
+-                  className="hidden rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-950 sm:inline-flex"
+-                >
+-                  Open Full Setup Calculator
+-                </Link>
++          <div className="mt-6 grid gap-5 lg:grid-cols-[1.05fr_0.95fr]">
++            <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
++              <div>
++                <h3 className="text-xl font-semibold text-slate-950 sm:text-2xl">Your setup</h3>
+               </div>
+ 
+-              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
+-                Start with rated pressure, flow, and hose length. PressureCal estimates
+-                the nozzle and shows what the setup is likely doing at the gun.
+-              </p>
+-
+-              <div className="mt-6 grid gap-4 sm:mt-8 sm:gap-5">
++              <div className="mt-5 grid gap-4 sm:mt-7 sm:gap-5">
+                 <div>
+                   <label className="block text-sm font-medium text-slate-700">
+                     Pump pressure ({inputs.pumpPressureUnit.toUpperCase()})
+@@ -1260,94 +932,88 @@
+                   </Link>
+                 </div>
+               </div>
++            </div>
++          </div>
++        </div>
++      </section>
+ 
+-              <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+-                <h3 className="text-lg font-semibold text-slate-950 sm:text-xl">When to open the full calculator</h3>
+-
+-                <p className="mt-2 text-sm leading-6 text-slate-600">
+-                  Use the full setup calculator when nozzle size, hose loss, pressure,
+-                  and flow all need to be checked together instead of guessed separately.
+-                </p>
+-
+-                <div className="mt-4 space-y-3 sm:mt-5">
+-                  {fullCalculatorReasons.map((reason, index) => (
+-                    <div
+-                      key={reason}
+-                      className={`${index > 1 ? "hidden sm:block " : ""}rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700`}
+-                    >
+-                      {reason}
+-                    </div>
+-                  ))}
+-                </div>
++      <section className="border-b border-slate-200 bg-white">
++        <div className="mx-auto max-w-6xl px-4 py-10 sm:py-14">
++          <div className="max-w-4xl">
++            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">
++              Why does this matter?
++            </p>
++            <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
++              Your machine’s rated PSI isn’t necessarily what reaches the gun.
++            </h2>
++            <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600 sm:text-lg sm:leading-8">
++              PressureCal connects the pressure, flow, hose and nozzle so you can see what the setup is likely doing in the real world and spot mismatches before changing parts.
++            </p>
++          </div>
+ 
+-                <Link
+-                  to={fullRigHref}
+-                  onClick={() =>
+-                    trackEvent("open_full_setup_calculator_clicked", {
+-                      page: "home",
+-                      location: "quick_check_callout",
+-                    })
+-                  }
+-                  className="mt-5 inline-flex items-center justify-center rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+-                >
+-                  Open Full Setup Calculator
+-                </Link>
++          <div className="mt-7 grid gap-4 sm:grid-cols-2">
++            {proofPoints.map((item) => (
++              <div
++                key={item.title}
++                className="rounded-3xl border border-slate-200 bg-slate-50 p-5 shadow-sm sm:p-6"
++              >
++                <h3 className="text-lg font-semibold text-slate-950">{item.title}</h3>
++                <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
+               </div>
+-            </div>
++            ))}
+           </div>
+         </div>
+       </section>
+ 
+       <section className="border-b border-slate-200 bg-slate-950 text-white">
+-        <div className="mx-auto max-w-6xl px-4 py-12 sm:py-14">
++        <div className="mx-auto max-w-6xl px-4 py-10 sm:py-14">
+           <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+             <div className="max-w-2xl">
+               <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-300">
+-                PressureCal Pro
++                Full calculator + PressureCal Pro
+               </p>
+               <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+-                PressureCal Pro is for repeat-job workflow
++                Go further when a quick check isn’t enough
+               </h2>
+               <p className="mt-4 text-base leading-7 text-slate-300 sm:text-lg">
+-                Save proven setups, compare changes before swapping parts, and stop
+-                working out the same machine over and over.
++                Use the full calculator for deeper setup modelling, then save, compare and share repeat setups with PressureCal Pro.
+               </p>
+ 
+               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                 <Link
+-                  to="/pricing"
++                  to={fullRigHref}
+                   onClick={() =>
+-                    trackEvent("pro_bridge_clicked", {
++                    trackEvent("open_full_setup_calculator_clicked", {
+                       page: "home",
+-                      location: "pro_section",
++                      location: "features_section",
+                     })
+                   }
+                   className="inline-flex items-center justify-center rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-200"
+                 >
+-                  See Pro plans
++                  Full Calculator
+                 </Link>
+ 
+                 <Link
+-                  to="/saved-setups"
++                  to="/pricing"
+                   onClick={() =>
+-                    trackEvent("saved_setups_page_clicked", {
++                    trackEvent("pro_bridge_clicked", {
+                       page: "home",
+-                      location: "pro_section",
++                      location: "features_section",
+                     })
+                   }
+                   className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+                 >
+-                  See saved setups
++                  See Pro Plans
+                 </Link>
+               </div>
+             </div>
+ 
+-            <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
++            <div className="rounded-3xl border border-white/10 bg-white/5 p-5 sm:p-6">
+               <div className="grid gap-3">
+                 {proFeatures.map((feature) => (
+                   <div
+                     key={feature}
+-                    className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-sm text-slate-100"
++                    className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-100 sm:py-4"
+                   >
+                     {feature}
+                   </div>
+@@ -1359,18 +1025,90 @@
+       </section>
+ 
+       <section className="border-b border-slate-200 bg-white">
+-        <div className="mx-auto max-w-6xl px-4 py-14">
++        <div className="mx-auto max-w-6xl px-4 py-10 sm:py-14">
++          <div className="max-w-4xl">
++            <h2 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
++              Pressure washer calculator tools and guides
++            </h2>
++            <p className="mt-4 text-base leading-7 text-slate-600 sm:text-lg sm:leading-8">
++              Use a dedicated tool when you only need one answer, or open the full setup calculator when pressure, flow, hose and nozzle choice need to be checked together.
++            </p>
++          </div>
++
++          <div className="mt-8">
++            <h3 className="text-xl font-semibold text-slate-950">Pressure washer calculator tools</h3>
++
++            <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
++              {supportingToolCards.map((item, index) => (
++                <Link
++                  key={item.title}
++                  to={item.href}
++                  onClick={() =>
++                    trackEvent("homepage_tool_clicked", {
++                      page: "home",
++                      tool: item.title,
++                    })
++                  }
++                  className={`${index > 1 ? "hidden md:block " : ""}rounded-3xl border border-slate-200 bg-slate-50 p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-white hover:shadow-md sm:p-6`}
++                >
++                  <h4 className="text-lg font-semibold text-slate-950 sm:text-xl">{item.title}</h4>
++                  <p className="mt-3 text-sm leading-6 text-slate-600">{item.description}</p>
++                  <p className="mt-5 text-sm font-semibold text-slate-950">{item.cta}</p>
++                </Link>
++              ))}
++            </div>
++            <p className="mt-4 text-sm text-slate-500 md:hidden">
++              More tools are available from the Tools menu.
++            </p>
++          </div>
++
++          <div className="mt-10 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
++            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
++              Quick unit tools
++            </p>
++
++            <div className="mt-4 grid gap-3 sm:hidden">
++              {converterLinks.map((item) => (
++                <Link
++                  key={item.title}
++                  to={item.href}
++                  className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 transition hover:border-slate-300"
++                >
++                  <span className="text-sm font-semibold text-slate-950">{item.title}</span>
++                  <span className="text-sm font-semibold text-slate-950">Open tool →</span>
++                </Link>
++              ))}
++            </div>
++
++            <div className="mt-4 hidden gap-4 md:grid md:grid-cols-2">
++              {converterLinks.map((item) => (
++                <Link
++                  key={item.title}
++                  to={item.href}
++                  className="rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-slate-300"
++                >
++                  <p className="text-sm font-semibold text-slate-950">{item.title}</p>
++                  <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
++                  <p className="mt-4 text-sm font-semibold text-slate-950">Open {item.title} →</p>
++                </Link>
++              ))}
++            </div>
++          </div>
++        </div>
++      </section>
++
++      <section className="border-b border-slate-200 bg-white">
++        <div className="mx-auto max-w-6xl px-4 py-10 sm:py-14">
+           <div className="max-w-3xl">
+             <h2 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
+-              Use PressureCal when the whole setup needs checking
++              Common pressure washer setup problems to check
+             </h2>
+             <p className="mt-4 text-lg leading-8 text-slate-600">
+-              PressureCal is most useful when pressure, flow, nozzle, and hose decisions
+-              need to be checked together instead of guessed separately.
++              These are common signs that hose loss, nozzle sizing or the overall setup should be checked before blaming the machine.
+             </p>
+           </div>
+ 
+-          <div className="mt-10 grid gap-4 md:grid-cols-2 md:gap-5">
++          <div className="mt-7 grid gap-4 md:grid-cols-2 md:gap-5">
+             {useCaseCards.map((item, index) => (
+               <div
+                 key={item.title}

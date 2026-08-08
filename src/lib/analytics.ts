@@ -5,6 +5,7 @@ export type PressureCalEventName =
   | "calculator_section_viewed"
   | "copy_setup_link_clicked"
   | "open_full_setup_calculator_clicked"
+  | "internal_link_clicked"
   | "homepage_tool_clicked"
   | "saved_setups_page_clicked"
   | "pro_bridge_clicked"
